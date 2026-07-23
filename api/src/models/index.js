@@ -13,7 +13,7 @@ Vehicle.hasMany(Case, { foreignKey: "vehicleId" });
 Case.belongsTo(Vehicle, { foreignKey: "vehicleId" });
 
 export const syncDatabase = async () => {
-  await sequelize.sync({ alter: true });
+  await sequelize.sync();
   console.log("Database synced");
 };
 

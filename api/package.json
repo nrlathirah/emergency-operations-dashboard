@@ -9,7 +9,9 @@
   },
   "imports": {
     "#config/*": "./src/config/*",
-    "#models/*": "./src/models/*"
+    "#models/*": "./src/models/*",
+    "#services/*": "./src/services/*",
+    "#controllers/*": "./src/controllers/*"
   },
   "keywords": [],
   "author": "",
