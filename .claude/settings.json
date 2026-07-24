@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls -la \"c:\\\\Users\\\\NurulAthirahBintiMoh\\\\Documents\\\\tmbi-ui\" 2>&1)",
+      "Read(//c/Users/NurulAthirahBintiMoh/Documents/tmbi-ui/**)",
+      "Bash(find \"c:\\\\Users\\\\NurulAthirahBintiMoh\\\\Documents\\\\tmbi-ui\\\\src\" -maxdepth 2 -type d | sort)",
+      "Read(//c/Users/NurulAthirahBintiMoh/Documents/tmbi-ui/src/**)",
+      "Bash(grep -i \"^leaflet$\\\\|^axios$\")"
+    ]
+  }
+}
