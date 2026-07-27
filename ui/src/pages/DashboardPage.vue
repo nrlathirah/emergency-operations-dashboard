@@ -1,6 +1,8 @@
 <template>
-  <VehicleMap />
-  <CaseList />
+  <div class="space-y-6">
+    <VehicleMap />
+    <CaseList />
+  </div>
 </template>
 
 <script setup>

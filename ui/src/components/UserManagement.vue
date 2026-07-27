@@ -1,10 +1,15 @@
 <template>
-  <div>
-    <h2>User Management</h2>
+  <div class="bg-white rounded-lg shadow p-4">
+    <h2 class="text-lg font-semibold mb-3">User Management</h2>
 
-    <div class="controls">
-      <input v-model="search" type="text" placeholder="Search by name or email..." />
-      <select v-model="agencyFilter">
+    <div class="flex gap-3 mb-4">
+      <input
+        v-model="search"
+        type="text"
+        placeholder="Search by name or email..."
+        class="border rounded px-3 py-1.5 text-sm flex-1 max-w-xs"
+      />
+      <select v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm">
         <option value="">All Agencies</option>
         <option value="KKM">KKM</option>
         <option value="PDRM">PDRM</option>
@@ -12,31 +17,44 @@
       </select>
     </div>
 
-    <table>
+    <table class="w-full text-sm border-collapse">
       <thead>
-        <tr>
-          <th @click="toggleSort('name')">Name {{ sortIndicator('name') }}</th>
-          <th @click="toggleSort('email')">Email {{ sortIndicator('email') }}</th>
-          <th>Agency</th>
-          <th @click="toggleSort('role')">Role {{ sortIndicator('role') }}</th>
-          <th @click="toggleSort('status')">Status {{ sortIndicator('status') }}</th>
+        <tr class="border-b border-gray-200 text-left text-gray-500">
+          <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('name')">Name {{ sortIndicator('name') }}</th>
+          <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('email')">Email {{ sortIndicator('email') }}</th>
+          <th class="py-2 pr-4">Agency</th>
+          <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('role')">Role {{ sortIndicator('role') }}</th>
+          <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('status')">Status {{ sortIndicator('status') }}</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="u in users" :key="u.id">
-          <td>{{ u.name }}</td>
-          <td>{{ u.email }}</td>
-          <td>{{ u.Agency?.code }}</td>
-          <td>{{ u.role }}</td>
-          <td>{{ u.status }}</td>
+        <tr v-for="u in users" :key="u.id" class="border-b border-gray-100 hover:bg-gray-50">
+          <td class="py-2 pr-4 font-medium">{{ u.name }}</td>
+          <td class="py-2 pr-4 text-gray-600">{{ u.email }}</td>
+          <td class="py-2 pr-4">{{ u.Agency?.code }}</td>
+          <td class="py-2 pr-4 capitalize">{{ u.role }}</td>
+          <td class="py-2 pr-4">
+            <span
+              class="px-2 py-0.5 rounded-full text-xs"
+              :class="u.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
+            >{{ u.status }}</span>
+          </td>
         </tr>
       </tbody>
     </table>
 
-    <div class="pagination">
-      <button :disabled="page === 1" @click="page--">Previous</button>
-      <span>Page {{ page }} of {{ totalPages }}</span>
-      <button :disabled="page === totalPages" @click="page++">Next</button>
+    <div class="flex items-center gap-3 mt-4 text-sm">
+      <button
+        :disabled="page === 1"
+        @click="page--"
+        class="px-3 py-1 border rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+      >Previous</button>
+      <span class="text-gray-600">Page {{ page }} of {{ totalPages }}</span>
+      <button
+        :disabled="page === totalPages"
+        @click="page++"
+        class="px-3 py-1 border rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+      >Next</button>
     </div>
   </div>
 </template>

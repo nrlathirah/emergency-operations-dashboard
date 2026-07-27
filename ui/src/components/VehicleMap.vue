@@ -1,5 +1,8 @@
 <template>
-  <div id="map" style="height: 600px; width: 100%;"></div>
+  <div class="bg-white rounded-lg shadow p-4">
+    <h2 class="text-lg font-semibold mb-3">Live Vehicle Map</h2>
+    <div id="map" style="height: 500px; width: 100%;" class="rounded"></div>
+  </div>
 </template>
 
 <script setup>
