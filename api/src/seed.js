@@ -1,4 +1,4 @@
-import { sequelize, Agency, Vehicle, Case } from "#models/index.js";
+import { sequelize, Agency, Vehicle, Case, User } from "#models/index.js";
 
 const run = async () => {
   await sequelize.sync({ force: true }); // wipes and recreates tables — seed script only!
@@ -38,6 +38,25 @@ const run = async () => {
     priority: "low", status: "closed", location: "Jalan Sultan Ismail, KL",
     latitude: 3.1520, longitude: 101.7100,
   });
+
+  const users = [
+    { name: "Ahmad Razak", email: "ahmad.razak@kkm.gov.my", role: "dispatcher", agencyId: kkm.id },
+    { name: "Siti Aminah", email: "siti.aminah@kkm.gov.my", role: "controller", agencyId: kkm.id },
+    { name: "Farah Nadia", email: "farah.nadia@kkm.gov.my", role: "admin", agencyId: kkm.id },
+    { name: "Danial Iqbal", email: "danial.iqbal@kkm.gov.my", role: "dispatcher", agencyId: kkm.id },
+    { name: "Zulkifli Hassan", email: "zul.hassan@pdrm.gov.my", role: "dispatcher", agencyId: pdrm.id },
+    { name: "Nur Hidayah", email: "nur.hidayah@pdrm.gov.my", role: "controller", agencyId: pdrm.id },
+    { name: "Amirul Haziq", email: "amirul.haziq@pdrm.gov.my", role: "dispatcher", agencyId: pdrm.id },
+    { name: "Rosnah Ibrahim", email: "rosnah.ibrahim@pdrm.gov.my", role: "admin", agencyId: pdrm.id },
+    { name: "Faizal Anuar", email: "faizal.anuar@jbpm.gov.my", role: "dispatcher", agencyId: jbpm.id },
+    { name: "Kamalia Yusof", email: "kamalia.yusof@jbpm.gov.my", role: "controller", agencyId: jbpm.id },
+    { name: "Hafiz Rahman", email: "hafiz.rahman@jbpm.gov.my", role: "dispatcher", agencyId: jbpm.id },
+    { name: "Aina Sofea", email: "aina.sofea@jbpm.gov.my", role: "admin", agencyId: jbpm.id },
+  ];
+
+  for (const u of users) {
+    await User.create(u);
+  }
 
   console.log("Seed complete");
   process.exit(0);

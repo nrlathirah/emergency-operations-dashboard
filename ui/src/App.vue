@@ -1,10 +1,8 @@
-<script setup>
-import VehicleMap from "./components/VehicleMap.vue";
-import CaseList from "./components/CaseList.vue";
-</script>
-
 <template>
   <h1>Emergency Operations Dashboard</h1>
-  <VehicleMap />
-  <CaseList />
+  <nav>
+    <RouterLink to="/">Live Dashboard</RouterLink> |
+    <RouterLink to="/users">Users</RouterLink>
+  </nav>
+  <RouterView />
 </template>
