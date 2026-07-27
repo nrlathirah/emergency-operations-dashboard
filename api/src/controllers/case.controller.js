@@ -5,6 +5,8 @@ export const listCases = async (req, res, next) => {
     const cases = await getAllCases({
       agencyCode: req.query.agency,
       status: req.query.status,
+      sort: req.query.sort,
+      order: req.query.order,
     });
     res.status(200).json({ data: cases });
   } catch (error) {

@@ -21,6 +21,24 @@ const run = async () => {
     latitude: 3.1600, longitude: 101.7180,
   });
 
+  await Case.create({
+    agencyId: pdrm.id, caseNumber: "PDRM-0001", category: "theft",
+    priority: "medium", status: "dispatched", location: "Jalan Bukit Bintang, KL",
+    latitude: 3.1466, longitude: 101.7116,
+  });
+
+  await Case.create({
+    agencyId: jbpm.id, caseNumber: "JBPM-0001", category: "fire",
+    priority: "high", status: "in_progress", location: "Jalan Tun Razak, KL",
+    latitude: 3.1580, longitude: 101.7220,
+  });
+
+  await Case.create({
+    agencyId: kkm.id, caseNumber: "KKM-0002", category: "medical",
+    priority: "low", status: "closed", location: "Jalan Sultan Ismail, KL",
+    latitude: 3.1520, longitude: 101.7100,
+  });
+
   console.log("Seed complete");
   process.exit(0);
 };
