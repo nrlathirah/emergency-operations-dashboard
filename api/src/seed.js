@@ -1,7 +1,7 @@
 import { sequelize, Agency, Vehicle, Case, User } from "#models/index.js";
 
-const run = async () => {
-  await sequelize.sync({ force: true }); // wipes and recreates tables — seed script only!
+export const seedDatabase = async () => {
+  await sequelize.sync({ force: true }); // wipes and recreates tables
 
   const kkm = await Agency.create({ code: "KKM", name: "Kementerian Kesihatan Malaysia" });
   const pdrm = await Agency.create({ code: "PDRM", name: "Polis Diraja Malaysia" });
@@ -59,7 +59,9 @@ const run = async () => {
   }
 
   console.log("Seed complete");
-  process.exit(0);
 };
 
-run();
+// Allows `node src/seed.js` to still work as a manual command
+if (import.meta.url === `file://${process.argv[1]}`) {
+  seedDatabase().then(() => process.exit(0));
+}

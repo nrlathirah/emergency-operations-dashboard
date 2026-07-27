@@ -1,7 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { syncDatabase } from "#models/index.js";
+import { syncDatabase, Agency } from "#models/index.js";
+import { seedDatabase } from "./src/seed.js";
 import { startVehicleSimulator } from "#services/simulator.service.js";
 import { mountRoutes } from "./src/routes/index.js";
 
@@ -19,6 +20,13 @@ app.get("/", (req, res) => {
 
 mountRoutes(app);
 await syncDatabase();
+
+const agencyCount = await Agency.count();
+if (agencyCount === 0) {
+  console.log("No data found — running initial seed...");
+  await seedDatabase();
+}
+
 startVehicleSimulator();
 
 app.listen(PORT, () => {
