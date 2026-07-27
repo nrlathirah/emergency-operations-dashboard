@@ -1,0 +1,92 @@
+{
+  "info": {
+    "name": "Emergency Operations Dashboard API",
+    "description": "REST API for a simulated multi-agency (KKM/PDRM/JBPM) emergency operations dashboard.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:4000/api" }],
+  "item": [
+    {
+      "name": "Vehicles",
+      "item": [
+        {
+          "name": "Get all vehicles",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/vehicles", "host": ["{{baseUrl}}"], "path": ["vehicles"] } }
+        },
+        {
+          "name": "Get vehicles by agency",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/vehicles?agency=KKM",
+              "host": ["{{baseUrl}}"], "path": ["vehicles"],
+              "query": [{ "key": "agency", "value": "KKM" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cases",
+      "item": [
+        {
+          "name": "Get all cases",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/cases", "host": ["{{baseUrl}}"], "path": ["cases"] } }
+        },
+        {
+          "name": "Get cases filtered + sorted",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/cases?agency=PDRM&status=open&sort=priority&order=DESC",
+              "host": ["{{baseUrl}}"], "path": ["cases"],
+              "query": [
+                { "key": "agency", "value": "PDRM" },
+                { "key": "status", "value": "open" },
+                { "key": "sort", "value": "priority" },
+                { "key": "order", "value": "DESC" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get all users",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] } }
+        },
+        {
+          "name": "Search + paginate users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/users?search=ahmad&page=1&limit=5",
+              "host": ["{{baseUrl}}"], "path": ["users"],
+              "query": [
+                { "key": "search", "value": "ahmad" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "5" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Cases summary (chart data)",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/reports/cases-summary", "host": ["{{baseUrl}}"], "path": ["reports", "cases-summary"] } }
+        },
+        {
+          "name": "Export cases to Excel",
+          "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/reports/cases/export", "host": ["{{baseUrl}}"], "path": ["reports", "cases", "export"] } }
+        }
+      ]
+    }
+  ]
+}
