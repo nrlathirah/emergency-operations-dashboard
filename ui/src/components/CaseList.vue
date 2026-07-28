@@ -3,7 +3,7 @@
     <h2 class="text-lg font-semibold mb-3">Cases</h2>
 
     <div class="flex gap-3 mb-4">
-      <select v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm">
+      <select v-if="isSuperAdmin" v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm">
         <option value="">All Agencies</option>
         <option value="KKM">KKM</option>
         <option value="PDRM">PDRM</option>
@@ -47,8 +47,12 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { caseService } from "../services/caseService";
+import { useAuthStore } from "../stores/auth";
+
+const authStore = useAuthStore();
+const isSuperAdmin = computed(() => authStore.user?.role === "super_admin");
 
 const cases = ref([]);
 const agencyFilter = ref("");

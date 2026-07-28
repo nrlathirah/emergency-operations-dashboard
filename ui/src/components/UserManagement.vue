@@ -9,7 +9,7 @@
         placeholder="Search by name or email..."
         class="border rounded px-3 py-1.5 text-sm flex-1 max-w-xs"
       />
-      <select v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm">
+      <select v-if="isSuperAdmin" v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm">
         <option value="">All Agencies</option>
         <option value="KKM">KKM</option>
         <option value="PDRM">PDRM</option>
@@ -62,6 +62,10 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import { userService } from "../services/userService";
+import { useAuthStore } from "../stores/auth";
+
+const authStore = useAuthStore();
+const isSuperAdmin = computed(() => authStore.user?.role === "super_admin");
 
 const users = ref([]);
 const search = ref("");
