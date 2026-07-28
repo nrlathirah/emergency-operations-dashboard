@@ -45,7 +45,9 @@
             <div v-if="c.status === 'open'" class="flex items-center gap-2">
               <select v-model="selectedVehicle[c.id]" class="border rounded px-2 py-1 text-xs">
                 <option value="">Select vehicle</option>
-                <option v-for="v in availableVehiclesFor(c)" :key="v.id" :value="v.id">{{ v.callSign }}</option>
+                <option v-for="(v, index) in availableVehiclesFor(c)" :key="v.id" :value="v.id">
+                  {{ v.callSign }} — {{ v.distanceKm.toFixed(1) }} km{{ index === 0 ? ' (Nearest)' : '' }}
+                </option>
               </select>
               <button
                 :disabled="!selectedVehicle[c.id]"
@@ -91,8 +93,28 @@ const fetchVehicles = async () => {
   vehicles.value = await vehicleService.getAll();
 };
 
-const availableVehiclesFor = (c) =>
-  vehicles.value.filter((v) => v.status === "available" && v.Agency?.code === c.Agency?.code);
+const haversineDistanceKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Earth radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+const availableVehiclesFor = (c) => {
+  return vehicles.value
+    .filter((v) => v.status === "available" && v.Agency?.code === c.Agency?.code)
+    .map((v) => ({
+      ...v,
+      distanceKm: haversineDistanceKm(c.latitude, c.longitude, v.latitude, v.longitude),
+    }))
+    .sort((a, b) => a.distanceKm - b.distanceKm);
+};
 
 const handleDispatch = async (caseId) => {
   const vehicleId = selectedVehicle.value[caseId];
