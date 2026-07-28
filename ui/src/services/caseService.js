@@ -10,4 +10,9 @@ export const caseService = {
     const response = await api.get("/cases", { params });
     return response.data.data;
   },
+
+  async dispatch(caseId, vehicleId) {
+    const response = await api.patch(`/cases/${caseId}/dispatch`, { vehicleId });
+    return response.data.data;
+  },
 };

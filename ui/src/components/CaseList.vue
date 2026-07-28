@@ -28,6 +28,7 @@
           <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('priority')">Priority {{ sortIndicator('priority') }}</th>
           <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('status')">Status {{ sortIndicator('status') }}</th>
           <th class="py-2 pr-4">Location</th>
+          <th class="py-2 pr-4">Dispatch</th>
         </tr>
       </thead>
       <tbody>
@@ -40,6 +41,20 @@
             <span class="px-2 py-0.5 rounded-full text-xs" :class="statusColor(c.status)">{{ c.status }}</span>
           </td>
           <td class="py-2 pr-4 text-gray-600">{{ c.location }}</td>
+          <td class="py-2 pr-4">
+            <div v-if="c.status === 'open'" class="flex items-center gap-2">
+              <select v-model="selectedVehicle[c.id]" class="border rounded px-2 py-1 text-xs">
+                <option value="">Select vehicle</option>
+                <option v-for="v in availableVehiclesFor(c)" :key="v.id" :value="v.id">{{ v.callSign }}</option>
+              </select>
+              <button
+                :disabled="!selectedVehicle[c.id]"
+                @click="handleDispatch(c.id)"
+                class="px-2 py-1 bg-blue-600 text-white rounded text-xs disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700"
+              >Dispatch</button>
+            </div>
+            <span v-else class="text-gray-400 text-xs">—</span>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -49,12 +64,15 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import { caseService } from "../services/caseService";
+import { vehicleService } from "../services/vehicleService";
 import { useAuthStore } from "../stores/auth";
 
 const authStore = useAuthStore();
 const isSuperAdmin = computed(() => authStore.user?.role === "super_admin");
 
 const cases = ref([]);
+const vehicles = ref([]);
+const selectedVehicle = ref({});
 const agencyFilter = ref("");
 const statusFilter = ref("");
 const sortField = ref("createdAt");
@@ -67,6 +85,26 @@ const fetchCases = async () => {
     sort: sortField.value,
     order: sortOrder.value,
   });
+};
+
+const fetchVehicles = async () => {
+  vehicles.value = await vehicleService.getAll();
+};
+
+const availableVehiclesFor = (c) =>
+  vehicles.value.filter((v) => v.status === "available" && v.Agency?.code === c.Agency?.code);
+
+const handleDispatch = async (caseId) => {
+  const vehicleId = selectedVehicle.value[caseId];
+  if (!vehicleId) return;
+  try {
+    await caseService.dispatch(caseId, vehicleId);
+    delete selectedVehicle.value[caseId];
+    await fetchCases();
+    await fetchVehicles();
+  } catch (err) {
+    alert(err.response?.data?.message || "Failed to dispatch");
+  }
 };
 
 const toggleSort = (field) => {
@@ -92,5 +130,8 @@ const statusColor = (status) => {
 };
 
 watch([agencyFilter, statusFilter, sortField, sortOrder], fetchCases);
-onMounted(fetchCases);
+onMounted(() => {
+  fetchCases();
+  fetchVehicles();
+});
 </script>

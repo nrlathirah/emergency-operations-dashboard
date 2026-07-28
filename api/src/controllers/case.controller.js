@@ -1,4 +1,4 @@
-import { getAllCases } from "#services/case.service.js";
+import { getAllCases, dispatchCase as dispatchCaseService } from "#services/case.service.js";
 import { getScopedAgency } from "#utils/scope.util.js";
 
 export const listCases = async (req, res, next) => {
@@ -12,5 +12,19 @@ export const listCases = async (req, res, next) => {
     res.status(200).json({ data: cases });
   } catch (error) {
     next(error);
+  }
+};
+
+export const dispatchCase = async (req, res, next) => {
+  try {
+    const updatedCase = await dispatchCaseService({
+      caseId: req.params.id,
+      vehicleId: req.body.vehicleId,
+      requesterRole: req.user.role,
+      requesterAgencyCode: req.user.agencyCode,
+    });
+    res.status(200).json({ data: updatedCase });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };
