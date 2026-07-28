@@ -1,4 +1,5 @@
 import { getAllUsers } from "#services/user.service.js";
+import { getScopedAgency } from "#utils/scope.util.js";
 
 export const listUsers = async (req, res, next) => {
   try {
@@ -7,7 +8,7 @@ export const listUsers = async (req, res, next) => {
 
     const result = await getAllUsers({
       search: req.query.search,
-      agencyCode: req.query.agency,
+      agencyCode: getScopedAgency(req),
       sort: req.query.sort,
       order: req.query.order,
       page,

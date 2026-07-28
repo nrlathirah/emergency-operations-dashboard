@@ -1,9 +1,10 @@
 import { getAllCases } from "#services/case.service.js";
+import { getScopedAgency } from "#utils/scope.util.js";
 
 export const listCases = async (req, res, next) => {
   try {
     const cases = await getAllCases({
-      agencyCode: req.query.agency,
+      agencyCode: getScopedAgency(req),
       status: req.query.status,
       sort: req.query.sort,
       order: req.query.order,

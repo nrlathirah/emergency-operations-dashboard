@@ -11,6 +11,12 @@ A real-time, multi-agency emergency operations dashboard — live vehicle tracki
 
 > Note: the backend is hosted on a free tier that sleeps after inactivity — the first load may take 30-60 seconds to wake up.
 
+## Problem & Motivation
+
+Emergency response is often split across separate, agency-specific systems — health, police, and fire each operate with their own tools, making it harder to get a single, live, cross-agency view during an incident. Operators need to know where the nearest available resource is; supervisors need to track active cases and monitor performance across agencies.
+
+This project is a simplified reimagining of that coordination layer: a single dashboard giving operators a live view of multi-agency resources and cases, instead of switching between siloed systems — plus the user administration and reporting a real operations team would need around it.
+
 ## Features
 
 - **Live map** — simulated real-time vehicle tracking (ambulances, patrol cars, fire trucks) across 3 agencies (KKM, PDRM, JBPM), updating every few seconds
