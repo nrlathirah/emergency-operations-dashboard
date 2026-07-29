@@ -14,7 +14,8 @@
         <option value="">All Statuses</option>
         <option value="open">Open</option>
         <option value="dispatched">Dispatched</option>
-        <option value="in_progress">In Progress</option>
+        <option value="en_route">En Route</option>
+        <option value="on_scene">On Scene</option>
         <option value="closed">Closed</option>
       </select>
     </div>
@@ -93,6 +94,7 @@ const sortField = ref("createdAt");
 const sortOrder = ref("DESC");
 const now = ref(Date.now());
 let clockInterval;
+let pollInterval;
 
 const SLA_MINUTES = { high: 5, medium: 15, low: 30 };
 
@@ -176,7 +178,8 @@ const statusColor = (status) => {
   const colors = {
     open: "bg-red-100 text-red-700",
     dispatched: "bg-yellow-100 text-yellow-700",
-    in_progress: "bg-blue-100 text-blue-700",
+    en_route: "bg-orange-100 text-orange-700",
+    on_scene: "bg-blue-100 text-blue-700",
     closed: "bg-green-100 text-green-700",
   };
   return colors[status] || "bg-gray-100 text-gray-700";
@@ -189,6 +192,13 @@ onMounted(() => {
   clockInterval = setInterval(() => {
     now.value = Date.now();
   }, 30000);
+  pollInterval = setInterval(() => {
+    fetchCases();
+    fetchVehicles();
+  }, 5000);
 });
-onUnmounted(() => clearInterval(clockInterval));
+onUnmounted(() => {
+  clearInterval(clockInterval);
+  clearInterval(pollInterval);
+});
 </script>
