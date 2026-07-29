@@ -1,4 +1,4 @@
-import { sequelize, Agency, Vehicle, Case, User } from "#models/index.js";
+import { sequelize, Agency, Vehicle, Case, User, Station } from "#models/index.js";
 
 export const seedDatabase = async () => {
   await sequelize.sync({ force: true });
@@ -7,13 +7,25 @@ export const seedDatabase = async () => {
   const pdrm = await Agency.create({ code: "PDRM", name: "Polis Diraja Malaysia" });
   const jbpm = await Agency.create({ code: "JBPM", name: "Jabatan Bomba dan Penyelamat Malaysia" });
 
-  await Vehicle.create({ agencyId: kkm.id, callSign: "AMB-01", type: "ambulance", latitude: 3.1569, longitude: 101.7123 });
-  await Vehicle.create({ agencyId: kkm.id, callSign: "AMB-02", type: "ambulance", latitude: 3.1478, longitude: 101.6953 });
+  const hospitalKL = await Station.create({ name: "Hospital Kuala Lumpur", code: "KKM-HOSP-01", type: "hospital", agencyId: kkm.id, latitude: 3.1730, longitude: 101.7030 });
+  const hospitalSelayang = await Station.create({ name: "Hospital Selayang", code: "KKM-HOSP-02", type: "hospital", agencyId: kkm.id, latitude: 3.2534, longitude: 101.6480 });
+  await Station.create({ name: "Hospital Serdang", code: "KKM-HOSP-03", type: "hospital", agencyId: kkm.id, latitude: 2.9890, longitude: 101.7180 });
 
-  await Vehicle.create({ agencyId: pdrm.id, callSign: "PC-01", type: "patrol_car", latitude: 3.1412, longitude: 101.6865 });
-  await Vehicle.create({ agencyId: pdrm.id, callSign: "PC-02", type: "patrol_car", latitude: 3.1590, longitude: 101.7180 });
+  const ipdDangWangi = await Station.create({ name: "IPD Dang Wangi", code: "PDRM-PS-01", type: "police_station", agencyId: pdrm.id, latitude: 3.1580, longitude: 101.7010 });
+  const ipdPJ = await Station.create({ name: "IPD Petaling Jaya", code: "PDRM-PS-02", type: "police_station", agencyId: pdrm.id, latitude: 3.1073, longitude: 101.6067 });
+  await Station.create({ name: "IPD Shah Alam", code: "PDRM-PS-03", type: "police_station", agencyId: pdrm.id, latitude: 3.0855, longitude: 101.5320 });
 
-  await Vehicle.create({ agencyId: jbpm.id, callSign: "FT-01", type: "fire_truck", latitude: 3.1701, longitude: 101.6996 });
+  const bombaHangTuah = await Station.create({ name: "Balai Bomba Hang Tuah", code: "JBPM-FS-01", type: "fire_station", agencyId: jbpm.id, latitude: 3.1390, longitude: 101.7080 });
+  await Station.create({ name: "Balai Bomba Petaling Jaya", code: "JBPM-FS-02", type: "fire_station", agencyId: jbpm.id, latitude: 3.1121, longitude: 101.6120 });
+  await Station.create({ name: "Balai Bomba Shah Alam", code: "JBPM-FS-03", type: "fire_station", agencyId: jbpm.id, latitude: 3.0738, longitude: 101.5183 });
+
+  await Vehicle.create({ agencyId: kkm.id, stationId: hospitalKL.id, callSign: "AMB-01", type: "ambulance", latitude: hospitalKL.latitude, longitude: hospitalKL.longitude });
+  await Vehicle.create({ agencyId: kkm.id, stationId: hospitalSelayang.id, callSign: "AMB-02", type: "ambulance", latitude: hospitalSelayang.latitude, longitude: hospitalSelayang.longitude });
+
+  await Vehicle.create({ agencyId: pdrm.id, stationId: ipdDangWangi.id, callSign: "PC-01", type: "patrol_car", latitude: ipdDangWangi.latitude, longitude: ipdDangWangi.longitude });
+  await Vehicle.create({ agencyId: pdrm.id, stationId: ipdPJ.id, callSign: "PC-02", type: "patrol_car", latitude: ipdPJ.latitude, longitude: ipdPJ.longitude });
+
+  await Vehicle.create({ agencyId: jbpm.id, stationId: bombaHangTuah.id, callSign: "FT-01", type: "fire_truck", latitude: bombaHangTuah.latitude, longitude: bombaHangTuah.longitude });
 
   await Case.create({
     agencyId: kkm.id, caseNumber: "KKM-0001", category: "accident",
