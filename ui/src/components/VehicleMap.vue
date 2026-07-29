@@ -108,6 +108,14 @@ onMounted(async () => {
     attribution: "&copy; OpenStreetMap contributors",
   }).addTo(map);
 
+  L.circle([3.12, 101.62], {
+    radius: 35000,
+    color: "#3b82f6",
+    weight: 2,
+    dashArray: "6,6",
+    fillOpacity: 0.03,
+  }).addTo(map).bindTooltip("Demo coverage area: Klang Valley (KL & Selangor)");
+
   await renderStations();
   await refresh();
   pollTimer = setInterval(refresh, 3000);
