@@ -7,6 +7,18 @@ export const reportService = {
     return response.data.data;
   },
 
+  async getCasesByAgency(agencyCode) {
+    const params = agencyCode ? { agency: agencyCode } : {};
+    const response = await api.get("/reports/cases-by-agency", { params });
+    return response.data.data;
+  },
+
+  async getVehicleUtilization(agencyCode) {
+    const params = agencyCode ? { agency: agencyCode } : {};
+    const response = await api.get("/reports/vehicle-utilization", { params });
+    return response.data.data;
+  },
+
   getExportUrl(agencyCode) {
     const params = new URLSearchParams();
     if (agencyCode) params.set("agency", agencyCode);

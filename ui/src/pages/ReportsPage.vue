@@ -17,13 +17,28 @@
       >Export to Excel</a>
     </div>
 
-    <CasesChart :agency-code="agencyFilter" />
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div>
+        <h3 class="text-sm font-medium text-gray-600 mb-2">Cases by Status</h3>
+        <CasesChart :agency-code="agencyFilter" />
+      </div>
+      <div v-if="isSuperAdmin">
+        <h3 class="text-sm font-medium text-gray-600 mb-2">Cases by Agency</h3>
+        <CasesByAgencyChart :agency-code="agencyFilter" />
+      </div>
+      <div>
+        <h3 class="text-sm font-medium text-gray-600 mb-2">Vehicle Utilization</h3>
+        <VehicleUtilizationChart :agency-code="agencyFilter" />
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from "vue";
 import CasesChart from "../components/CasesChart.vue";
+import CasesByAgencyChart from "../components/CasesByAgencyChart.vue";
+import VehicleUtilizationChart from "../components/VehicleUtilizationChart.vue";
 import { reportService } from "../services/reportService";
 import { useAuthStore } from "../stores/auth";
 

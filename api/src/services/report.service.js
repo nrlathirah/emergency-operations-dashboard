@@ -1,11 +1,31 @@
 import ExcelJS from "exceljs";
 import { getAllCases } from "./case.service.js";
+import { getAllVehicles } from "./vehicle.service.js";
 
 export const getCasesSummaryByStatus = async ({ agencyCode } = {}) => {
   const cases = await getAllCases({ agencyCode });
   const summary = {};
   cases.forEach((c) => {
     summary[c.status] = (summary[c.status] || 0) + 1;
+  });
+  return summary;
+};
+
+export const getCasesSummaryByAgency = async ({ agencyCode } = {}) => {
+  const cases = await getAllCases({ agencyCode });
+  const summary = {};
+  cases.forEach((c) => {
+    const key = c.Agency?.code || "Unknown";
+    summary[key] = (summary[key] || 0) + 1;
+  });
+  return summary;
+};
+
+export const getVehicleUtilization = async ({ agencyCode } = {}) => {
+  const vehicles = await getAllVehicles({ agencyCode });
+  const summary = {};
+  vehicles.forEach((v) => {
+    summary[v.status] = (summary[v.status] || 0) + 1;
   });
   return summary;
 };
