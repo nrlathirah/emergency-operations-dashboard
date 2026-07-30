@@ -1,7 +1,12 @@
 <template>
   <div class="bg-white rounded-lg shadow p-4">
     <h2 class="text-lg font-semibold mb-3">Live Vehicle Map</h2>
-    <div id="map" style="height: 500px; width: 100%;" class="rounded"></div>
+    <div class="relative">
+      <div id="map" style="height: 500px; width: 100%;" class="rounded"></div>
+      <div v-if="mapLoading" class="absolute inset-0 flex items-center justify-center bg-white/70 rounded">
+        <LoadingSpinner />
+      </div>
+    </div>
 
     <div class="flex flex-wrap gap-4 mt-3 text-xs text-gray-600">
       <span class="flex items-center gap-1"><span>🏥</span> Hospital</span>
@@ -22,17 +27,19 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { vehicleService } from "../services/vehicleService";
 import { caseService } from "../services/caseService";
 import { stationService } from "../services/stationService";
+import LoadingSpinner from "./LoadingSpinner.vue";
 
 let map;
 const vehicleMarkers = {};
 const incidentMarkers = {};
 let pollTimer;
+const mapLoading = ref(true);
 
 const AGENCY_COLORS = { KKM: "#dc2626", PDRM: "#2563eb", JBPM: "#ea580c" };
 const VEHICLE_EMOJI = { ambulance: "🚑", patrol_car: "🚓", fire_truck: "🚒" };
@@ -99,6 +106,7 @@ const renderVehicles = async (activeCases) => {
 const refresh = async () => {
   const activeCases = await renderIncidents();
   await renderVehicles(activeCases);
+  mapLoading.value = false;
 };
 
 onMounted(async () => {

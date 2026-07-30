@@ -1,5 +1,6 @@
 <template>
-  <Doughnut v-if="chartData" :data="chartData" :options="chartOptions" />
+  <LoadingSpinner v-if="!chartData" />
+  <Doughnut v-else :data="chartData" :options="chartOptions" />
 </template>
 
 <script setup>
@@ -7,6 +8,7 @@ import { ref, watch, onMounted } from "vue";
 import { Doughnut } from "vue-chartjs";
 import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement } from "chart.js";
 import { reportService } from "../services/reportService";
+import LoadingSpinner from "./LoadingSpinner.vue";
 
 ChartJS.register(Title, Tooltip, Legend, ArcElement);
 

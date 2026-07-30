@@ -20,7 +20,8 @@
       </select>
     </div>
 
-    <table class="w-full text-sm border-collapse">
+    <LoadingSpinner v-if="loading" />
+    <table v-else class="w-full text-sm border-collapse">
       <thead>
         <tr class="border-b border-gray-200 text-left text-gray-500">
           <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('caseNumber')">Case # {{ sortIndicator('caseNumber') }}</th>
@@ -81,6 +82,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { caseService } from "../services/caseService";
 import { vehicleService } from "../services/vehicleService";
 import { useAuthStore } from "../stores/auth";
+import LoadingSpinner from "./LoadingSpinner.vue";
 
 const authStore = useAuthStore();
 const isSuperAdmin = computed(() => authStore.user?.role === "super_admin");
@@ -93,6 +95,7 @@ const statusFilter = ref("");
 const sortField = ref("createdAt");
 const sortOrder = ref("DESC");
 const now = ref(Date.now());
+const loading = ref(true);
 let clockInterval;
 let pollInterval;
 
@@ -105,6 +108,7 @@ const fetchCases = async () => {
     sort: sortField.value,
     order: sortOrder.value,
   });
+  loading.value = false;
 };
 
 const fetchVehicles = async () => {

@@ -1,12 +1,15 @@
 <template>
-  <Bar v-if="chartData" :data="chartData" :options="chartOptions" />
+  <LoadingSpinner v-if="!chartData" />
+  <Bar v-else :data="chartData" :options="chartOptions" />
 </template>
+
 
 <script setup>
 import { ref, watch, onMounted } from "vue";
 import { Bar } from "vue-chartjs";
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from "chart.js";
 import { reportService } from "../services/reportService";
+import LoadingSpinner from "./LoadingSpinner.vue";
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 

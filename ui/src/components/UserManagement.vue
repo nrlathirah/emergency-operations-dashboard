@@ -17,45 +17,48 @@
       </select>
     </div>
 
-    <table class="w-full text-sm border-collapse">
-      <thead>
-        <tr class="border-b border-gray-200 text-left text-gray-500">
-          <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('name')">Name {{ sortIndicator('name') }}</th>
-          <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('email')">Email {{ sortIndicator('email') }}</th>
-          <th class="py-2 pr-4">Agency</th>
-          <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('role')">Role {{ sortIndicator('role') }}</th>
-          <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('status')">Status {{ sortIndicator('status') }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="u in users" :key="u.id" class="border-b border-gray-100 hover:bg-gray-50">
-          <td class="py-2 pr-4 font-medium">{{ u.name }}</td>
-          <td class="py-2 pr-4 text-gray-600">{{ u.email }}</td>
-          <td class="py-2 pr-4">{{ u.Agency?.code }}</td>
-          <td class="py-2 pr-4 capitalize">{{ u.role }}</td>
-          <td class="py-2 pr-4">
-            <span
-              class="px-2 py-0.5 rounded-full text-xs"
-              :class="u.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
-            >{{ u.status }}</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <LoadingSpinner v-if="loading" />
+    <template v-else>
+      <table class="w-full text-sm border-collapse">
+        <thead>
+          <tr class="border-b border-gray-200 text-left text-gray-500">
+            <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('name')">Name {{ sortIndicator('name') }}</th>
+            <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('email')">Email {{ sortIndicator('email') }}</th>
+            <th class="py-2 pr-4">Agency</th>
+            <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('role')">Role {{ sortIndicator('role') }}</th>
+            <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('status')">Status {{ sortIndicator('status') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="u in users" :key="u.id" class="border-b border-gray-100 hover:bg-gray-50">
+            <td class="py-2 pr-4 font-medium">{{ u.name }}</td>
+            <td class="py-2 pr-4 text-gray-600">{{ u.email }}</td>
+            <td class="py-2 pr-4">{{ u.Agency?.code }}</td>
+            <td class="py-2 pr-4 capitalize">{{ u.role }}</td>
+            <td class="py-2 pr-4">
+              <span
+                class="px-2 py-0.5 rounded-full text-xs"
+                :class="u.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
+              >{{ u.status }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-    <div class="flex items-center gap-3 mt-4 text-sm">
-      <button
-        :disabled="page === 1"
-        @click="page--"
-        class="px-3 py-1 border rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
-      >Previous</button>
-      <span class="text-gray-600">Page {{ page }} of {{ totalPages }}</span>
-      <button
-        :disabled="page === totalPages"
-        @click="page++"
-        class="px-3 py-1 border rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
-      >Next</button>
-    </div>
+      <div class="flex items-center gap-3 mt-4 text-sm">
+        <button
+          :disabled="page === 1"
+          @click="page--"
+          class="px-3 py-1 border rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+        >Previous</button>
+        <span class="text-gray-600">Page {{ page }} of {{ totalPages }}</span>
+        <button
+          :disabled="page === totalPages"
+          @click="page++"
+          class="px-3 py-1 border rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+        >Next</button>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -63,6 +66,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { userService } from "../services/userService";
 import { useAuthStore } from "../stores/auth";
+import LoadingSpinner from "./LoadingSpinner.vue";
 
 const authStore = useAuthStore();
 const isSuperAdmin = computed(() => authStore.user?.role === "super_admin");
@@ -75,6 +79,7 @@ const sortOrder = ref("ASC");
 const page = ref(1);
 const limit = 5;
 const total = ref(0);
+const loading = ref(true);
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit)));
 
@@ -89,6 +94,7 @@ const fetchUsers = async () => {
   });
   users.value = result.data;
   total.value = result.total;
+  loading.value = false;
 };
 
 const toggleSort = (field) => {
