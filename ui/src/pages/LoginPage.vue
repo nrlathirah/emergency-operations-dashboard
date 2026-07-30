@@ -1,23 +1,44 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-slate-100">
-    <form @submit.prevent="handleLogin" class="bg-white rounded-lg shadow p-6 w-full max-w-sm space-y-4">
-      <h1 class="text-lg font-semibold text-center">Emergency Operations Dashboard</h1>
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
+    <form @submit.prevent="handleLogin" class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm space-y-5">
+      <div class="text-center">
+        <div class="text-4xl mb-2">🚨</div>
+        <h1 class="text-lg font-semibold text-slate-900">Emergency Operations Dashboard</h1>
+        <p class="text-xs text-gray-500 mt-1">Multi-Agency Coordination Platform</p>
+      </div>
 
       <div>
         <label class="block text-sm text-gray-600 mb-1">Email</label>
-        <input v-model="email" type="email" required class="w-full border rounded px-3 py-2 text-sm" />
+        <input
+          v-model="email"
+          type="email"
+          required
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
+        />
       </div>
 
       <div>
         <label class="block text-sm text-gray-600 mb-1">Password</label>
-        <input v-model="password" type="password" required class="w-full border rounded px-3 py-2 text-sm" />
+        <input
+          v-model="password"
+          type="password"
+          required
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
+        />
       </div>
 
-      <p v-if="error" class="text-red-600 text-sm">{{ error }}</p>
+      <p v-if="error" class="text-red-600 text-sm text-center">{{ error }}</p>
 
-      <button type="submit" class="w-full bg-blue-600 text-white rounded py-2 text-sm hover:bg-blue-700">
+      <button
+        type="submit"
+        class="w-full bg-slate-900 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-slate-800 transition"
+      >
         Log In
       </button>
+
+      <p class="text-center text-[11px] text-gray-400 pt-2 border-t border-gray-100">
+        Authorized personnel only · KKM · PDRM · JBPM
+      </p>
     </form>
   </div>
 </template>
