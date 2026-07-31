@@ -3,7 +3,7 @@ import { sequelize } from "#config/database.js";
 
 export const Vehicle = sequelize.define("Vehicle", {
   callSign: { type: DataTypes.STRING, allowNull: false },
-  type: { type: DataTypes.STRING, allowNull: false }, // ambulance, patrol_car, fire_truck
+  type: { type: DataTypes.STRING, allowNull: false }, // ambulance, police_car, fire_truck
   status: {
     type: DataTypes.STRING,
     allowNull: false,

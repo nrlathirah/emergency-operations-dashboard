@@ -9,17 +9,49 @@
     </div>
 
     <div class="flex flex-wrap gap-4 mt-3 text-xs text-gray-600">
-      <span class="flex items-center gap-1"><span>☪️</span> Hospital</span>
-      <span class="flex items-center gap-1"><span>🛡️</span> Police Station</span>
-      <span class="flex items-center gap-1"><span>🔥</span> Fire Station</span>
-      <span class="flex items-center gap-1">
-        <span class="inline-block w-3 h-3 rounded-full" style="background:#dc2626"></span> KKM Incident/Vehicle
+      <span class="flex items-center gap-1.5">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white" style="box-shadow:0 1px 4px rgba(0,0,0,0.5);">
+          <svg width="12" height="12" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#dc2626"/><circle cx="21" cy="12" r="10" fill="white"/></svg>
+        </span>
+        Hospital
       </span>
-      <span class="flex items-center gap-1">
-        <span class="inline-block w-3 h-3 rounded-full" style="background:#2563eb"></span> PDRM Incident/Vehicle
+      <span class="flex items-center gap-1.5">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white text-xs" style="box-shadow:0 1px 4px rgba(0,0,0,0.5);">👮</span>
+        Police Station
       </span>
-      <span class="flex items-center gap-1">
-        <span class="inline-block w-3 h-3 rounded-full" style="background:#ea580c"></span> JBPM Incident/Vehicle
+      <span class="flex items-center gap-1.5">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white text-xs" style="box-shadow:0 1px 4px rgba(0,0,0,0.5);">🧑‍🚒</span>
+        Fire Station
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#dc2626">🚑</span>
+        Ambulance (KKM)
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#2563eb">🚓</span>
+        Police Car (PDRM)
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#f59e0b">🚒</span>
+        Fire Truck (JBPM)
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#dc2626">
+          <span class="block w-1.5 h-1.5 rounded-full bg-white"></span>
+        </span>
+        KKM Incident
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#2563eb">
+          <span class="block w-1.5 h-1.5 rounded-full bg-white"></span>
+        </span>
+        PDRM Incident
+      </span>
+      <span class="flex items-center gap-1.5">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#f59e0b">
+          <span class="block w-1.5 h-1.5 rounded-full bg-white"></span>
+        </span>
+        JBPM Incident
       </span>
     </div>
   </div>
@@ -41,29 +73,39 @@ const routeLines = {};
 let pollTimer;
 const mapLoading = ref(true);
 
-const AGENCY_COLORS = { KKM: "#dc2626", PDRM: "#2563eb", JBPM: "#ea580c" };
-const VEHICLE_EMOJI = { ambulance: "🚑", patrol_car: "🚓", fire_truck: "🚒" };
+const AGENCY_COLORS = { KKM: "#dc2626", PDRM: "#2563eb", JBPM: "#f59e0b" };
+const VEHICLE_EMOJI = { ambulance: "🚑", police_car: "🚓", fire_truck: "🚒" };
 
-// Red crescent: red circle with a white circle offset to "bite" a crescent shape out of it
 const CRESCENT_SVG = `<svg width="16" height="16" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#dc2626"/><circle cx="21" cy="12" r="10" fill="white"/></svg>`;
 
 const STATION_ICONS = {
-  hospital: { bg: "#ffffff", html: CRESCENT_SVG },
-  police_station: { bg: "#1e3a8a", html: `<span style="font-size:14px;">🛡️</span>` },
-  fire_station: { bg: "#7c2d12", html: `<span style="font-size:14px;">🔥</span>` },
+  hospital: CRESCENT_SVG,
+  police_station: `<span style="font-size:14px;">👮</span>`,
+  fire_station: `<span style="font-size:14px;">🧑‍🚒</span>`,
 };
 
-const pinIcon = (innerHtml, bgColor, size = 30) =>
+// Stations: white pin, no border, shadow only for definition
+const stationPinIcon = (innerHtml, size = 30) =>
   L.divIcon({
-    html: `<div style="width:${size}px; height:${size}px; background:${bgColor}; border-radius:50% 50% 50% 0; transform:rotate(-45deg); border:2px solid white; box-shadow:0 1px 4px rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center;"><div style="transform:rotate(45deg); line-height:1;">${innerHtml}</div></div>`,
+    html: `<div style="width:${size}px; height:${size}px; background:#ffffff; border-radius:50% 50% 50% 0; transform:rotate(-45deg); box-shadow:0 1px 5px rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center;"><div style="transform:rotate(45deg); line-height:1;">${innerHtml}</div></div>`,
     className: "",
     iconSize: [size, size],
     iconAnchor: [size / 2, size],
   });
 
-const plainPinIcon = (bgColor, size = 26) =>
+// Vehicles: white pin, colored border matching agency
+const vehiclePinIcon = (emoji, borderColor, size = 30) =>
   L.divIcon({
-    html: `<div style="width:${size}px; height:${size}px; background:${bgColor}; border-radius:50% 50% 50% 0; transform:rotate(-45deg); border:2px solid white; box-shadow:0 1px 4px rgba(0,0,0,0.5);"></div>`,
+    html: `<div style="width:${size}px; height:${size}px; background:#ffffff; border-radius:50% 50% 50% 0; transform:rotate(-45deg); border:3px solid ${borderColor}; box-shadow:0 1px 4px rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center;"><div style="transform:rotate(45deg); font-size:14px; line-height:1;">${emoji}</div></div>`,
+    className: "",
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size],
+  });
+
+// Incidents: classic pin look — colored teardrop with a white hollow circle in the center
+const incidentPinIcon = (color, size = 26) =>
+  L.divIcon({
+    html: `<div style="width:${size}px; height:${size}px; background:${color}; border-radius:50% 50% 50% 0; transform:rotate(-45deg); border:2px solid white; box-shadow:0 1px 4px rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center;"><div style="width:${Math.round(size * 0.35)}px; height:${Math.round(size * 0.35)}px; background:white; border-radius:50%;"></div></div>`,
     className: "",
     iconSize: [size, size],
     iconAnchor: [size / 2, size],
@@ -72,9 +114,8 @@ const plainPinIcon = (bgColor, size = 26) =>
 const renderStations = async () => {
   const stations = await stationService.getAll();
   stations.forEach((station) => {
-    const config = STATION_ICONS[station.type] || { bg: "#6b7280", html: "📍" };
-    const icon = pinIcon(config.html, config.bg);
-    L.marker([station.latitude, station.longitude], { icon })
+    const html = STATION_ICONS[station.type] || "📍";
+    L.marker([station.latitude, station.longitude], { icon: stationPinIcon(html) })
       .addTo(map)
       .bindTooltip(`<strong>${station.name}</strong><br>${station.type.replace("_", " ")} · ${station.Agency?.code}`);
   });
@@ -89,7 +130,7 @@ const renderIncidents = async () => {
 
   activeCases.forEach((c) => {
     const color = AGENCY_COLORS[c.Agency?.code] || "#6b7280";
-    const marker = L.marker([c.latitude, c.longitude], { icon: plainPinIcon(color) })
+    const marker = L.marker([c.latitude, c.longitude], { icon: incidentPinIcon(color) })
       .addTo(map)
       .bindTooltip(`<strong>${c.caseNumber}</strong><br>${c.category} · ${c.priority} priority<br>Status: ${c.status}`);
     incidentMarkers[c.id] = marker;
@@ -113,9 +154,7 @@ const renderVehicles = async (activeCases) => {
       vehicleMarkers[vehicle.id].setLatLng(position);
       vehicleMarkers[vehicle.id].setTooltipContent(tooltip);
     } else {
-      vehicleMarkers[vehicle.id] = L.marker(position, {
-        icon: pinIcon(`<span style="font-size:14px;">${emoji}</span>`, color),
-      })
+      vehicleMarkers[vehicle.id] = L.marker(position, { icon: vehiclePinIcon(emoji, color) })
         .addTo(map)
         .bindTooltip(tooltip);
     }
@@ -163,7 +202,6 @@ const addCoverageMask = () => {
     [-85, -180], [-85, 180], [85, 180], [85, -180],
   ];
 
-  // Outer ring + inner ring (the circle) = Leaflet renders the inner ring as a hole
   L.polygon([outerRing, circlePoints], {
     stroke: false,
     fillColor: "#000000",
