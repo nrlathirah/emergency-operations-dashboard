@@ -3,10 +3,10 @@
     <header v-if="authStore.isLoggedIn" :style="{ backgroundColor: headerColor }" class="text-white px-6 py-4 shadow-md">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
-          <span class="text-2xl">🚨</span>
+          <span class="text-2xl">{{ headerIcon }}</span>
           <div>
             <h1 class="text-lg font-semibold leading-tight">Emergency Operations Dashboard</h1>
-            <p class="text-xs text-white/70 leading-tight">Multi-Agency Coordination Platform</p>
+            <p class="text-xs text-white/70 leading-tight">{{ headerSubtitle }}</p>
           </div>
         </div>
         <div class="flex items-center gap-3 text-sm">
@@ -59,6 +59,28 @@ const AGENCY_THEME = {
   PDRM: "#1e3a8a",        // dark blue
   JBPM: "#92400e",        // dark amber/gold
 };
+
+const AGENCY_FULL_NAMES = {
+  KKM: "Kementerian Kesihatan Malaysia",
+  PDRM: "Polis Diraja Malaysia",
+  JBPM: "Jabatan Bomba dan Penyelamat Malaysia",
+};
+
+const AGENCY_ICONS = {
+  KKM: "🏥",
+  PDRM: "👮",
+  JBPM: "🧑‍🚒",
+};
+
+const headerIcon = computed(() => {
+  if (authStore.user?.role === "super_admin") return "🚨";
+  return AGENCY_ICONS[authStore.user?.agency] || "🚨";
+});
+
+const headerSubtitle = computed(() => {
+  if (authStore.user?.role === "super_admin") return "Multi-Agency Coordination Platform";
+  return AGENCY_FULL_NAMES[authStore.user?.agency] || "Multi-Agency Coordination Platform";
+});
 
 const headerColor = computed(() => {
   if (authStore.user?.role === "super_admin") return AGENCY_THEME.super_admin;
