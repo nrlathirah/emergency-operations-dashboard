@@ -8,7 +8,7 @@ export const User = sequelize.define(
     name: { type: DataTypes.STRING, allowNull: false },
     email: { type: DataTypes.STRING, allowNull: false, unique: true },
     password: { type: DataTypes.STRING, allowNull: false },
-    role: { type: DataTypes.STRING, allowNull: false, defaultValue: "dispatcher" }, // dispatcher, controller, admin, super_admin
+    role: { type: DataTypes.STRING, allowNull: false, defaultValue: "staff" }, // staff (agency-scoped), super_admin (all agencies)
     status: { type: DataTypes.STRING, allowNull: false, defaultValue: "active" }, // active, inactive
   },
   {

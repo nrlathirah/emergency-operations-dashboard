@@ -77,9 +77,7 @@ const roleLabel = computed(() => {
   return `${authStore.user.role} · ${authStore.user.agency}`;
 });
 
-const canManageUsers = computed(() =>
-  ["admin", "super_admin"].includes(authStore.user?.role)
-);
+const canManageUsers = computed(() => authStore.user?.role === "super_admin");
 
 const handleLogout = () => {
   authStore.logout();

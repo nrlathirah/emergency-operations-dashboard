@@ -56,19 +56,13 @@
           </td>
           <td class="py-2 pr-4 text-gray-600">{{ c.location }}</td>
           <td class="py-2 pr-4">
-            <div v-if="c.status === 'open'" class="flex items-center gap-2">
-              <select v-model="selectedVehicle[c.id]" class="border rounded px-2 py-1 text-xs">
-                <option value="">Select vehicle</option>
-                <option v-for="(v, index) in availableVehiclesFor(c)" :key="v.id" :value="v.id">
-                  {{ v.callSign }} — {{ v.distanceKm.toFixed(1) }} km{{ index === 0 ? ' (Nearest)' : '' }}
-                </option>
-              </select>
-              <button
-                :disabled="!selectedVehicle[c.id]"
-                @click="handleDispatch(c.id)"
-                class="px-2 py-1 bg-blue-600 text-white rounded text-xs disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700"
-              >Dispatch</button>
-            </div>
+            <button
+              v-if="c.status === 'open'"
+              :disabled="availableVehiclesFor(c).length === 0"
+              @click="handleDispatch(c)"
+              class="px-2 py-1 bg-blue-600 text-white rounded text-xs disabled:opacity-40 disabled:cursor-not-allowed hover:bg-blue-700"
+              :title="availableVehiclesFor(c).length ? `Nearest: ${availableVehiclesFor(c)[0].callSign} (${availableVehiclesFor(c)[0].distanceKm.toFixed(1)} km)` : 'No available vehicles'"
+            >Dispatch Nearest</button>
             <span v-else class="text-gray-400 text-xs">—</span>
           </td>
         </tr>
@@ -89,7 +83,6 @@ const isSuperAdmin = computed(() => authStore.user?.role === "super_admin");
 
 const cases = ref([]);
 const vehicles = ref([]);
-const selectedVehicle = ref({});
 const agencyFilter = ref("");
 const statusFilter = ref("");
 const sortField = ref("createdAt");
@@ -153,12 +146,11 @@ const availableVehiclesFor = (c) => {
     .sort((a, b) => a.distanceKm - b.distanceKm);
 };
 
-const handleDispatch = async (caseId) => {
-  const vehicleId = selectedVehicle.value[caseId];
-  if (!vehicleId) return;
+const handleDispatch = async (caseRecord) => {
+  const nearest = availableVehiclesFor(caseRecord)[0];
+  if (!nearest) return;
   try {
-    await caseService.dispatch(caseId, vehicleId);
-    delete selectedVehicle.value[caseId];
+    await caseService.dispatch(caseRecord.id, nearest.id);
     await fetchCases();
     await fetchVehicles();
   } catch (err) {

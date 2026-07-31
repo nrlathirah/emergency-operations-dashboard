@@ -17,10 +17,10 @@ The dashboard requires login. Use any of these accounts (password for all: `pass
 
 | Email | Role | Access |
 |---|---|---|
-| `admin@ops.gov.my` | super_admin | All 3 agencies |
-| `ahmad.razak@kkm.gov.my` | dispatcher | KKM only |
-| `rosnah.ibrahim@pdrm.gov.my` | admin | PDRM only |
-| `faizal.anuar@jbpm.gov.my` | dispatcher | JBPM only |
+| `admin@ops.gov.my` | super_admin | All 3 agencies, plus User Management |
+| `ahmad.razak@kkm.gov.my` | staff | KKM only |
+| `rosnah.ibrahim@pdrm.gov.my` | staff | PDRM only |
+| `faizal.anuar@jbpm.gov.my` | staff | JBPM only |
 
 ## Problem & Motivation
 
@@ -33,8 +33,8 @@ To keep the dataset focused, this demo covers the **Klang Valley (Kuala Lumpur &
 ## Features
 
 - **Live map** — vehicles, stations (hospitals, police stations, fire stations), and active incidents shown with distinct icons, hover details, and a legend; positions update every few seconds
-- **Authentication & role-based access** — JWT login; agency-scoped roles (dispatcher/controller/admin) see only their own agency's data, a `super_admin` role sees across all 3 agencies
-- **Dispatch workflow** — assign an available vehicle to an open case, sorted by real distance (nearest-vehicle suggestion); the case and vehicle then progress automatically through a full lifecycle (`dispatched → en route → on scene → closed`)
+- **Authentication & role-based access** — JWT login; agency `staff` see only their own agency's data, a `super_admin` role sees across all 3 agencies and manages users
+- **Dispatch workflow** — one-click dispatch auto-assigns the nearest available vehicle (real distance calculation, not manual selection — this project displays and simulates, it doesn't control real dispatch decisions); the case and vehicle then progress automatically through a full lifecycle (`dispatched → en route → on scene → closed`)
 - **SLA tracking** — open cases are flagged once they exceed a priority-based response time target
 - **Case management** — filtering by agency/status, sortable columns
 - **User management** — operator directory with search, sort, and pagination

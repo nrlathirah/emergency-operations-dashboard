@@ -52,18 +52,18 @@ export const seedDatabase = async () => {
   });
 
   const users = [
-    { name: "Ahmad Razak", email: "ahmad.razak@kkm.gov.my", password: "password123", role: "dispatcher", agencyId: kkm.id },
-    { name: "Siti Aminah", email: "siti.aminah@kkm.gov.my", password: "password123", role: "controller", agencyId: kkm.id },
-    { name: "Farah Nadia", email: "farah.nadia@kkm.gov.my", password: "password123", role: "admin", agencyId: kkm.id },
-    { name: "Danial Iqbal", email: "danial.iqbal@kkm.gov.my", password: "password123", role: "dispatcher", agencyId: kkm.id },
-    { name: "Zulkifli Hassan", email: "zul.hassan@pdrm.gov.my", password: "password123", role: "dispatcher", agencyId: pdrm.id },
-    { name: "Nur Hidayah", email: "nur.hidayah@pdrm.gov.my", password: "password123", role: "controller", agencyId: pdrm.id },
-    { name: "Amirul Haziq", email: "amirul.haziq@pdrm.gov.my", password: "password123", role: "dispatcher", agencyId: pdrm.id },
-    { name: "Rosnah Ibrahim", email: "rosnah.ibrahim@pdrm.gov.my", password: "password123", role: "admin", agencyId: pdrm.id },
-    { name: "Faizal Anuar", email: "faizal.anuar@jbpm.gov.my", password: "password123", role: "dispatcher", agencyId: jbpm.id },
-    { name: "Kamalia Yusof", email: "kamalia.yusof@jbpm.gov.my", password: "password123", role: "controller", agencyId: jbpm.id },
-    { name: "Hafiz Rahman", email: "hafiz.rahman@jbpm.gov.my", password: "password123", role: "dispatcher", agencyId: jbpm.id },
-    { name: "Aina Sofea", email: "aina.sofea@jbpm.gov.my", password: "password123", role: "admin", agencyId: jbpm.id },
+    { name: "Ahmad Razak", email: "ahmad.razak@kkm.gov.my", password: "password123", role: "staff", agencyId: kkm.id },
+    { name: "Siti Aminah", email: "siti.aminah@kkm.gov.my", password: "password123", role: "staff", agencyId: kkm.id },
+    { name: "Farah Nadia", email: "farah.nadia@kkm.gov.my", password: "password123", role: "staff", agencyId: kkm.id },
+    { name: "Danial Iqbal", email: "danial.iqbal@kkm.gov.my", password: "password123", role: "staff", agencyId: kkm.id },
+    { name: "Zulkifli Hassan", email: "zul.hassan@pdrm.gov.my", password: "password123", role: "staff", agencyId: pdrm.id },
+    { name: "Nur Hidayah", email: "nur.hidayah@pdrm.gov.my", password: "password123", role: "staff", agencyId: pdrm.id },
+    { name: "Amirul Haziq", email: "amirul.haziq@pdrm.gov.my", password: "password123", role: "staff", agencyId: pdrm.id },
+    { name: "Rosnah Ibrahim", email: "rosnah.ibrahim@pdrm.gov.my", password: "password123", role: "staff", agencyId: pdrm.id },
+    { name: "Faizal Anuar", email: "faizal.anuar@jbpm.gov.my", password: "password123", role: "staff", agencyId: jbpm.id },
+    { name: "Kamalia Yusof", email: "kamalia.yusof@jbpm.gov.my", password: "password123", role: "staff", agencyId: jbpm.id },
+    { name: "Hafiz Rahman", email: "hafiz.rahman@jbpm.gov.my", password: "password123", role: "staff", agencyId: jbpm.id },
+    { name: "Aina Sofea", email: "aina.sofea@jbpm.gov.my", password: "password123", role: "staff", agencyId: jbpm.id },
     { name: "System Administrator", email: "admin@ops.gov.my", password: "password123", role: "super_admin", agencyId: null },
   ];
 
