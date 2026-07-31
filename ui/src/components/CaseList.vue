@@ -21,7 +21,8 @@
     </div>
 
     <LoadingSpinner v-if="loading" />
-    <table v-else class="w-full text-sm border-collapse">
+    <div v-else class="overflow-x-auto">
+    <table class="w-full text-sm border-collapse">
       <thead>
         <tr class="border-b border-gray-200 text-left text-gray-500">
           <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('caseNumber')">Case # {{ sortIndicator('caseNumber') }}</th>
@@ -29,6 +30,7 @@
           <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('category')">Category {{ sortIndicator('category') }}</th>
           <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('priority')">Priority {{ sortIndicator('priority') }}</th>
           <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('status')">Status {{ sortIndicator('status') }}</th>
+          <th class="py-2 pr-4">Progress</th>
           <th class="py-2 pr-4">Elapsed</th>
           <th class="py-2 pr-4">Location</th>
           <th class="py-2 pr-4">Dispatch</th>
@@ -47,6 +49,9 @@
           <td class="py-2 pr-4 capitalize">{{ c.priority }}</td>
           <td class="py-2 pr-4">
             <span class="px-2 py-0.5 rounded-full text-xs" :class="statusColor(c.status)">{{ c.status }}</span>
+          </td>
+          <td class="py-2 pr-4">
+            <StatusStepper :status="c.status" />
           </td>
           <td class="py-2 pr-4">
             <span :class="isOverdue(c) ? 'text-red-600 font-semibold' : 'text-gray-500'">
@@ -68,6 +73,7 @@
         </tr>
       </tbody>
     </table>
+    </div>
   </div>
 </template>
 
@@ -77,6 +83,7 @@ import { caseService } from "../services/caseService";
 import { vehicleService } from "../services/vehicleService";
 import { useAuthStore } from "../stores/auth";
 import LoadingSpinner from "./LoadingSpinner.vue";
+import StatusStepper from "./StatusStepper.vue";
 
 const authStore = useAuthStore();
 const isSuperAdmin = computed(() => authStore.user?.role === "super_admin");
