@@ -1,6 +1,12 @@
 <template>
-  <LoadingSpinner v-if="!chartData" />
-  <Doughnut v-else :data="chartData" :options="chartOptions" />
+  <div>
+    <div class="flex justify-end gap-2 mb-2">
+      <button @click="handleDownloadImage" class="px-2 py-1 text-xs border rounded hover:bg-gray-50 text-gray-600">📷 PNG</button>
+      <button @click="handleDownloadCsv" class="px-2 py-1 text-xs border rounded hover:bg-gray-50 text-gray-600">📄 CSV</button>
+    </div>
+    <LoadingSpinner v-if="!chartData" />
+    <Doughnut v-else ref="chartRef" :data="chartData" :options="chartOptions" />
+  </div>
 </template>
 
 <script setup>
@@ -9,6 +15,7 @@ import { Doughnut } from "vue-chartjs";
 import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement } from "chart.js";
 import { reportService } from "../services/reportService";
 import LoadingSpinner from "./LoadingSpinner.vue";
+import { downloadChartImage, downloadChartCsv } from "../utils/chartExport";
 
 ChartJS.register(Title, Tooltip, Legend, ArcElement);
 
@@ -18,6 +25,7 @@ const props = defineProps({
 
 const chartData = ref(null);
 const chartOptions = { responsive: true };
+const chartRef = ref(null);
 
 const STATUS_COLORS = {
   available: "#16a34a",
@@ -41,6 +49,9 @@ const loadChart = async () => {
     ],
   };
 };
+
+const handleDownloadImage = () => downloadChartImage(chartRef.value?.chart, "vehicle-utilization");
+const handleDownloadCsv = () => downloadChartCsv(chartData.value, "vehicle-utilization");
 
 watch(() => props.agencyCode, loadChart);
 onMounted(loadChart);
