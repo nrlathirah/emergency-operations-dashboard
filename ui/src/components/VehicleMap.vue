@@ -1,7 +1,7 @@
 <template>
   <div class="bg-white rounded-lg shadow p-4">
     <h2 class="text-lg font-semibold mb-3">Live Vehicle Map</h2>
-    <p class="text-xs text-gray-500 mb-2">Click an incident or station to focus on its story. Click empty map area to reset.</p>
+    <p class="text-xs text-gray-500 mb-2">Vehicle markers are hidden by default — click an incident or station to reveal the vehicle involved. Click empty map area to reset.</p>
     <div class="relative">
       <div id="map" style="height: 500px; width: 100%;" class="rounded"></div>
       <div v-if="mapLoading" class="absolute inset-0 flex items-center justify-center bg-white/70 rounded">
@@ -133,6 +133,8 @@ const incidentPinIcon = (color, size = 26) =>
 // The set of "type:id" keys that should stay at full opacity, given current
 // focus (click) first, falling back to the table's agency/status filters.
 // null means "nothing active" -> everything full opacity.
+// Vehicles are deliberately excluded from the filter fallback below — they're
+// never shown at all unless a click-focus applies (see visibleVehicleIds).
 const relevantKeys = computed(() => {
   if (!focus.value) {
     if (!props.agencyFilter && !props.statusFilter) return null;
@@ -144,15 +146,9 @@ const relevantKeys = computed(() => {
       .filter((s) => matchesAgency(s.Agency?.code))
       .forEach((s) => set.add(`station:${s.id}`));
 
-    const matchingCases = activeCasesData.value.filter(
-      (c) => matchesAgency(c.Agency?.code) && (!props.statusFilter || c.status === props.statusFilter)
-    );
-    matchingCases.forEach((c) => set.add(`incident:${c.id}`));
-
-    const matchingVehicleIds = new Set(matchingCases.map((c) => c.vehicleId).filter(Boolean));
-    activeVehiclesData.value
-      .filter((v) => matchingVehicleIds.has(v.id))
-      .forEach((v) => set.add(`vehicle:${v.id}`));
+    activeCasesData.value
+      .filter((c) => matchesAgency(c.Agency?.code) && (!props.statusFilter || c.status === props.statusFilter))
+      .forEach((c) => set.add(`incident:${c.id}`));
 
     return set;
   }
@@ -184,6 +180,25 @@ const relevantKeys = computed(() => {
   return set;
 });
 
+// Vehicles are only ever rendered on the map when a click-focus (incident or
+// station) directly involves them — not on filters, not by default. This is
+// a separate, stricter gate than relevantKeys, which only controls opacity.
+const visibleVehicleIds = computed(() => {
+  const set = new Set();
+  if (!focus.value) return set;
+
+  if (focus.value.type === "incident") {
+    const incident = activeCasesData.value.find((c) => c.id === focus.value.id);
+    if (incident?.vehicleId) set.add(incident.vehicleId);
+  } else if (focus.value.type === "station") {
+    activeVehiclesData.value
+      .filter((v) => v.stationId === focus.value.id)
+      .forEach((v) => set.add(v.id));
+  }
+
+  return set;
+});
+
 const anyStationTypeVisible = (type) => {
   const matching = stationsData.value.filter((s) => s.type === type);
   const keys = relevantKeys.value;
@@ -191,12 +206,8 @@ const anyStationTypeVisible = (type) => {
   return matching.some((s) => keys.has(`station:${s.id}`));
 };
 
-const anyVehicleTypeVisible = (type) => {
-  const matching = activeVehiclesData.value.filter((v) => v.type === type);
-  const keys = relevantKeys.value;
-  if (keys === null) return matching.length > 0;
-  return matching.some((v) => keys.has(`vehicle:${v.id}`));
-};
+const anyVehicleTypeVisible = (type) =>
+  activeVehiclesData.value.some((v) => v.type === type && visibleVehicleIds.value.has(v.id));
 
 const anyIncidentAgencyVisible = (agencyCode) => {
   const matching = activeCasesData.value.filter((c) => c.Agency?.code === agencyCode);
@@ -240,6 +251,7 @@ const clearFocus = () => {
     focusBoundaryLayer = null;
   }
   map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+  syncVehicleMarkers();
   applyOpacity();
 };
 
@@ -255,6 +267,7 @@ const focusOnIncident = (incident) => {
   const bounds = L.latLngBounds(points).pad(0.4);
   map.fitBounds(bounds);
   drawFocusBoundary(bounds);
+  syncVehicleMarkers();
   applyOpacity();
 };
 
@@ -274,6 +287,7 @@ const focusOnStation = (station) => {
   const bounds = L.latLngBounds(points).pad(0.4);
   map.fitBounds(bounds);
   drawFocusBoundary(bounds);
+  syncVehicleMarkers();
   applyOpacity();
 };
 
@@ -301,78 +315,118 @@ const renderIncidents = async () => {
   const activeCases = cases.filter((c) => c.status !== "closed");
   activeCasesData.value = activeCases;
 
-  Object.values(incidentMarkers).forEach((m) => map.removeLayer(m));
-  Object.keys(incidentMarkers).forEach((key) => delete incidentMarkers[key]);
+  const activeIds = new Set(activeCases.map((c) => c.id));
+
+  // Only remove markers for incidents that genuinely dropped off (e.g. just
+  // closed) — existing markers are updated in place, never destroyed and
+  // recreated, so their current opacity is preserved between polls instead
+  // of flashing back to full opacity every 3 seconds.
+  Object.keys(incidentMarkers).forEach((id) => {
+    if (!activeIds.has(Number(id))) {
+      map.removeLayer(incidentMarkers[id]);
+      delete incidentMarkers[id];
+    }
+  });
 
   activeCases.forEach((c) => {
     const color = AGENCY_COLORS[c.Agency?.code] || "#6b7280";
-    const marker = L.marker([c.latitude, c.longitude], { icon: incidentPinIcon(color) })
-      .addTo(map)
-      .bindTooltip(`<strong>${c.caseNumber}</strong> (Incident ID: ${c.id})<br>${c.category} · ${c.priority} priority<br>Status: ${c.status}`);
+    const tooltip = `<strong>${c.caseNumber}</strong> (Incident ID: ${c.id})<br>${c.category} · ${c.priority} priority<br>Status: ${c.status}`;
 
-    marker.on("click", (e) => {
-      L.DomEvent.stopPropagation(e);
-      focusOnIncident(c);
-      emit("focus-case", c.id);
-    });
+    if (incidentMarkers[c.id]) {
+      incidentMarkers[c.id].setTooltipContent(tooltip);
+    } else {
+      const marker = L.marker([c.latitude, c.longitude], { icon: incidentPinIcon(color) })
+        .addTo(map)
+        .bindTooltip(tooltip);
 
-    incidentMarkers[c.id] = marker;
+      // Give brand-new markers the correct opacity immediately, instead of
+      // waiting for the next applyOpacity() call further down the pipeline.
+      const keys = relevantKeys.value;
+      marker.setOpacity(keys === null || keys.has(`incident:${c.id}`) ? 1 : DIM_OPACITY);
+
+      marker.on("click", (e) => {
+        L.DomEvent.stopPropagation(e);
+        const current = activeCasesData.value.find((cs) => cs.id === c.id);
+        if (current) {
+          focusOnIncident(current);
+          emit("focus-case", current.id);
+        }
+      });
+
+      incidentMarkers[c.id] = marker;
+    }
   });
 
   return activeCases;
 };
 
-const renderVehicles = async (activeCases) => {
-  const allVehicles = await vehicleService.getAll();
-  const linkedVehicleIds = new Set(activeCases.map((c) => c.vehicleId).filter(Boolean));
-  const relevantVehicles = allVehicles.filter((v) => linkedVehicleIds.has(v.id));
-  activeVehiclesData.value = relevantVehicles;
-  const enRouteStatuses = ["dispatched", "en_route"];
+// Adds/updates/removes vehicle markers and route lines to match exactly
+// visibleVehicleIds, using already-cached data (no fetch). Called both after
+// a fresh poll and immediately on any focus change, so hiding/revealing
+// vehicles never waits for the next 3s poll tick.
+const syncVehicleMarkers = () => {
+  const visibleIds = visibleVehicleIds.value;
+  // Route line reflects the CASE's status, not the vehicle's — an "open" case's
+  // nearest vehicle hasn't actually been dispatched yet (still "available"),
+  // but the line should still show which unit would respond and from where.
+  const routeVisibleStatuses = ["open", "dispatched", "en_route"];
 
-  // Remove markers/routes for vehicles no longer linked to an active incident
   Object.keys(vehicleMarkers).forEach((id) => {
-    if (!linkedVehicleIds.has(Number(id))) {
+    if (!visibleIds.has(Number(id))) {
       map.removeLayer(vehicleMarkers[id]);
       delete vehicleMarkers[id];
     }
   });
   Object.keys(routeLines).forEach((id) => {
-    if (!linkedVehicleIds.has(Number(id))) {
+    if (!visibleIds.has(Number(id))) {
       map.removeLayer(routeLines[id]);
       delete routeLines[id];
     }
   });
 
-  relevantVehicles.forEach((vehicle) => {
-    const color = AGENCY_COLORS[vehicle.Agency?.code] || "#6b7280";
-    const emoji = VEHICLE_EMOJI[vehicle.type] || "🚗";
-    const position = [vehicle.latitude, vehicle.longitude];
-    const linkedCase = activeCases.find((c) => c.vehicleId === vehicle.id);
-    const tooltip = `<strong>${vehicle.callSign}</strong> (Vehicle ID: ${vehicle.id})<br>${vehicle.type.replace("_", " ")} · ${vehicle.status}${linkedCase ? `<br>Incident: ${linkedCase.caseNumber} (ID: ${linkedCase.id})` : ""}`;
+  activeVehiclesData.value
+    .filter((vehicle) => visibleIds.has(vehicle.id))
+    .forEach((vehicle) => {
+      const color = AGENCY_COLORS[vehicle.Agency?.code] || "#6b7280";
+      const emoji = VEHICLE_EMOJI[vehicle.type] || "🚗";
+      const position = [vehicle.latitude, vehicle.longitude];
+      const linkedCase = activeCasesData.value.find((c) => c.vehicleId === vehicle.id);
+      const tooltip = `<strong>${vehicle.callSign}</strong> (Vehicle ID: ${vehicle.id})<br>${vehicle.type.replace("_", " ")} · ${vehicle.status}${linkedCase ? `<br>Incident: ${linkedCase.caseNumber} (ID: ${linkedCase.id})` : ""}`;
 
-    if (vehicleMarkers[vehicle.id]) {
-      vehicleMarkers[vehicle.id].setLatLng(position);
-      vehicleMarkers[vehicle.id].setTooltipContent(tooltip);
-    } else {
-      const marker = L.marker(position, { icon: vehiclePinIcon(emoji, color) })
-        .addTo(map)
-        .bindTooltip(tooltip);
-      marker.on("click", (e) => L.DomEvent.stopPropagation(e));
-      vehicleMarkers[vehicle.id] = marker;
-    }
-
-    if (linkedCase && enRouteStatuses.includes(vehicle.status)) {
-      const routePoints = [position, [linkedCase.latitude, linkedCase.longitude]];
-      if (routeLines[vehicle.id]) {
-        routeLines[vehicle.id].setLatLngs(routePoints);
+      if (vehicleMarkers[vehicle.id]) {
+        vehicleMarkers[vehicle.id].setLatLng(position);
+        vehicleMarkers[vehicle.id].setTooltipContent(tooltip);
       } else {
-        routeLines[vehicle.id] = L.polyline(routePoints, { color, weight: 2, dashArray: "4,6" }).addTo(map);
+        const marker = L.marker(position, { icon: vehiclePinIcon(emoji, color) })
+          .addTo(map)
+          .bindTooltip(tooltip);
+
+        const keys = relevantKeys.value;
+        marker.setOpacity(keys === null || keys.has(`vehicle:${vehicle.id}`) ? 1 : DIM_OPACITY);
+
+        marker.on("click", (e) => L.DomEvent.stopPropagation(e));
+        vehicleMarkers[vehicle.id] = marker;
       }
-    } else if (routeLines[vehicle.id]) {
-      map.removeLayer(routeLines[vehicle.id]);
-      delete routeLines[vehicle.id];
-    }
-  });
+
+      if (linkedCase && routeVisibleStatuses.includes(linkedCase.status)) {
+        const routePoints = [position, [linkedCase.latitude, linkedCase.longitude]];
+        if (routeLines[vehicle.id]) {
+          routeLines[vehicle.id].setLatLngs(routePoints);
+        } else {
+          routeLines[vehicle.id] = L.polyline(routePoints, { color, weight: 2 }).addTo(map);
+        }
+      } else if (routeLines[vehicle.id]) {
+        map.removeLayer(routeLines[vehicle.id]);
+        delete routeLines[vehicle.id];
+      }
+    });
+};
+
+const renderVehicles = async (activeCases) => {
+  const allVehicles = await vehicleService.getAll();
+  const linkedVehicleIds = new Set(activeCases.map((c) => c.vehicleId).filter(Boolean));
+  activeVehiclesData.value = allVehicles.filter((v) => linkedVehicleIds.has(v.id));
+  syncVehicleMarkers();
 };
 
 const refresh = async () => {

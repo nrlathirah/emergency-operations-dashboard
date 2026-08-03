@@ -1,4 +1,4 @@
-import { Case, Agency, Vehicle } from "#models/index.js";
+import { Case, Agency, Vehicle, Station } from "#models/index.js";
 
 const ALLOWED_SORT_FIELDS = ["caseNumber", "category", "priority", "status", "createdAt"];
 
@@ -32,7 +32,7 @@ export const dispatchCase = async ({ caseId, vehicleId, requesterRole, requester
     throw new Error("Only open cases can be dispatched");
   }
 
-  const vehicle = await Vehicle.findByPk(vehicleId);
+  const vehicle = await Vehicle.findByPk(vehicleId, { include: [Station] });
   if (!vehicle) {
     throw new Error("Vehicle not found");
   }
@@ -44,7 +44,16 @@ export const dispatchCase = async ({ caseId, vehicleId, requesterRole, requester
   }
 
   await caseRecord.update({ status: "dispatched", vehicleId: vehicle.id });
-  await vehicle.update({ status: "dispatched" });
+
+  // Snap the vehicle back to its station on dispatch — it may have drifted
+  // while idle/wandering, but a freshly-dispatched vehicle should visually
+  // read as "just leaving the station," not wherever it happened to wander to.
+  const updates = { status: "dispatched" };
+  if (vehicle.Station) {
+    updates.latitude = vehicle.Station.latitude;
+    updates.longitude = vehicle.Station.longitude;
+  }
+  await vehicle.update(updates);
 
   return caseRecord;
 };
