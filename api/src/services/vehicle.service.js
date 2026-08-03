@@ -1,7 +1,10 @@
-import { Vehicle, Agency } from "#models/index.js";
+import { Vehicle, Agency, Station } from "#models/index.js";
 
 export const getAllVehicles = async ({ agencyCode } = {}) => {
-  const include = [{ model: Agency, attributes: ["code", "name"] }];
+  const include = [
+    { model: Agency, attributes: ["code", "name"] },
+    { model: Station, attributes: ["name", "type"] },
+  ];
   if (agencyCode) {
     include[0].where = { code: agencyCode };
   }
