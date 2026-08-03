@@ -31,7 +31,7 @@
 
       <button
         type="submit"
-        class="w-full bg-slate-900 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-slate-800 transition"
+        class="w-full bg-slate-900 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-slate-800 transition cursor-pointer"
       >
         Log In
       </button>

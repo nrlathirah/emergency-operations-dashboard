@@ -1,8 +1,8 @@
 <template>
   <div>
     <div class="flex justify-end gap-2 mb-2">
-      <button @click="handleDownloadImage" class="px-2 py-1 text-xs border rounded hover:bg-gray-50 text-gray-600">📷 PNG</button>
-      <button @click="handleDownloadCsv" class="px-2 py-1 text-xs border rounded hover:bg-gray-50 text-gray-600">📄 CSV</button>
+      <button @click="handleDownloadImage" class="px-2 py-1 text-xs border rounded hover:bg-gray-50 text-gray-600 cursor-pointer">📷 PNG</button>
+      <button @click="handleDownloadCsv" class="px-2 py-1 text-xs border rounded hover:bg-gray-50 text-gray-600 cursor-pointer">📄 CSV</button>
     </div>
     <LoadingSpinner v-if="!chartData" />
     <Bar v-else ref="chartRef" :data="chartData" :options="chartOptions" />

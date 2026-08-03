@@ -3,6 +3,10 @@ import { Vehicle, Case, Station } from "#models/index.js";
 // How far along the station->incident line the vehicle sits at each stage
 // (0 = exactly at the station, 1 = exactly at the incident). Each is a fixed
 // point, not time-based, so every status has one stable, comparable position.
+// OPEN_FRACTION is nonzero (not exactly 0) so the vehicle renders as a
+// distinct pin next to the station instead of stacking exactly on top of it
+// and visually hiding the station marker underneath.
+const OPEN_FRACTION = 0.05; // just off the station, not yet moving
 const DISPATCHED_FRACTION = 0.15; // just pulling away from the station
 const EN_ROUTE_FRACTION = 0.5; // roughly the midpoint of the journey
 const ON_SCENE_FRACTION = 0.95; // essentially at the incident
@@ -23,7 +27,7 @@ const positionForCase = (caseRecord, station) => {
 
   switch (caseRecord.status) {
     case "open":
-      return { latitude: station.latitude, longitude: station.longitude };
+      return interpolate(station, incident, OPEN_FRACTION);
     case "dispatched":
       return interpolate(station, incident, DISPATCHED_FRACTION);
     case "en_route":

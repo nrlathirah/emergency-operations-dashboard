@@ -5,7 +5,7 @@
       <button
         type="button"
         @click="clearFocus"
-        class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600"
+        class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600 cursor-pointer"
       >Reset View</button>
     </div>
     <p class="text-xs text-gray-500 mb-2">Vehicle markers are hidden by default — click an incident or station to reveal the vehicle involved. Click an incident pin again for a "Show on table" button. Click empty map area or "Reset View" to reset.</p>
@@ -97,6 +97,13 @@ const mapLoading = ref(true);
 const DEFAULT_CENTER = [3.139, 101.6869];
 const DEFAULT_ZOOM = 11;
 const DIM_OPACITY = 0.25;
+// Fixed on-screen margin (px) for focus views — a percentage-based pad on the
+// LatLngBounds itself can be too small in pixel terms for a tight cluster
+// (e.g. an "open" case, where the vehicle sits right at the station), letting
+// a pin end up clipped at the map's edge. Pixel padding guarantees every
+// focused pin stays fully visible regardless of how tight or spread the
+// incident/vehicle/station cluster is.
+const FOCUS_VIEW_PADDING = [60, 60];
 
 // Reactive data snapshots, used both for rendering and for legend/focus calculations
 const stationsData = ref([]);
@@ -278,8 +285,8 @@ const focusOnIncident = (incident) => {
   const station = vehicle ? stationsData.value.find((s) => s.id === vehicle.stationId) : null;
   if (station) points.push([station.latitude, station.longitude]);
 
-  const bounds = L.latLngBounds(points).pad(0.4);
-  map.fitBounds(bounds);
+  const bounds = L.latLngBounds(points).pad(0.15);
+  map.fitBounds(bounds, { padding: FOCUS_VIEW_PADDING });
   drawFocusBoundary(bounds);
   syncVehicleMarkers();
   applyOpacity();
@@ -298,8 +305,8 @@ const focusOnStation = (station) => {
     if (incident) points.push([incident.latitude, incident.longitude]);
   });
 
-  const bounds = L.latLngBounds(points).pad(0.4);
-  map.fitBounds(bounds);
+  const bounds = L.latLngBounds(points).pad(0.15);
+  map.fitBounds(bounds, { padding: FOCUS_VIEW_PADDING });
   drawFocusBoundary(bounds);
   syncVehicleMarkers();
   applyOpacity();

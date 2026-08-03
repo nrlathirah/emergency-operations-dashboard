@@ -17,24 +17,24 @@
               :style="{ backgroundColor: badgeColor }"
             >{{ roleLabel }}</span>
           </div>
-          <button @click="handleLogout" class="bg-black/20 px-3 py-1.5 rounded hover:bg-black/30 transition">Logout</button>
+          <button @click="handleLogout" class="bg-black/20 px-3 py-1.5 rounded hover:bg-black/30 transition cursor-pointer">Logout</button>
         </div>
       </div>
-      <nav class="mt-3 flex gap-1 text-sm">
+      <nav class="mt-3 flex text-sm">
         <RouterLink
           to="/"
-          class="px-3 py-1.5 rounded-t transition"
+          class="px-3 py-1.5 rounded-t transition hover:bg-white/10"
           active-class="bg-white/15 font-medium"
         >Live Dashboard</RouterLink>
         <RouterLink
           v-if="canManageUsers"
           to="/users"
-          class="px-3 py-1.5 rounded-t transition"
+          class="px-3 py-1.5 rounded-t transition hover:bg-white/10"
           active-class="bg-white/15 font-medium"
         >Users</RouterLink>
         <RouterLink
           to="/reports"
-          class="px-3 py-1.5 rounded-t transition"
+          class="px-3 py-1.5 rounded-t transition hover:bg-white/10"
           active-class="bg-white/15 font-medium"
         >Reports</RouterLink>
       </nav>

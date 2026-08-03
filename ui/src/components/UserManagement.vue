@@ -9,7 +9,7 @@
         placeholder="Search by name or email..."
         class="border rounded px-3 py-1.5 text-sm flex-1 max-w-xs"
       />
-      <select v-if="isSuperAdmin" v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm">
+      <select v-if="isSuperAdmin" v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
         <option value="">All Agencies</option>
         <option value="KKM">KKM</option>
         <option value="PDRM">PDRM</option>
@@ -49,13 +49,13 @@
         <button
           :disabled="page === 1"
           @click="page--"
-          class="px-3 py-1 border rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+          class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
         >Previous</button>
         <span class="text-gray-600">Page {{ page }} of {{ totalPages }}</span>
         <button
           :disabled="page === totalPages"
           @click="page++"
-          class="px-3 py-1 border rounded disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+          class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
         >Next</button>
       </div>
     </template>

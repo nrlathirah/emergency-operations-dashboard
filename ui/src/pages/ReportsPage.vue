@@ -3,7 +3,7 @@
     <h2 class="text-lg font-semibold mb-3">Reports</h2>
 
     <div class="flex items-center gap-3 mb-4">
-      <select v-if="isSuperAdmin" v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm">
+      <select v-if="isSuperAdmin" v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
         <option value="">All Agencies</option>
         <option value="KKM">KKM</option>
         <option value="PDRM">PDRM</option>

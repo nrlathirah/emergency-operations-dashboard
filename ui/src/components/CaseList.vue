@@ -3,14 +3,14 @@
     <h2 class="text-lg font-semibold mb-3">Cases</h2>
 
     <div class="flex gap-3 mb-4">
-      <select v-if="isSuperAdmin" v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm">
+      <select v-if="isSuperAdmin" v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
         <option value="">All Agencies</option>
         <option value="KKM">KKM</option>
         <option value="PDRM">PDRM</option>
         <option value="JBPM">JBPM</option>
       </select>
 
-      <select v-model="statusFilter" class="border rounded px-3 py-1.5 text-sm">
+      <select v-model="statusFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
         <option value="">All Statuses</option>
         <option value="open">Open</option>
         <option value="dispatched">Dispatched</option>
@@ -22,7 +22,7 @@
       <button
         :disabled="!agencyFilter && !statusFilter"
         @click="resetFilters"
-        class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600 disabled:opacity-40 disabled:cursor-not-allowed"
+        class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600 cursor-pointer disabled:opacity-40 disabled:cursor-default"
       >Reset Filters</button>
     </div>
 
@@ -64,7 +64,7 @@
               v-if="c.status !== 'closed'"
               type="button"
               @click="emit('show-on-map', c.id)"
-              class="text-blue-600 hover:underline text-xs font-medium"
+              class="text-blue-600 hover:underline text-xs font-medium cursor-pointer"
             >Show on map</button>
             <span v-else class="text-gray-400 text-xs">—</span>
           </td>
