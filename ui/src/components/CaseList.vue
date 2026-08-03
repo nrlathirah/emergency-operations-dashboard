@@ -33,11 +33,11 @@
         <tr class="border-b border-gray-200 text-left text-gray-500">
           <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('caseNumber')">Case # {{ sortIndicator('caseNumber') }}</th>
           <th class="py-3 px-6 whitespace-nowrap">Agency</th>
-          <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('category')">Category {{ sortIndicator('category') }}</th>
           <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('createdAt')">Created {{ sortIndicator('createdAt') }}</th>
           <th class="py-3 px-6 whitespace-nowrap">Station</th>
           <th class="py-3 px-6 whitespace-nowrap">Vehicle ID</th>
           <th class="py-3 px-6 w-full">Location</th>
+          <th class="py-3 px-6 whitespace-nowrap">Map</th>
         </tr>
       </thead>
       <tbody
@@ -55,11 +55,19 @@
         >
           <td class="py-3 px-6 font-medium whitespace-nowrap">{{ c.caseNumber }}</td>
           <td class="py-3 px-6 whitespace-nowrap">{{ c.Agency?.code }}</td>
-          <td class="py-3 px-6 whitespace-nowrap">{{ c.category }}</td>
           <td class="py-3 px-6 text-gray-600 whitespace-nowrap">{{ formatCreatedAt(c.createdAt) }}</td>
           <td class="py-3 px-6 text-gray-600 whitespace-nowrap">{{ assignedVehicleFor(c)?.Station?.name || "—" }}</td>
           <td class="py-3 px-6 text-gray-600 whitespace-nowrap">{{ assignedVehicleFor(c)?.callSign || "—" }}</td>
           <td class="py-3 px-6 text-gray-600">{{ c.location }}</td>
+          <td class="py-3 px-6 whitespace-nowrap">
+            <button
+              v-if="c.status !== 'closed'"
+              type="button"
+              @click="emit('show-on-map', c.id)"
+              class="text-blue-600 hover:underline text-xs font-medium"
+            >Show on map</button>
+            <span v-else class="text-gray-400 text-xs">—</span>
+          </td>
         </tr>
         <tr
           class="border-b border-gray-100 transition-colors"
@@ -91,6 +99,8 @@ const props = defineProps({
   // even when the same case is clicked twice in a row, so the watcher fires.
   focusedCaseId: { type: String, default: null },
 });
+
+const emit = defineEmits(["show-on-map"]);
 
 const authStore = useAuthStore();
 const isSuperAdmin = computed(() => authStore.user?.role === "super_admin");

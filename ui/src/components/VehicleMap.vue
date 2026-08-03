@@ -1,7 +1,14 @@
 <template>
-  <div class="bg-white rounded-lg shadow p-4">
-    <h2 class="text-lg font-semibold mb-3">Live Vehicle Map</h2>
-    <p class="text-xs text-gray-500 mb-2">Vehicle markers are hidden by default — click an incident or station to reveal the vehicle involved. Click empty map area to reset.</p>
+  <div ref="mapCardRef" class="bg-white rounded-lg shadow p-4">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-semibold">Live Vehicle Map</h2>
+      <button
+        type="button"
+        @click="clearFocus"
+        class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600"
+      >Reset View</button>
+    </div>
+    <p class="text-xs text-gray-500 mb-2">Vehicle markers are hidden by default — click an incident or station to reveal the vehicle involved. Click an incident pin again for a "Show on table" button. Click empty map area or "Reset View" to reset.</p>
     <div class="relative">
       <div id="map" style="height: 500px; width: 100%;" class="rounded"></div>
       <div v-if="mapLoading" class="absolute inset-0 flex items-center justify-center bg-white/70 rounded">
@@ -70,10 +77,14 @@ import LoadingSpinner from "./LoadingSpinner.vue";
 const props = defineProps({
   agencyFilter: { type: String, default: "" },
   statusFilter: { type: String, default: "" },
+  // Composite "id:timestamp" string set by the table's "Show on map" button —
+  // the timestamp guarantees a fresh value even for the same case twice in a row.
+  focusCaseId: { type: String, default: null },
 });
 
 const emit = defineEmits(["focus-case"]);
 
+const mapCardRef = ref(null);
 let map;
 const vehicleMarkers = {};
 const incidentMarkers = {};
@@ -128,6 +139,9 @@ const incidentPinIcon = (color, size = 26) =>
     className: "",
     iconSize: [size, size],
     iconAnchor: [size / 2, size],
+    // Anchor the popup above the whole pin (not just its bottom tip), so it
+    // doesn't open right on top of and cover the marker itself.
+    popupAnchor: [0, -size],
   });
 
 // The set of "type:id" keys that should stay at full opacity, given current
@@ -337,19 +351,34 @@ const renderIncidents = async () => {
     } else {
       const marker = L.marker([c.latitude, c.longitude], { icon: incidentPinIcon(color) })
         .addTo(map)
-        .bindTooltip(tooltip);
+        .bindTooltip(tooltip)
+        .bindPopup(`<button type="button" class="show-on-table-btn">Show on table</button>`, {
+          className: "incident-action-popup",
+          closeButton: false,
+          offset: [0, -4],
+        });
 
       // Give brand-new markers the correct opacity immediately, instead of
       // waiting for the next applyOpacity() call further down the pipeline.
       const keys = relevantKeys.value;
       marker.setOpacity(keys === null || keys.has(`incident:${c.id}`) ? 1 : DIM_OPACITY);
 
+      // Clicking the pin only focuses the map (zoom + reveal vehicle) and
+      // opens a popup with a "Show on table" button — it no longer jumps
+      // the table on its own, that's now an explicit user action.
       marker.on("click", (e) => {
         L.DomEvent.stopPropagation(e);
         const current = activeCasesData.value.find((cs) => cs.id === c.id);
-        if (current) {
-          focusOnIncident(current);
-          emit("focus-case", current.id);
+        if (current) focusOnIncident(current);
+      });
+
+      marker.on("popupopen", (e) => {
+        const btn = e.popup.getElement()?.querySelector(".show-on-table-btn");
+        if (btn) {
+          btn.onclick = () => {
+            emit("focus-case", c.id);
+            marker.closePopup();
+          };
         }
       });
 
@@ -502,5 +531,50 @@ watch([() => props.agencyFilter, () => props.statusFilter], () => {
   else applyOpacity();
 });
 
+// Triggered by the table's "Show on map" button — mirrors a direct marker
+// click (zoom + reveal vehicle) for whichever case the user picked, and
+// scrolls the map into view since the table row may be far down the page.
+watch(() => props.focusCaseId, (value) => {
+  if (!value) return;
+  const caseId = Number(value.split(":")[0]);
+  const incident = activeCasesData.value.find((c) => c.id === caseId);
+  if (!incident) return;
+  focusOnIncident(incident);
+  mapCardRef.value?.scrollIntoView({ behavior: "smooth", block: "center" });
+});
+
 onUnmounted(() => clearInterval(pollTimer));
 </script>
+
+<style>
+/* Leaflet popups are appended outside this component's scoped template, so
+   this block is intentionally global — reskins the tiny "Show on table"
+   action popup as a compact blue pill instead of Leaflet's default boxy
+   white popup (which was wide/padded enough to cover the pin underneath). */
+.incident-action-popup .leaflet-popup-content-wrapper {
+  background: #2563eb;
+  border-radius: 6px;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+.incident-action-popup .leaflet-popup-content {
+  margin: 0;
+}
+.incident-action-popup .leaflet-popup-tip {
+  background: #2563eb;
+}
+.incident-action-popup .show-on-table-btn {
+  display: block;
+  background: transparent;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.incident-action-popup .show-on-table-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+</style>
