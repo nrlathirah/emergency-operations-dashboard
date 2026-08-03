@@ -72,6 +72,8 @@ const props = defineProps({
   statusFilter: { type: String, default: "" },
 });
 
+const emit = defineEmits(["focus-case"]);
+
 let map;
 const vehicleMarkers = {};
 const incidentMarkers = {};
@@ -311,6 +313,7 @@ const renderIncidents = async () => {
     marker.on("click", (e) => {
       L.DomEvent.stopPropagation(e);
       focusOnIncident(c);
+      emit("focus-case", c.id);
     });
 
     incidentMarkers[c.id] = marker;
