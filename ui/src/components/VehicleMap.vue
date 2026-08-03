@@ -59,13 +59,18 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { vehicleService } from "../services/vehicleService";
 import { caseService } from "../services/caseService";
 import { stationService } from "../services/stationService";
 import LoadingSpinner from "./LoadingSpinner.vue";
+
+const props = defineProps({
+  agencyFilter: { type: String, default: "" },
+  statusFilter: { type: String, default: "" },
+});
 
 let map;
 const vehicleMarkers = {};
@@ -123,10 +128,33 @@ const incidentPinIcon = (color, size = 26) =>
     iconAnchor: [size / 2, size],
   });
 
-// The set of "type:id" keys that should stay at full opacity given current focus.
-// null means "no focus active" -> everything full opacity.
+// The set of "type:id" keys that should stay at full opacity, given current
+// focus (click) first, falling back to the table's agency/status filters.
+// null means "nothing active" -> everything full opacity.
 const relevantKeys = computed(() => {
-  if (!focus.value) return null;
+  if (!focus.value) {
+    if (!props.agencyFilter && !props.statusFilter) return null;
+
+    const set = new Set();
+    const matchesAgency = (agencyCode) => !props.agencyFilter || agencyCode === props.agencyFilter;
+
+    stationsData.value
+      .filter((s) => matchesAgency(s.Agency?.code))
+      .forEach((s) => set.add(`station:${s.id}`));
+
+    const matchingCases = activeCasesData.value.filter(
+      (c) => matchesAgency(c.Agency?.code) && (!props.statusFilter || c.status === props.statusFilter)
+    );
+    matchingCases.forEach((c) => set.add(`incident:${c.id}`));
+
+    const matchingVehicleIds = new Set(matchingCases.map((c) => c.vehicleId).filter(Boolean));
+    activeVehiclesData.value
+      .filter((v) => matchingVehicleIds.has(v.id))
+      .forEach((v) => set.add(`vehicle:${v.id}`));
+
+    return set;
+  }
+
   const set = new Set();
 
   if (focus.value.type === "incident") {
@@ -407,6 +435,14 @@ onMounted(async () => {
   map.on("click", clearFocus);
 
   pollTimer = setInterval(refresh, 3000);
+});
+
+// When the table's agency/status filter changes, drop any active click-focus
+// (it may no longer make sense against the new filter) and re-apply opacity
+// immediately rather than waiting for the next 3s poll.
+watch([() => props.agencyFilter, () => props.statusFilter], () => {
+  if (focus.value) clearFocus();
+  else applyOpacity();
 });
 
 onUnmounted(() => clearInterval(pollTimer));

@@ -90,8 +90,8 @@ const isSuperAdmin = computed(() => authStore.user?.role === "super_admin");
 
 const cases = ref([]);
 const vehicles = ref([]);
-const agencyFilter = ref("");
-const statusFilter = ref("");
+const agencyFilter = defineModel("agencyFilter", { default: "" });
+const statusFilter = defineModel("statusFilter", { default: "" });
 const sortField = ref("createdAt");
 const sortOrder = ref("DESC");
 const now = ref(Date.now());
