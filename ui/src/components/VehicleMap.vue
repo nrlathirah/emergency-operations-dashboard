@@ -1,14 +1,13 @@
 <template>
   <div ref="mapCardRef" class="bg-white rounded-lg shadow p-4">
     <div class="flex items-center justify-between mb-3">
-      <h2 class="text-lg font-semibold">Live Vehicle Map</h2>
+      <h2 class="text-lg font-semibold">Live Operations Map</h2>
       <button
         type="button"
         @click="clearFocus"
         class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600 cursor-pointer"
       >Reset View</button>
     </div>
-    <p class="text-xs text-gray-500 mb-2">Vehicle markers are hidden by default — click an incident or station to reveal the vehicle involved. Click an incident pin again for a "Show on table" button. Use "Reset View" to reset.</p>
     <div class="relative">
       <div id="map" style="height: 500px; width: 100%;" class="rounded"></div>
       <div v-if="mapLoading" class="absolute inset-0 flex items-center justify-center bg-white/70 rounded">
@@ -17,45 +16,45 @@
     </div>
 
     <div class="flex flex-wrap gap-4 mt-3 text-xs text-gray-600">
-      <span class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyStationTypeVisible('hospital') }">
+      <span v-if="showAgency('KKM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyStationTypeVisible('hospital') }">
         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white" style="box-shadow:0 1px 4px rgba(0,0,0,0.5);">
           <svg width="12" height="12" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#dc2626"/><circle cx="21" cy="12" r="10" fill="white"/></svg>
         </span>
         Hospital
       </span>
-      <span class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyStationTypeVisible('police_station') }">
+      <span v-if="showAgency('PDRM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyStationTypeVisible('police_station') }">
         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white text-xs" style="box-shadow:0 1px 4px rgba(0,0,0,0.5);">👮</span>
         Police Station
       </span>
-      <span class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyStationTypeVisible('fire_station') }">
+      <span v-if="showAgency('JBPM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyStationTypeVisible('fire_station') }">
         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white text-xs" style="box-shadow:0 1px 4px rgba(0,0,0,0.5);">🧑‍🚒</span>
         Fire Station
       </span>
-      <span class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyVehicleTypeVisible('ambulance') }">
+      <span v-if="showAgency('KKM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyVehicleTypeVisible('ambulance') }">
         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#dc2626">🚑</span>
         Ambulance
       </span>
-      <span class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyVehicleTypeVisible('police_car') }">
-        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#2563eb">🚓</span>
+      <span v-if="showAgency('PDRM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyVehicleTypeVisible('police_car') }">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#1e3a8a">🚓</span>
         Police Car
       </span>
-      <span class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyVehicleTypeVisible('fire_truck') }">
+      <span v-if="showAgency('JBPM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyVehicleTypeVisible('fire_truck') }">
         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#f59e0b">🚒</span>
         Fire Truck
       </span>
-      <span class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyIncidentAgencyVisible('KKM') }">
+      <span v-if="showAgency('KKM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyIncidentAgencyVisible('KKM') }">
         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#dc2626">
           <span class="block w-1.5 h-1.5 rounded-full bg-white"></span>
         </span>
         KKM Incident
       </span>
-      <span class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyIncidentAgencyVisible('PDRM') }">
-        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#2563eb">
+      <span v-if="showAgency('PDRM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyIncidentAgencyVisible('PDRM') }">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#1e3a8a">
           <span class="block w-1.5 h-1.5 rounded-full bg-white"></span>
         </span>
         PDRM Incident
       </span>
-      <span class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyIncidentAgencyVisible('JBPM') }">
+      <span v-if="showAgency('JBPM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyIncidentAgencyVisible('JBPM') }">
         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#f59e0b">
           <span class="block w-1.5 h-1.5 rounded-full bg-white"></span>
         </span>
@@ -72,6 +71,7 @@ import "leaflet/dist/leaflet.css";
 import { vehicleService } from "../services/vehicleService";
 import { caseService } from "../services/caseService";
 import { stationService } from "../services/stationService";
+import { useAuthStore } from "../stores/auth";
 import LoadingSpinner from "./LoadingSpinner.vue";
 
 const props = defineProps({
@@ -81,6 +81,13 @@ const props = defineProps({
   // the timestamp guarantees a fresh value even for the same case twice in a row.
   focusCaseId: { type: String, default: null },
 });
+
+// Non-super-admin users only see the legend entries for their own agency —
+// there's no point showing them Police Car / Fire Truck icons they'll never
+// see markers for.
+const authStore = useAuthStore();
+const showAgency = (code) =>
+  authStore.user?.role === "super_admin" || authStore.user?.agency === code;
 
 const emit = defineEmits(["focus-case"]);
 
@@ -112,7 +119,7 @@ const activeVehiclesData = ref([]); // only vehicles currently linked to an acti
 // { type: 'incident' | 'station', id } | null
 const focus = ref(null);
 
-const AGENCY_COLORS = { KKM: "#dc2626", PDRM: "#2563eb", JBPM: "#f59e0b" };
+const AGENCY_COLORS = { KKM: "#dc2626", PDRM: "#1e3a8a", JBPM: "#f59e0b" };
 const VEHICLE_EMOJI = { ambulance: "🚑", police_car: "🚓", fire_truck: "🚒" };
 
 // Matches the labels used everywhere else (status filter, case table stepper)
@@ -259,9 +266,11 @@ const applyOpacity = () => {
   Object.entries(vehicleMarkers).forEach(([id, marker]) =>
     marker.setOpacity(isRelevant("vehicle", id) ? 1 : DIM_OPACITY)
   );
-  Object.entries(routeLines).forEach(([id, line]) =>
-    line.setStyle({ opacity: isRelevant("vehicle", id) ? 1 : DIM_OPACITY * 0.6 })
-  );
+  Object.entries(routeLines).forEach(([id, { casing, line }]) => {
+    const relevant = isRelevant("vehicle", id);
+    casing.setStyle({ opacity: relevant ? 0.9 : DIM_OPACITY * 0.6 });
+    line.setStyle({ opacity: relevant ? 1 : DIM_OPACITY * 0.6 });
+  });
 };
 
 const clearFocus = () => {
@@ -408,7 +417,8 @@ const syncVehicleMarkers = () => {
   });
   Object.keys(routeLines).forEach((id) => {
     if (!visibleIds.has(Number(id))) {
-      map.removeLayer(routeLines[id]);
+      map.removeLayer(routeLines[id].casing);
+      map.removeLayer(routeLines[id].line);
       delete routeLines[id];
     }
   });
@@ -440,12 +450,18 @@ const syncVehicleMarkers = () => {
       if (linkedCase && routeVisibleStatuses.includes(linkedCase.status)) {
         const routePoints = [position, [linkedCase.latitude, linkedCase.longitude]];
         if (routeLines[vehicle.id]) {
-          routeLines[vehicle.id].setLatLngs(routePoints);
+          routeLines[vehicle.id].casing.setLatLngs(routePoints);
+          routeLines[vehicle.id].line.setLatLngs(routePoints);
         } else {
-          routeLines[vehicle.id] = L.polyline(routePoints, { color, weight: 2 }).addTo(map);
+          // A white "casing" underneath the colored line keeps the route
+          // visible against any tile background instead of blending in.
+          const casing = L.polyline(routePoints, { color: "#ffffff", weight: 6, opacity: 0.9 }).addTo(map);
+          const line = L.polyline(routePoints, { color, weight: 4 }).addTo(map);
+          routeLines[vehicle.id] = { casing, line };
         }
       } else if (routeLines[vehicle.id]) {
-        map.removeLayer(routeLines[vehicle.id]);
+        map.removeLayer(routeLines[vehicle.id].casing);
+        map.removeLayer(routeLines[vehicle.id].line);
         delete routeLines[vehicle.id];
       }
     });

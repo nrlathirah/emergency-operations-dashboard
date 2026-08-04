@@ -1,10 +1,25 @@
+import { Op } from "sequelize";
 import { Case, Agency, Vehicle, Station } from "#models/index.js";
 
 const ALLOWED_SORT_FIELDS = ["caseNumber", "category", "priority", "status", "createdAt"];
+const CLOSED_RETENTION_MS = 24 * 60 * 60 * 1000;
 
 export const getAllCases = async ({ agencyCode, status, sort, order } = {}) => {
   const where = {};
-  if (status) where.status = status;
+  if (status) {
+    // An explicit status filter (e.g. picked from the dropdown) is a
+    // deliberate drill-down — show every matching case, regardless of age.
+    where.status = status;
+  } else {
+    // Default Live Dashboard scope: active cases stay visible no matter how
+    // old they are, but closed cases only stick around for 24h afterward —
+    // otherwise the list grows unbounded as cases pile up day after day.
+    // Older closed cases remain available via the Reports page.
+    where[Op.or] = [
+      { status: { [Op.ne]: "closed" } },
+      { status: "closed", updatedAt: { [Op.gte]: new Date(Date.now() - CLOSED_RETENTION_MS) } },
+    ];
+  }
 
   const include = [{ model: Agency, attributes: ["code", "name"] }];
   if (agencyCode) include[0].where = { code: agencyCode };

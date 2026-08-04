@@ -20,7 +20,7 @@ const props = defineProps({
 const chartData = ref(null);
 const chartOptions = { responsive: true };
 
-const AGENCY_COLORS = { KKM: "#dc2626", PDRM: "#2563eb", JBPM: "#f59e0b" };
+const AGENCY_COLORS = { KKM: "#dc2626", PDRM: "#1e3a8a", JBPM: "#f59e0b" };
 
 const loadChart = async () => {
   const summary = await reportService.getCasesByAgency(props.agencyCode || undefined);

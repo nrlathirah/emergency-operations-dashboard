@@ -1,9 +1,16 @@
 <template>
   <div class="bg-white rounded-lg shadow p-4">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="text-lg font-semibold">Cases</h2>
+    <div class="flex items-center justify-between mb-1">
+      <div class="flex items-center gap-2">
+        <h2 class="text-lg font-semibold">Cases</h2>
+        <span class="flex items-center gap-1 text-[11px] text-green-600 font-medium">
+          <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+          Live
+        </span>
+      </div>
       <span class="text-xs text-gray-500">{{ activeCount }} Active · {{ closedCount }} Closed</span>
     </div>
+    <p class="text-xs text-gray-400 mb-3">Showing active cases and cases closed in the last 24h — see Reports for full history.</p>
 
     <div class="flex gap-3 mb-4">
       <select v-if="isSuperAdmin" v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
@@ -50,6 +57,11 @@
           <th class="py-3 px-6 whitespace-nowrap">Map</th>
         </tr>
       </thead>
+      <tbody v-if="displayCases.length === 0">
+        <tr>
+          <td colspan="7" class="py-10 text-center text-gray-400 text-sm">No cases found matching your filters.</td>
+        </tr>
+      </tbody>
       <tbody
         v-for="c in displayCases"
         :key="c.id"
@@ -57,7 +69,7 @@
         class="group"
       >
         <tr
-          class="border-t border-gray-100 transition-colors"
+          class="border-t-2 border-gray-200 transition-colors"
           :class="[
             c.status === 'closed' ? 'opacity-60 group-hover:bg-gray-200' : 'group-hover:bg-blue-50',
             { 'bg-yellow-100': highlightedCaseId === c.id },
@@ -83,7 +95,7 @@
           </td>
         </tr>
         <tr
-          class="border-b border-gray-100 transition-colors"
+          class="border-b-2 border-gray-200 transition-colors"
           :class="[
             c.status === 'closed' ? 'opacity-60 group-hover:bg-gray-200' : 'group-hover:bg-blue-50',
             highlightedCaseId === c.id ? 'bg-yellow-100' : 'bg-slate-50',
