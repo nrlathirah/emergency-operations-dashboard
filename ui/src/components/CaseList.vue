@@ -31,7 +31,7 @@
     <table class="w-full min-w-[900px] text-sm border-collapse">
       <thead>
         <tr class="border-b border-gray-200 text-left text-gray-500">
-          <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('caseNumber')">Case # {{ sortIndicator('caseNumber') }}</th>
+          <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('caseNumber')">Case ID {{ sortIndicator('caseNumber') }}</th>
           <th class="py-3 px-6 whitespace-nowrap">Agency</th>
           <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('createdAt')">Created {{ sortIndicator('createdAt') }}</th>
           <th class="py-3 px-6 whitespace-nowrap">Station</th>

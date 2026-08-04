@@ -320,7 +320,7 @@ const renderStations = async () => {
     const html = STATION_ICONS[station.type] || "📍";
     const marker = L.marker([station.latitude, station.longitude], { icon: stationPinIcon(html) })
       .addTo(map)
-      .bindTooltip(`<strong>${station.name}</strong><br>${station.type.replace("_", " ")} · ${station.Agency?.code}`);
+      .bindTooltip(station.name);
 
     marker.on("click", (e) => {
       L.DomEvent.stopPropagation(e);
@@ -351,7 +351,7 @@ const renderIncidents = async () => {
 
   activeCases.forEach((c) => {
     const color = AGENCY_COLORS[c.Agency?.code] || "#6b7280";
-    const tooltip = `<strong>${c.caseNumber}</strong> (Incident ID: ${c.id})<br>${c.category} · ${c.priority} priority<br>Status: ${c.status}`;
+    const tooltip = `<strong>${c.caseNumber}</strong><br>Status: ${c.status}`;
 
     if (incidentMarkers[c.id]) {
       incidentMarkers[c.id].setTooltipContent(tooltip);
@@ -427,7 +427,7 @@ const syncVehicleMarkers = () => {
       const emoji = VEHICLE_EMOJI[vehicle.type] || "🚗";
       const position = [vehicle.latitude, vehicle.longitude];
       const linkedCase = activeCasesData.value.find((c) => c.vehicleId === vehicle.id);
-      const tooltip = `<strong>${vehicle.callSign}</strong> (Vehicle ID: ${vehicle.id})<br>${vehicle.type.replace("_", " ")} · ${vehicle.status}${linkedCase ? `<br>Incident: ${linkedCase.caseNumber} (ID: ${linkedCase.id})` : ""}`;
+      const tooltip = `${linkedCase ? `<strong>${linkedCase.caseNumber}</strong><br>` : ""}Vehicle: ${vehicle.callSign}`;
 
       if (vehicleMarkers[vehicle.id]) {
         vehicleMarkers[vehicle.id].setLatLng(position);

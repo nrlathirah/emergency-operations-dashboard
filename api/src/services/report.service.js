@@ -37,7 +37,7 @@ export const generateCasesExcel = async ({ agencyCode, status } = {}) => {
   const sheet = workbook.addWorksheet("Cases");
 
   sheet.columns = [
-    { header: "Case #", key: "caseNumber", width: 15 },
+    { header: "Case ID", key: "caseNumber", width: 15 },
     { header: "Agency", key: "agency", width: 10 },
     { header: "Category", key: "category", width: 15 },
     { header: "Priority", key: "priority", width: 10 },

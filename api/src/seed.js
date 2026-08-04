@@ -2,6 +2,11 @@ import { sequelize, Agency, Vehicle, Case, User, Station } from "#models/index.j
 
 const minutesAgo = (mins) => new Date(Date.now() - mins * 60000);
 
+// Unique case/incident ID format: AGENCY + YEAR + 5-digit sequence,
+// e.g. KKM202600001, KKM202600002 — standardized across all agencies.
+const currentYear = new Date().getFullYear();
+const formatCaseNumber = (agencyCode, seq) => `${agencyCode}${currentYear}${String(seq).padStart(5, "0")}`;
+
 export const seedDatabase = async () => {
   await sequelize.sync({ force: true });
 
@@ -41,23 +46,23 @@ export const seedDatabase = async () => {
 
   // Every agency has one case in every status: open, dispatched, en_route,
   // on_scene, closed — each active one with its own dedicated vehicle.
-  await Case.create({ agencyId: kkm.id, caseNumber: "KKM-0001", category: "accident", priority: "high", location: "Jalan Ampang, KL", latitude: 3.1680, longitude: 101.7080, vehicleId: amb01.id, createdAt: minutesAgo(5) });
-  await Case.create({ agencyId: kkm.id, caseNumber: "KKM-0002", category: "medical", priority: "low", status: "closed", location: "Jalan Ipoh, Selayang", latitude: 3.2400, longitude: 101.6600, vehicleId: amb02.id, createdAt: minutesAgo(240) });
-  await Case.create({ agencyId: kkm.id, caseNumber: "KKM-0003", category: "medical", priority: "medium", status: "dispatched", vehicleId: amb04.id, location: "Jalan Raja Chulan, KL", latitude: 3.1750, longitude: 101.7010, createdAt: minutesAgo(15) });
-  await Case.create({ agencyId: kkm.id, caseNumber: "KKM-0004", category: "accident", priority: "high", status: "en_route", vehicleId: amb02.id, location: "Jalan Selayang Baru", latitude: 3.2450, longitude: 101.6550, createdAt: minutesAgo(45) });
-  await Case.create({ agencyId: kkm.id, caseNumber: "KKM-0005", category: "medical", priority: "medium", status: "on_scene", vehicleId: amb03.id, location: "Jalan Serdang Raya", latitude: 3.0050, longitude: 101.7150, createdAt: minutesAgo(90) });
+  await Case.create({ agencyId: kkm.id, caseNumber: formatCaseNumber("KKM", 1), category: "accident", priority: "high", location: "Jalan Ampang, KL", latitude: 3.1680, longitude: 101.7080, vehicleId: amb01.id, createdAt: minutesAgo(5) });
+  await Case.create({ agencyId: kkm.id, caseNumber: formatCaseNumber("KKM", 2), category: "medical", priority: "low", status: "closed", location: "Jalan Ipoh, Selayang", latitude: 3.2400, longitude: 101.6600, vehicleId: amb02.id, createdAt: minutesAgo(240) });
+  await Case.create({ agencyId: kkm.id, caseNumber: formatCaseNumber("KKM", 3), category: "medical", priority: "medium", status: "dispatched", vehicleId: amb04.id, location: "Jalan Raja Chulan, KL", latitude: 3.1750, longitude: 101.7010, createdAt: minutesAgo(15) });
+  await Case.create({ agencyId: kkm.id, caseNumber: formatCaseNumber("KKM", 4), category: "accident", priority: "high", status: "en_route", vehicleId: amb02.id, location: "Jalan Selayang Baru", latitude: 3.2450, longitude: 101.6550, createdAt: minutesAgo(45) });
+  await Case.create({ agencyId: kkm.id, caseNumber: formatCaseNumber("KKM", 5), category: "medical", priority: "medium", status: "on_scene", vehicleId: amb03.id, location: "Jalan Serdang Raya", latitude: 3.0050, longitude: 101.7150, createdAt: minutesAgo(90) });
 
-  await Case.create({ agencyId: pdrm.id, caseNumber: "PDRM-0004", category: "traffic", priority: "low", location: "Jalan Dang Wangi, KL", latitude: 3.1620, longitude: 101.7060, vehicleId: pc01.id, createdAt: minutesAgo(10) });
-  await Case.create({ agencyId: pdrm.id, caseNumber: "PDRM-0005", category: "theft", priority: "high", status: "closed", location: "Jalan SS2, Petaling Jaya", latitude: 3.1000, longitude: 101.6150, vehicleId: pc02.id, createdAt: minutesAgo(200) });
-  await Case.create({ agencyId: pdrm.id, caseNumber: "PDRM-0001", category: "theft", priority: "medium", status: "dispatched", vehicleId: pc04.id, location: "Jalan Bukit Bintang, KL", latitude: 3.1550, longitude: 101.6980, createdAt: minutesAgo(20) });
-  await Case.create({ agencyId: pdrm.id, caseNumber: "PDRM-0002", category: "traffic", priority: "high", status: "en_route", vehicleId: pc02.id, location: "Jalan Petaling Jaya", latitude: 3.1100, longitude: 101.6100, createdAt: minutesAgo(50) });
-  await Case.create({ agencyId: pdrm.id, caseNumber: "PDRM-0003", category: "assault", priority: "medium", status: "on_scene", vehicleId: pc03.id, location: "Jalan Shah Alam", latitude: 3.0800, longitude: 101.5350, createdAt: minutesAgo(100) });
+  await Case.create({ agencyId: pdrm.id, caseNumber: formatCaseNumber("PDRM", 4), category: "traffic", priority: "low", location: "Jalan Dang Wangi, KL", latitude: 3.1620, longitude: 101.7060, vehicleId: pc01.id, createdAt: minutesAgo(10) });
+  await Case.create({ agencyId: pdrm.id, caseNumber: formatCaseNumber("PDRM", 5), category: "theft", priority: "high", status: "closed", location: "Jalan SS2, Petaling Jaya", latitude: 3.1000, longitude: 101.6150, vehicleId: pc02.id, createdAt: minutesAgo(200) });
+  await Case.create({ agencyId: pdrm.id, caseNumber: formatCaseNumber("PDRM", 1), category: "theft", priority: "medium", status: "dispatched", vehicleId: pc04.id, location: "Jalan Bukit Bintang, KL", latitude: 3.1550, longitude: 101.6980, createdAt: minutesAgo(20) });
+  await Case.create({ agencyId: pdrm.id, caseNumber: formatCaseNumber("PDRM", 2), category: "traffic", priority: "high", status: "en_route", vehicleId: pc02.id, location: "Jalan Petaling Jaya", latitude: 3.1100, longitude: 101.6100, createdAt: minutesAgo(50) });
+  await Case.create({ agencyId: pdrm.id, caseNumber: formatCaseNumber("PDRM", 3), category: "assault", priority: "medium", status: "on_scene", vehicleId: pc03.id, location: "Jalan Shah Alam", latitude: 3.0800, longitude: 101.5350, createdAt: minutesAgo(100) });
 
-  await Case.create({ agencyId: jbpm.id, caseNumber: "JBPM-0002", category: "rescue", priority: "medium", location: "Jalan Hang Tuah, KL", latitude: 3.1350, longitude: 101.7150, vehicleId: ft01.id, createdAt: minutesAgo(8) });
-  await Case.create({ agencyId: jbpm.id, caseNumber: "JBPM-0005", category: "fire", priority: "low", status: "closed", location: "Jalan Petaling Jaya Utara", latitude: 3.1150, longitude: 101.6050, vehicleId: ft02.id, createdAt: minutesAgo(220) });
-  await Case.create({ agencyId: jbpm.id, caseNumber: "JBPM-0001", category: "fire", priority: "high", status: "on_scene", vehicleId: ft04.id, location: "Jalan Tun Razak, KL", latitude: 3.1420, longitude: 101.7050, createdAt: minutesAgo(25) });
-  await Case.create({ agencyId: jbpm.id, caseNumber: "JBPM-0003", category: "fire", priority: "high", status: "dispatched", vehicleId: ft02.id, location: "Jalan Sungai Besi, Petaling Jaya", latitude: 3.1080, longitude: 101.6180, createdAt: minutesAgo(55) });
-  await Case.create({ agencyId: jbpm.id, caseNumber: "JBPM-0004", category: "rescue", priority: "medium", status: "en_route", vehicleId: ft03.id, location: "Jalan Shah Alam Selatan", latitude: 3.0700, longitude: 101.5250, createdAt: minutesAgo(110) });
+  await Case.create({ agencyId: jbpm.id, caseNumber: formatCaseNumber("JBPM", 2), category: "rescue", priority: "medium", location: "Jalan Hang Tuah, KL", latitude: 3.1350, longitude: 101.7150, vehicleId: ft01.id, createdAt: minutesAgo(8) });
+  await Case.create({ agencyId: jbpm.id, caseNumber: formatCaseNumber("JBPM", 5), category: "fire", priority: "low", status: "closed", location: "Jalan Petaling Jaya Utara", latitude: 3.1150, longitude: 101.6050, vehicleId: ft02.id, createdAt: minutesAgo(220) });
+  await Case.create({ agencyId: jbpm.id, caseNumber: formatCaseNumber("JBPM", 1), category: "fire", priority: "high", status: "on_scene", vehicleId: ft04.id, location: "Jalan Tun Razak, KL", latitude: 3.1420, longitude: 101.7050, createdAt: minutesAgo(25) });
+  await Case.create({ agencyId: jbpm.id, caseNumber: formatCaseNumber("JBPM", 3), category: "fire", priority: "high", status: "dispatched", vehicleId: ft02.id, location: "Jalan Sungai Besi, Petaling Jaya", latitude: 3.1080, longitude: 101.6180, createdAt: minutesAgo(55) });
+  await Case.create({ agencyId: jbpm.id, caseNumber: formatCaseNumber("JBPM", 4), category: "rescue", priority: "medium", status: "en_route", vehicleId: ft03.id, location: "Jalan Shah Alam Selatan", latitude: 3.0700, longitude: 101.5250, createdAt: minutesAgo(110) });
 
   const users = [
     { name: "Ahmad Razak", email: "ahmad.razak@kkm.gov.my", password: "password123", role: "staff", agencyId: kkm.id },
