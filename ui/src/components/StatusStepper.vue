@@ -28,36 +28,31 @@ import { computed } from "vue";
 
 const props = defineProps({
   status: { type: String, required: true },
-  agencyCode: { type: String, default: "" },
 });
 
-const AGENCY_COLORS = {
-  KKM: { main: "#dc2626", light: "#fecaca" },
-  PDRM: { main: "#2563eb", light: "#bfdbfe" },
-  JBPM: { main: "#f59e0b", light: "#fde68a" },
-};
-
-const colors = computed(() => AGENCY_COLORS[props.agencyCode] || { main: "#475569", light: "#cbd5e1" });
+// One fixed color for every agency — matches the app's existing blue accent
+// (links, focus popups) instead of varying by agency.
+const colors = { main: "#2563eb", light: "#bfdbfe" };
 
 const steps = [
-  { key: "open", label: "Reported" },
+  { key: "open", label: "Open" },
   { key: "dispatched", label: "Dispatched" },
   { key: "en_route", label: "En Route" },
   { key: "on_scene", label: "On Scene" },
-  { key: "closed", label: "Resolved" },
+  { key: "closed", label: "Closed" },
 ];
 
 const currentIndex = computed(() => steps.findIndex((s) => s.key === props.status));
 
 const dotStyle = (index) => {
-  if (index < currentIndex.value) return { backgroundColor: colors.value.main, color: "#fff" };
+  if (index < currentIndex.value) return { backgroundColor: colors.main, color: "#fff" };
   if (index === currentIndex.value) {
-    return { backgroundColor: colors.value.main, color: "#fff", boxShadow: `0 0 0 4px ${colors.value.light}` };
+    return { backgroundColor: colors.main, color: "#fff", boxShadow: `0 0 0 4px ${colors.light}` };
   }
   return { backgroundColor: "#e5e7eb", color: "#6b7280" };
 };
 
 const lineStyle = (index) => ({
-  backgroundColor: index < currentIndex.value ? colors.value.main : "#e5e7eb",
+  backgroundColor: index < currentIndex.value ? colors.main : "#e5e7eb",
 });
 </script>

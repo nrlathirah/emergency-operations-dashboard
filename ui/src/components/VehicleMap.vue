@@ -8,7 +8,7 @@
         class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600 cursor-pointer"
       >Reset View</button>
     </div>
-    <p class="text-xs text-gray-500 mb-2">Vehicle markers are hidden by default — click an incident or station to reveal the vehicle involved. Click an incident pin again for a "Show on table" button. Click empty map area or "Reset View" to reset.</p>
+    <p class="text-xs text-gray-500 mb-2">Vehicle markers are hidden by default — click an incident or station to reveal the vehicle involved. Click an incident pin again for a "Show on table" button. Use "Reset View" to reset.</p>
     <div class="relative">
       <div id="map" style="height: 500px; width: 100%;" class="rounded"></div>
       <div v-if="mapLoading" class="absolute inset-0 flex items-center justify-center bg-white/70 rounded">
@@ -33,15 +33,15 @@
       </span>
       <span class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyVehicleTypeVisible('ambulance') }">
         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#dc2626">🚑</span>
-        Ambulance (KKM)
+        Ambulance
       </span>
       <span class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyVehicleTypeVisible('police_car') }">
         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#2563eb">🚓</span>
-        Police Car (PDRM)
+        Police Car
       </span>
       <span class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyVehicleTypeVisible('fire_truck') }">
         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#f59e0b">🚒</span>
-        Fire Truck (JBPM)
+        Fire Truck
       </span>
       <span class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyIncidentAgencyVisible('KKM') }">
         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#dc2626">
@@ -91,7 +91,6 @@ const incidentMarkers = {};
 const stationMarkers = {};
 const routeLines = {};
 let pollTimer;
-let focusBoundaryLayer = null;
 const mapLoading = ref(true);
 
 const DEFAULT_CENTER = [3.139, 101.6869];
@@ -115,6 +114,16 @@ const focus = ref(null);
 
 const AGENCY_COLORS = { KKM: "#dc2626", PDRM: "#2563eb", JBPM: "#f59e0b" };
 const VEHICLE_EMOJI = { ambulance: "🚑", police_car: "🚓", fire_truck: "🚒" };
+
+// Matches the labels used everywhere else (status filter, case table stepper)
+// instead of showing the raw snake_case status value.
+const STATUS_LABELS = {
+  open: "Open",
+  dispatched: "Dispatched",
+  en_route: "En Route",
+  on_scene: "On Scene",
+  closed: "Closed",
+};
 
 const CRESCENT_SVG = `<svg width="16" height="16" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#dc2626"/><circle cx="21" cy="12" r="10" fill="white"/></svg>`;
 
@@ -255,22 +264,8 @@ const applyOpacity = () => {
   );
 };
 
-const drawFocusBoundary = (bounds) => {
-  if (focusBoundaryLayer) map.removeLayer(focusBoundaryLayer);
-  focusBoundaryLayer = L.rectangle(bounds, {
-    color: "#3b82f6",
-    weight: 2,
-    dashArray: "6,6",
-    fillOpacity: 0.05,
-  }).addTo(map);
-};
-
 const clearFocus = () => {
   focus.value = null;
-  if (focusBoundaryLayer) {
-    map.removeLayer(focusBoundaryLayer);
-    focusBoundaryLayer = null;
-  }
   map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
   syncVehicleMarkers();
   applyOpacity();
@@ -287,7 +282,6 @@ const focusOnIncident = (incident) => {
 
   const bounds = L.latLngBounds(points).pad(0.15);
   map.fitBounds(bounds, { padding: FOCUS_VIEW_PADDING });
-  drawFocusBoundary(bounds);
   syncVehicleMarkers();
   applyOpacity();
 };
@@ -307,7 +301,6 @@ const focusOnStation = (station) => {
 
   const bounds = L.latLngBounds(points).pad(0.15);
   map.fitBounds(bounds, { padding: FOCUS_VIEW_PADDING });
-  drawFocusBoundary(bounds);
   syncVehicleMarkers();
   applyOpacity();
 };
@@ -351,7 +344,7 @@ const renderIncidents = async () => {
 
   activeCases.forEach((c) => {
     const color = AGENCY_COLORS[c.Agency?.code] || "#6b7280";
-    const tooltip = `<strong>${c.caseNumber}</strong><br>Status: ${c.status}`;
+    const tooltip = `<strong>${c.caseNumber}</strong><br>Status: ${STATUS_LABELS[c.status] || c.status}`;
 
     if (incidentMarkers[c.id]) {
       incidentMarkers[c.id].setTooltipContent(tooltip);
@@ -524,8 +517,6 @@ onMounted(async () => {
   addCoverageMask();
   await renderStations();
   await refresh();
-
-  map.on("click", clearFocus);
 
   pollTimer = setInterval(refresh, 3000);
 });

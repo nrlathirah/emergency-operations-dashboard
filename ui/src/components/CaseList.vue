@@ -1,6 +1,9 @@
 <template>
   <div class="bg-white rounded-lg shadow p-4">
-    <h2 class="text-lg font-semibold mb-3">Cases</h2>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-lg font-semibold">Cases</h2>
+      <span class="text-xs text-gray-500">{{ activeCount }} Active · {{ closedCount }} Closed</span>
+    </div>
 
     <div class="flex gap-3 mb-4">
       <select v-if="isSuperAdmin" v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
@@ -20,7 +23,14 @@
       </select>
 
       <button
-        :disabled="!agencyFilter && !statusFilter"
+        type="button"
+        @click="toggleActiveOnly"
+        class="px-3 py-1.5 text-sm border rounded cursor-pointer transition"
+        :class="activeOnly ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'hover:bg-gray-50 text-gray-600'"
+      >Active Only</button>
+
+      <button
+        :disabled="!agencyFilter && !statusFilter && !activeOnly"
         @click="resetFilters"
         class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600 cursor-pointer disabled:opacity-40 disabled:cursor-default"
       >Reset Filters</button>
@@ -32,11 +42,11 @@
       <thead>
         <tr class="border-b border-gray-200 text-left text-gray-500">
           <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('caseNumber')">Case ID {{ sortIndicator('caseNumber') }}</th>
-          <th class="py-3 px-6 whitespace-nowrap">Agency</th>
+          <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('agency')">Agency {{ sortIndicator('agency') }}</th>
           <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('createdAt')">Created {{ sortIndicator('createdAt') }}</th>
-          <th class="py-3 px-6 whitespace-nowrap">Station</th>
-          <th class="py-3 px-6 whitespace-nowrap">Vehicle ID</th>
-          <th class="py-3 px-6 w-full">Location</th>
+          <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('station')">Station {{ sortIndicator('station') }}</th>
+          <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('vehicle')">Vehicle ID {{ sortIndicator('vehicle') }}</th>
+          <th class="py-3 px-6 w-full cursor-pointer select-none" @click="toggleSort('location')">Location {{ sortIndicator('location') }}</th>
           <th class="py-3 px-6 whitespace-nowrap">Map</th>
         </tr>
       </thead>
@@ -55,7 +65,10 @@
         >
           <td class="py-3 px-6 font-medium whitespace-nowrap">{{ c.caseNumber }}</td>
           <td class="py-3 px-6 whitespace-nowrap">{{ c.Agency?.code }}</td>
-          <td class="py-3 px-6 text-gray-600 whitespace-nowrap">{{ formatCreatedAt(c.createdAt) }}</td>
+          <td class="py-3 px-6 text-gray-600 whitespace-nowrap">
+            <div>{{ formatCreatedAt(c.createdAt) }}</div>
+            <div v-if="c.status !== 'closed'" class="text-xs text-gray-400">{{ formatDuration(c.createdAt) }}</div>
+          </td>
           <td class="py-3 px-6 text-gray-600 whitespace-nowrap">{{ assignedVehicleFor(c)?.Station?.name || "—" }}</td>
           <td class="py-3 px-6 text-gray-600 whitespace-nowrap">{{ assignedVehicleFor(c)?.callSign || "—" }}</td>
           <td class="py-3 px-6 text-gray-600">{{ c.location }}</td>
@@ -77,7 +90,7 @@
           ]"
         >
           <td colspan="7" class="pb-3 pt-1 px-6">
-            <StatusStepper :status="c.status" :agency-code="c.Agency?.code" />
+            <StatusStepper :status="c.status" />
           </td>
         </tr>
       </tbody>
@@ -109,8 +122,16 @@ const cases = ref([]);
 const vehicles = ref([]);
 const agencyFilter = defineModel("agencyFilter", { default: "" });
 const statusFilter = defineModel("statusFilter", { default: "" });
-const sortField = ref("createdAt");
-const sortOrder = ref("DESC");
+// Client-side "any non-closed status" filter — separate from statusFilter,
+// which only supports one exact status at a time via the dropdown.
+const activeOnly = ref(false);
+// null sortField means "no explicit sort yet" — falls back to the default
+// (latest first). Kept separate from any column's own ASC/DESC value so the
+// Created column (which shares its field with the default) can still be
+// clicked into ascending/oldest-first instead of only ever landing back on
+// the default DESC state.
+const sortField = ref(null);
+const sortOrder = ref("ASC");
 const loading = ref(true);
 const highlightedCaseId = ref(null);
 const rowRefs = {};
@@ -125,8 +146,6 @@ const fetchCases = async () => {
   cases.value = await caseService.getAll({
     agencyCode: agencyFilter.value || undefined,
     status: statusFilter.value || undefined,
-    sort: sortField.value,
-    order: sortOrder.value,
   });
   loading.value = false;
 };
@@ -135,18 +154,47 @@ const fetchVehicles = async () => {
   vehicles.value = await vehicleService.getAll();
 };
 
-// Open cases always float to the top regardless of the active sort column —
-// Array.sort is stable, so within "open" and "non-open" each keeps whatever
-// order the backend already returned (e.g. newest-created first by default).
+const assignedVehicleFor = (c) => vehicles.value.find((v) => v.id === c.vehicleId);
+
+// Reflects whatever the current agency/status filters already narrowed down
+// to — so picking a single status like "Dispatched" naturally shows all of
+// them as "Active" rather than some separately-fetched global count.
+const activeCount = computed(() => cases.value.filter((c) => c.status !== "closed").length);
+const closedCount = computed(() => cases.value.filter((c) => c.status === "closed").length);
+
+const toggleActiveOnly = () => {
+  activeOnly.value = !activeOnly.value;
+  if (activeOnly.value) statusFilter.value = "";
+};
+
+// Station/Vehicle/Agency aren't columns on the Case table itself (Agency is a
+// joined table, Station/Vehicle are resolved client-side via assignedVehicleFor),
+// so sorting happens entirely here rather than via the backend — this also
+// means it keeps working correctly against whatever the filters return.
+const sortValue = (c, field) => {
+  switch (field) {
+    case "caseNumber": return c.caseNumber;
+    case "agency": return c.Agency?.code || "";
+    case "createdAt": return new Date(c.createdAt).getTime();
+    case "station": return assignedVehicleFor(c)?.Station?.name || "";
+    case "vehicle": return assignedVehicleFor(c)?.callSign || "";
+    case "location": return c.location || "";
+    default: return "";
+  }
+};
+
 const displayCases = computed(() => {
-  return [...cases.value].sort((a, b) => {
-    const aOpen = a.status === "open" ? 0 : 1;
-    const bOpen = b.status === "open" ? 0 : 1;
-    return aOpen - bOpen;
+  const field = sortField.value ?? DEFAULT_SORT_FIELD;
+  const order = sortField.value ? sortOrder.value : DEFAULT_SORT_ORDER;
+  const dir = order === "ASC" ? 1 : -1;
+  const source = activeOnly.value ? cases.value.filter((c) => c.status !== "closed") : cases.value;
+  return [...source].sort((a, b) => {
+    const va = sortValue(a, field);
+    const vb = sortValue(b, field);
+    if (typeof va === "number" && typeof vb === "number") return (va - vb) * dir;
+    return String(va).localeCompare(String(vb)) * dir;
   });
 });
-
-const assignedVehicleFor = (c) => vehicles.value.find((v) => v.id === c.vehicleId);
 
 const formatCreatedAt = (createdAt) =>
   new Date(createdAt).toLocaleString("en-MY", {
@@ -156,21 +204,47 @@ const formatCreatedAt = (createdAt) =>
     minute: "2-digit",
   });
 
+// Elapsed time since creation, for active cases — refreshes automatically on
+// every 5s poll since fetchCases() replaces the cases array each time.
+const formatDuration = (createdAt) => {
+  const totalMinutes = Math.floor((Date.now() - new Date(createdAt).getTime()) / 60000);
+  const days = Math.floor(totalMinutes / 1440);
+  const hours = Math.floor((totalMinutes % 1440) / 60);
+  const minutes = totalMinutes % 60;
+  if (days > 0) return `${days}d ${hours}h ago`;
+  if (hours > 0) return minutes > 0 ? `${hours}h ${minutes}m ago` : `${hours}h ago`;
+  return `${minutes}m ago`;
+};
+
+const DEFAULT_SORT_FIELD = "createdAt";
+const DEFAULT_SORT_ORDER = "DESC";
+
+// 3-click cycle per column: ASC -> DESC -> back to the default sort
+// (latest first), rather than toggling ASC/DESC forever.
 const toggleSort = (field) => {
-  if (sortField.value === field) {
-    sortOrder.value = sortOrder.value === "ASC" ? "DESC" : "ASC";
-  } else {
+  if (sortField.value !== field) {
     sortField.value = field;
     sortOrder.value = "ASC";
+    return;
+  }
+  if (sortOrder.value === "ASC") {
+    sortOrder.value = "DESC";
+  } else {
+    sortField.value = null;
   }
 };
 
-const sortIndicator = (field) =>
-  sortField.value === field ? (sortOrder.value === "ASC" ? "▲" : "▼") : "";
+const sortIndicator = (field) => {
+  const effectiveField = sortField.value ?? DEFAULT_SORT_FIELD;
+  if (effectiveField !== field) return "";
+  const effectiveOrder = sortField.value ? sortOrder.value : DEFAULT_SORT_ORDER;
+  return effectiveOrder === "ASC" ? "▲" : "▼";
+};
 
 const resetFilters = () => {
   agencyFilter.value = "";
   statusFilter.value = "";
+  activeOnly.value = false;
 };
 
 // Triggered when a marker is clicked on the map — clears any table filter
@@ -178,6 +252,7 @@ const resetFilters = () => {
 const jumpToCase = async (caseId) => {
   agencyFilter.value = "";
   statusFilter.value = "";
+  activeOnly.value = false;
   await fetchCases();
   await nextTick();
 
@@ -199,7 +274,13 @@ watch(() => props.focusedCaseId, (value) => {
   jumpToCase(caseId);
 });
 
-watch([agencyFilter, statusFilter, sortField, sortOrder], fetchCases);
+// Picking a specific status from the dropdown overrides "Active Only" —
+// the two would otherwise conflict (e.g. status=closed + non-closed-only).
+watch(statusFilter, (value) => {
+  if (value) activeOnly.value = false;
+});
+
+watch([agencyFilter, statusFilter], fetchCases);
 onMounted(() => {
   fetchCases();
   fetchVehicles();
