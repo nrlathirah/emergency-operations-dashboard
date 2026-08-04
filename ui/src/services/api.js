@@ -15,7 +15,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Only force-redirect when an already-authenticated request's token
+    // turned out to be invalid/expired — not when the login attempt itself
+    // fails (that 401 is expected for a wrong password and should just show
+    // the error on the login form, not reload the page out from under it).
+    const isLoginRequest = error.config?.url?.includes("/auth/login");
+    if (error.response?.status === 401 && !isLoginRequest) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       window.location.href = "/login";

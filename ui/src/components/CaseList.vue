@@ -33,7 +33,7 @@
         type="button"
         @click="toggleActiveOnly"
         class="px-3 py-1.5 text-sm border rounded cursor-pointer transition"
-        :class="activeOnly ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'hover:bg-gray-50 text-gray-600'"
+        :class="activeOnly ? 'bg-teal-600 text-white border-teal-600 hover:bg-teal-700' : 'hover:bg-gray-50 text-gray-600'"
       >Active Only</button>
 
       <button
@@ -89,7 +89,7 @@
               v-if="c.status !== 'closed'"
               type="button"
               @click="emit('show-on-map', c.id)"
-              class="text-blue-600 hover:underline text-xs font-medium cursor-pointer"
+              class="text-teal-600 hover:underline text-xs font-medium cursor-pointer"
             >Show on map</button>
             <span v-else class="text-gray-400 text-xs">—</span>
           </td>

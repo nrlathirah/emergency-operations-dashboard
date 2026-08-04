@@ -30,9 +30,9 @@ const props = defineProps({
   status: { type: String, required: true },
 });
 
-// One fixed color for every agency — matches the app's existing blue accent
-// (links, focus popups) instead of varying by agency.
-const colors = { main: "#2563eb", light: "#bfdbfe" };
+// One fixed color for every agency — a neutral teal, distinct from every
+// agency color (KKM red, PDRM navy, JBPM amber) and the super-admin indigo.
+const colors = { main: "#0d9488", light: "#99f6e4" };
 
 const steps = [
   { key: "open", label: "Open" },

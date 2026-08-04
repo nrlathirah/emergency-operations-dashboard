@@ -54,7 +54,7 @@ const authStore = useAuthStore();
 const router = useRouter();
 
 const AGENCY_THEME = {
-  super_admin: "#312e81", // indigo-900 — distinct "master" identity
+  super_admin: "#581c87", // deep purple — oversees every agency, distinct from all 3
   KKM: "#7f1d1d",         // dark red
   PDRM: "#1e3a8a",        // dark blue
   JBPM: "#92400e",        // dark amber/gold
@@ -88,7 +88,7 @@ const headerColor = computed(() => {
 });
 
 const badgeColor = computed(() => {
-  if (authStore.user?.role === "super_admin") return "#4338ca";
+  if (authStore.user?.role === "super_admin") return "#7e22ce";
   const colors = { KKM: "#dc2626", PDRM: "#1e3a8a", JBPM: "#f59e0b" };
   return colors[authStore.user?.agency] || "#475569";
 });

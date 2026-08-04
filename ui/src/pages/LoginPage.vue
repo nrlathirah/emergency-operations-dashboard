@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-4">
+  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 px-4">
     <form @submit.prevent="handleLogin" class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm space-y-5">
       <div class="text-center">
         <div class="text-4xl mb-2">🚨</div>
@@ -13,7 +13,7 @@
           v-model="email"
           type="email"
           required
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
         />
       </div>
 
@@ -23,7 +23,7 @@
           v-model="password"
           type="password"
           required
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
         />
       </div>
 
@@ -31,7 +31,7 @@
 
       <button
         type="submit"
-        class="w-full bg-slate-900 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-slate-800 transition cursor-pointer"
+        class="w-full bg-teal-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal-700 transition cursor-pointer"
       >
         Log In
       </button>
@@ -60,7 +60,7 @@ const handleLogin = async () => {
     await authStore.login(email.value, password.value);
     router.push("/");
   } catch (err) {
-    error.value = "Invalid email or password";
+    error.value = "Invalid email or password. Please try again.";
   }
 };
 </script>

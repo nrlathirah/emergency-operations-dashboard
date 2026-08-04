@@ -517,7 +517,7 @@ const addCoverageMask = () => {
   }).addTo(map);
 
   L.polyline([...circlePoints, circlePoints[0]], {
-    color: "#3b82f6",
+    color: "#0d9488",
     weight: 2,
     dashArray: "6,6",
   }).addTo(map).bindTooltip("Demo coverage area: Klang Valley (KL & Selangor)");
@@ -563,10 +563,10 @@ onUnmounted(() => clearInterval(pollTimer));
 <style>
 /* Leaflet popups are appended outside this component's scoped template, so
    this block is intentionally global — reskins the tiny "Show on table"
-   action popup as a compact blue pill instead of Leaflet's default boxy
+   action popup as a compact teal pill instead of Leaflet's default boxy
    white popup (which was wide/padded enough to cover the pin underneath). */
 .incident-action-popup .leaflet-popup-content-wrapper {
-  background: #2563eb;
+  background: #0d9488;
   border-radius: 6px;
   padding: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
@@ -575,7 +575,7 @@ onUnmounted(() => clearInterval(pollTimer));
   margin: 0;
 }
 .incident-action-popup .leaflet-popup-tip {
-  background: #2563eb;
+  background: #0d9488;
 }
 .incident-action-popup .show-on-table-btn {
   display: block;

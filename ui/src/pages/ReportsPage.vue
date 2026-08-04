@@ -13,7 +13,7 @@
       <a
         :href="exportUrl"
         target="_blank"
-        class="px-3 py-1.5 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+        class="px-3 py-1.5 bg-teal-600 text-white rounded text-sm hover:bg-teal-700"
       >Export to Excel</a>
     </div>
 
