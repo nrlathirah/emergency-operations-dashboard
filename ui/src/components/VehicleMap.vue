@@ -1,6 +1,6 @@
 <template>
   <div ref="mapCardRef" class="bg-white rounded-lg shadow p-4">
-    <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
       <h2 class="text-lg font-semibold">Live Operations Map</h2>
       <button
         type="button"

@@ -1,6 +1,6 @@
 <template>
   <div class="bg-white rounded-lg shadow p-4">
-    <div class="flex items-center justify-between mb-1">
+    <div class="flex items-center justify-between flex-wrap gap-2 mb-1">
       <div class="flex items-center gap-2">
         <h2 class="text-lg font-semibold">Cases</h2>
         <span class="flex items-center gap-1 text-[11px] text-green-600 font-medium">
@@ -12,7 +12,7 @@
     </div>
     <p class="text-xs text-gray-400 mb-3">Showing active cases and cases closed in the last 24h — see Reports for full history.</p>
 
-    <div class="flex gap-3 mb-4">
+    <div class="flex flex-wrap gap-3 mb-4">
       <select v-if="isSuperAdmin" v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
         <option value="">All Agencies</option>
         <option value="KKM">KKM</option>
@@ -63,7 +63,7 @@
         </tr>
       </tbody>
       <tbody
-        v-for="c in displayCases"
+        v-for="c in pagedCases"
         :key="c.id"
         :ref="(el) => registerRowRef(c.id, el)"
         class="group"
@@ -107,6 +107,20 @@
         </tr>
       </tbody>
     </table>
+    </div>
+
+    <div v-if="!loading" class="flex items-center gap-3 mt-4 text-sm">
+      <button
+        :disabled="page === 1"
+        @click="page--"
+        class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
+      >Previous</button>
+      <span class="text-gray-600">Page {{ page }} of {{ totalPages }}</span>
+      <button
+        :disabled="page === totalPages"
+        @click="page++"
+        class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
+      >Next</button>
     </div>
   </div>
 </template>
@@ -152,6 +166,7 @@ let highlightTimeout;
 
 const registerRowRef = (id, el) => {
   if (el) rowRefs[id] = el;
+  else delete rowRefs[id]; // row scrolled off the current page and unmounted
 };
 
 const fetchCases = async () => {
@@ -208,6 +223,14 @@ const displayCases = computed(() => {
   });
 });
 
+const PAGE_SIZE = 10;
+const page = ref(1);
+const totalPages = computed(() => Math.max(1, Math.ceil(displayCases.value.length / PAGE_SIZE)));
+const pagedCases = computed(() => {
+  const start = (page.value - 1) * PAGE_SIZE;
+  return displayCases.value.slice(start, start + PAGE_SIZE);
+});
+
 const formatCreatedAt = (createdAt) =>
   new Date(createdAt).toLocaleString("en-MY", {
     day: "numeric",
@@ -260,13 +283,20 @@ const resetFilters = () => {
 };
 
 // Triggered when a marker is clicked on the map — clears any table filter
-// that would hide the case, then scrolls to and briefly highlights its row.
+// that would hide the case, jumps to whichever page the case now falls on,
+// then scrolls to and briefly highlights its row.
 const jumpToCase = async (caseId) => {
   agencyFilter.value = "";
   statusFilter.value = "";
   activeOnly.value = false;
   await fetchCases();
   await nextTick();
+
+  const index = displayCases.value.findIndex((c) => c.id === caseId);
+  if (index !== -1) {
+    page.value = Math.floor(index / PAGE_SIZE) + 1;
+    await nextTick();
+  }
 
   const rowEl = rowRefs[caseId];
   if (rowEl) {
@@ -293,6 +323,17 @@ watch(statusFilter, (value) => {
 });
 
 watch([agencyFilter, statusFilter], fetchCases);
+
+// Jump back to page 1 whenever the filtered/sorted set changes shape, and
+// clamp down if a background poll shrinks the result set out from under
+// whatever page the user was on (e.g. a case's status moved it out of view).
+watch([agencyFilter, statusFilter, activeOnly, sortField, sortOrder], () => {
+  page.value = 1;
+});
+watch(totalPages, () => {
+  if (page.value > totalPages.value) page.value = totalPages.value;
+});
+
 onMounted(() => {
   fetchCases();
   fetchVehicles();

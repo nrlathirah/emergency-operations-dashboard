@@ -1,11 +1,11 @@
 <template>
   <div class="min-h-screen bg-slate-50">
-    <header v-if="authStore.isLoggedIn" :style="{ backgroundColor: headerColor }" class="text-white px-6 py-4 shadow-md">
-      <div class="flex items-center justify-between">
+    <header v-if="authStore.isLoggedIn" :style="{ backgroundColor: headerColor }" class="text-white px-4 sm:px-6 py-3 sm:py-4 shadow-md">
+      <div class="flex items-center justify-between flex-wrap gap-3">
         <div class="flex items-center gap-3">
           <span class="text-2xl">{{ headerIcon }}</span>
           <div>
-            <h1 class="text-lg font-semibold leading-tight">Emergency Operations Dashboard</h1>
+            <h1 class="text-base sm:text-lg font-semibold leading-tight">Emergency Operations Dashboard</h1>
             <p class="text-xs text-white/70 leading-tight">{{ headerSubtitle }}</p>
           </div>
         </div>
@@ -20,7 +20,7 @@
           <button @click="handleLogout" class="bg-black/20 px-3 py-1.5 rounded hover:bg-black/30 transition cursor-pointer">Logout</button>
         </div>
       </div>
-      <nav class="mt-3 flex text-sm">
+      <nav class="mt-3 flex flex-wrap text-sm">
         <RouterLink
           to="/"
           class="px-3 py-1.5 rounded-t transition hover:bg-white/10"
@@ -39,7 +39,7 @@
         >Reports</RouterLink>
       </nav>
     </header>
-    <main :class="authStore.isLoggedIn ? 'p-6 max-w-6xl mx-auto' : ''">
+    <main :class="authStore.isLoggedIn ? 'p-4 sm:p-6 max-w-6xl mx-auto' : ''">
       <RouterView />
     </main>
   </div>

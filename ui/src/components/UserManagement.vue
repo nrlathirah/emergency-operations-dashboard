@@ -2,12 +2,12 @@
   <div class="bg-white rounded-lg shadow p-4">
     <h2 class="text-lg font-semibold mb-3">User Management</h2>
 
-    <div class="flex gap-3 mb-4">
+    <div class="flex flex-wrap gap-3 mb-4">
       <input
         v-model="search"
         type="text"
         placeholder="Search by name or email..."
-        class="border rounded px-3 py-1.5 text-sm flex-1 max-w-xs"
+        class="border rounded px-3 py-1.5 text-sm flex-1 min-w-[180px] max-w-xs"
       />
       <select v-if="isSuperAdmin" v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
         <option value="">All Agencies</option>
@@ -19,23 +19,24 @@
 
     <LoadingSpinner v-if="loading" />
     <template v-else>
-      <table class="w-full text-sm border-collapse">
+      <div class="overflow-x-auto">
+      <table class="w-full min-w-[600px] text-sm border-collapse">
         <thead>
           <tr class="border-b border-gray-200 text-left text-gray-500">
-            <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('name')">Name {{ sortIndicator('name') }}</th>
-            <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('email')">Email {{ sortIndicator('email') }}</th>
-            <th class="py-2 pr-4">Agency</th>
-            <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('role')">Role {{ sortIndicator('role') }}</th>
-            <th class="py-2 pr-4 cursor-pointer select-none" @click="toggleSort('status')">Status {{ sortIndicator('status') }}</th>
+            <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('name')">Name {{ sortIndicator('name') }}</th>
+            <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('email')">Email {{ sortIndicator('email') }}</th>
+            <th class="py-2 pr-4 whitespace-nowrap">Agency</th>
+            <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('role')">Role {{ sortIndicator('role') }}</th>
+            <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('status')">Status {{ sortIndicator('status') }}</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="u in users" :key="u.id" class="border-b border-gray-100 hover:bg-gray-50">
-            <td class="py-2 pr-4 font-medium">{{ u.name }}</td>
-            <td class="py-2 pr-4 text-gray-600">{{ u.email }}</td>
-            <td class="py-2 pr-4">{{ u.Agency?.code }}</td>
-            <td class="py-2 pr-4 capitalize">{{ u.role }}</td>
-            <td class="py-2 pr-4">
+            <td class="py-2 pr-4 font-medium whitespace-nowrap">{{ u.name }}</td>
+            <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">{{ u.email }}</td>
+            <td class="py-2 pr-4 whitespace-nowrap">{{ u.Agency?.code }}</td>
+            <td class="py-2 pr-4 capitalize whitespace-nowrap">{{ u.role }}</td>
+            <td class="py-2 pr-4 whitespace-nowrap">
               <span
                 class="px-2 py-0.5 rounded-full text-xs"
                 :class="u.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
@@ -44,6 +45,7 @@
           </tr>
         </tbody>
       </table>
+      </div>
 
       <div class="flex items-center gap-3 mt-4 text-sm">
         <button
