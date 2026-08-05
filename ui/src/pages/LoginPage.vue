@@ -31,10 +31,16 @@
 
       <button
         type="submit"
-        class="w-full bg-teal-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal-700 transition cursor-pointer"
+        :disabled="loading"
+        class="w-full bg-teal-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal-700 transition cursor-pointer disabled:opacity-70 disabled:cursor-default flex items-center justify-center gap-2"
       >
-        Log In
+        <svg v-if="loading" class="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+        {{ loading ? "Logging in…" : "Log In" }}
       </button>
+      <p v-if="loading" class="text-center text-[11px] text-gray-400 -mt-3">First login can take up to a minute if the server was idle.</p>
 
       <div class="pt-1">
         <p class="text-center text-[11px] text-gray-400 mb-2">Quick login for demo purposes</p>
@@ -43,8 +49,9 @@
             v-for="role in quickLoginRoles"
             :key="role.label"
             type="button"
+            :disabled="loading"
             @click="quickFill(role)"
-            class="px-2 py-1.5 rounded-lg text-xs font-medium text-white cursor-pointer transition hover:opacity-90"
+            class="px-2 py-1.5 rounded-lg text-xs font-medium text-white cursor-pointer transition hover:opacity-90 disabled:opacity-50 disabled:cursor-default"
             :style="{ backgroundColor: role.color }"
           >{{ role.label }}</button>
         </div>
@@ -65,6 +72,7 @@ import { useAuthStore } from "../stores/auth";
 const email = ref("");
 const password = ref("");
 const error = ref("");
+const loading = ref(false);
 const router = useRouter();
 const authStore = useAuthStore();
 
@@ -84,12 +92,16 @@ const quickFill = (role) => {
 };
 
 const handleLogin = async () => {
+  if (loading.value) return; // guard against a duplicate submit sneaking in
   error.value = "";
+  loading.value = true;
   try {
     await authStore.login(email.value, password.value);
     router.push("/");
   } catch (err) {
     error.value = "Invalid email or password. Please try again.";
+  } finally {
+    loading.value = false;
   }
 };
 </script>

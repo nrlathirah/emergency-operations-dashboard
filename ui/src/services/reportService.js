@@ -19,9 +19,12 @@ export const reportService = {
     return response.data.data;
   },
 
-  getExportUrl(agencyCode) {
-    const params = new URLSearchParams();
-    if (agencyCode) params.set("agency", agencyCode);
-    return `${import.meta.env.VITE_API_BASE_URL}/reports/cases/export?${params.toString()}`;
+  // Uses the shared `api` axios instance (not a plain URL/<a href>) so the
+  // Authorization header actually gets attached — a plain link navigation
+  // can't send custom headers, and this endpoint requires auth.
+  async downloadCasesExcel(agencyCode) {
+    const params = agencyCode ? { agency: agencyCode } : {};
+    const response = await api.get("/reports/cases/export", { params, responseType: "blob" });
+    return response.data;
   },
 };
