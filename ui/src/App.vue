@@ -39,7 +39,7 @@
         >Reports</RouterLink>
       </nav>
     </header>
-    <main :class="authStore.isLoggedIn ? 'p-4 sm:p-6 max-w-6xl mx-auto' : ''">
+    <main :class="authStore.isLoggedIn ? 'p-4 sm:p-6 max-w-screen-2xl mx-auto' : ''">
       <RouterView />
     </main>
   </div>

@@ -1,12 +1,14 @@
 <template>
-  <div class="space-y-6">
+  <div class="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6 items-start">
     <VehicleMap
+      class="min-w-0"
       :agency-filter="agencyFilter"
       :status-filter="statusFilter"
       :focus-case-id="mapFocusCaseId"
       @focus-case="handleFocusCase"
     />
     <CaseList
+      class="min-w-0"
       v-model:agency-filter="agencyFilter"
       v-model:status-filter="statusFilter"
       :focused-case-id="focusedCaseId"

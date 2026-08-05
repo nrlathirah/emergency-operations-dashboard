@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-lg shadow p-4">
+  <div class="bg-white rounded-lg shadow p-4 flex flex-col lg:h-[650px]">
     <div class="flex items-center justify-between flex-wrap gap-2 mb-1">
       <div class="flex items-center gap-2">
         <h2 class="text-lg font-semibold">Cases</h2>
@@ -79,22 +79,19 @@
     </div>
 
     <LoadingSpinner v-if="loading" />
-    <div v-else class="overflow-x-auto">
-    <table class="w-full min-w-[900px] text-sm border-collapse">
+    <div v-else class="flex-1 overflow-y-auto overflow-x-auto">
+    <table class="min-w-[500px] text-sm border-collapse">
       <thead>
         <tr class="border-b border-gray-200 text-left text-gray-500">
           <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('caseNumber')">Case ID {{ sortIndicator('caseNumber') }}</th>
-          <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('agency')">Agency {{ sortIndicator('agency') }}</th>
           <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('createdAt')">Created {{ sortIndicator('createdAt') }}</th>
-          <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('station')">Station {{ sortIndicator('station') }}</th>
           <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('vehicle')">Vehicle ID {{ sortIndicator('vehicle') }}</th>
-          <th class="py-3 px-6 w-full cursor-pointer select-none" @click="toggleSort('location')">Location {{ sortIndicator('location') }}</th>
-          <th class="py-3 px-6 whitespace-nowrap">Map</th>
+          <th class="py-3 px-6 w-full cursor-pointer select-none whitespace-nowrap" @click="toggleSort('station')">Station {{ sortIndicator('station') }}</th>
         </tr>
       </thead>
       <tbody v-if="displayCases.length === 0">
         <tr>
-          <td colspan="7" class="py-10 text-center text-gray-400 text-sm">No cases found matching your filters.</td>
+          <td colspan="4" class="py-10 text-center text-gray-400 text-sm">No cases found matching your filters.</td>
         </tr>
       </tbody>
       <tbody
@@ -111,26 +108,23 @@
           ]"
         >
           <td class="py-3 px-6 font-medium whitespace-nowrap">
-            {{ c.caseNumber }}
-            <span v-if="isNew(c)" class="ml-1.5 text-[10px] font-bold uppercase tracking-wide text-white bg-teal-600 px-1.5 py-0.5 rounded-full align-middle">New</span>
-          </td>
-          <td class="py-3 px-6 whitespace-nowrap">{{ c.Agency?.code }}</td>
-          <td class="py-3 px-6 text-gray-600 whitespace-nowrap">
-            <div>{{ formatCreatedAt(c.createdAt) }}</div>
-            <div v-if="c.status !== 'closed'" class="text-xs text-gray-400">{{ formatDuration(c.createdAt) }}</div>
-          </td>
-          <td class="py-3 px-6 text-gray-600 whitespace-nowrap">{{ assignedVehicleFor(c)?.Station?.name || "—" }}</td>
-          <td class="py-3 px-6 text-gray-600 whitespace-nowrap">{{ assignedVehicleFor(c)?.callSign || "—" }}</td>
-          <td class="py-3 px-6 text-gray-600">{{ c.location }}</td>
-          <td class="py-3 px-6 whitespace-nowrap">
+            <div>
+              {{ c.caseNumber }}
+              <span v-if="isNew(c)" class="ml-1.5 text-[10px] font-bold uppercase tracking-wide text-white bg-teal-600 px-1.5 py-0.5 rounded-full align-middle">New</span>
+            </div>
             <button
               v-if="c.status !== 'closed'"
               type="button"
               @click="emit('show-on-map', c.id)"
-              class="text-teal-600 hover:underline text-xs font-medium cursor-pointer"
+              class="text-teal-600 hover:underline text-xs font-normal cursor-pointer"
             >Show on map</button>
-            <span v-else class="text-gray-400 text-xs">—</span>
           </td>
+          <td class="py-3 px-6 text-gray-600 whitespace-nowrap">
+            <div>{{ formatCreatedAt(c.createdAt) }}</div>
+            <div v-if="c.status !== 'closed'" class="text-xs text-gray-400">{{ formatDuration(c.createdAt) }}</div>
+          </td>
+          <td class="py-3 px-6 text-gray-600 whitespace-nowrap">{{ assignedVehicleFor(c)?.callSign || "—" }}</td>
+          <td class="py-3 px-6 text-gray-600 whitespace-nowrap">{{ assignedVehicleFor(c)?.Station?.name || "—" }}</td>
         </tr>
         <tr
           class="border-b-2 border-gray-200 transition-colors"
@@ -139,7 +133,7 @@
             highlightedCaseId === c.id ? 'bg-yellow-100' : 'bg-slate-50',
           ]"
         >
-          <td colspan="7" class="pb-3 pt-1 px-6">
+          <td colspan="4" class="pb-3 pt-1 px-6">
             <StatusStepper :status="c.status" />
           </td>
         </tr>
@@ -248,11 +242,9 @@ const toggleActiveOnly = () => {
 const sortValue = (c, field) => {
   switch (field) {
     case "caseNumber": return c.caseNumber;
-    case "agency": return c.Agency?.code || "";
     case "createdAt": return new Date(c.createdAt).getTime();
     case "station": return assignedVehicleFor(c)?.Station?.name || "";
     case "vehicle": return assignedVehicleFor(c)?.callSign || "";
-    case "location": return c.location || "";
     default: return "";
   }
 };
