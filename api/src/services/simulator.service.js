@@ -39,6 +39,13 @@ const positionForCase = (caseRecord, station) => {
   }
 };
 
+// A position only differs meaningfully if it moved more than this — guards
+// against rewriting the DB every tick over floating-point noise.
+const POSITION_EPSILON = 0.00001;
+const hasMoved = (vehicle, position) =>
+  Math.abs(vehicle.latitude - position.latitude) > POSITION_EPSILON ||
+  Math.abs(vehicle.longitude - position.longitude) > POSITION_EPSILON;
+
 // Places each active case's linked vehicle deterministically along the
 // station -> incident line, based purely on the case's current status — not
 // randomly wandering, and not time-based. This guarantees the vehicle can
@@ -62,47 +69,20 @@ const positionVehicles = async () => {
     }
   }
 
+  // Skip the write (and the log) entirely once a vehicle already sits at the
+  // position its case's status implies — a case's status rarely changes
+  // between ticks, so most ticks would otherwise rewrite identical rows.
+  let movedCount = 0;
   for (const caseRecord of caseByVehicle.values()) {
     const vehicle = caseRecord.Vehicle;
     const position = positionForCase(caseRecord, vehicle.Station);
+    if (!hasMoved(vehicle, position)) continue;
     await vehicle.update(position);
+    movedCount++;
   }
 
-  console.log(`Simulator tick: positioned ${caseByVehicle.size} vehicles`);
-};
-
-// Auto-progression (open -> dispatched -> en_route -> on_scene -> closed) is
-// intentionally disabled for now — statuses stay exactly as seeded so each
-// stage's fixed position can be inspected and compared side by side. Kept
-// here, unused, so it's easy to re-enable later for the "living system" demo.
-// eslint-disable-next-line no-unused-vars
-const progressCaseLifecycle = async () => {
-  const DISPATCH_TO_EN_ROUTE_MS = 15000;
-  const EN_ROUTE_TO_ON_SCENE_MS = 20000;
-  const ON_SCENE_TO_CLOSED_MS = 20000;
-
-  const activeCases = await Case.findAll({
-    where: { status: ["dispatched", "en_route", "on_scene"] },
-    include: [{ model: Vehicle }],
-  });
-
-  for (const caseRecord of activeCases) {
-    const elapsedMs = Date.now() - new Date(caseRecord.updatedAt).getTime();
-    const vehicle = caseRecord.Vehicle;
-
-    if (caseRecord.status === "dispatched" && elapsedMs > DISPATCH_TO_EN_ROUTE_MS) {
-      await caseRecord.update({ status: "en_route" });
-      if (vehicle) await vehicle.update({ status: "en_route" });
-      console.log(`Case ${caseRecord.caseNumber} -> en_route`);
-    } else if (caseRecord.status === "en_route" && elapsedMs > EN_ROUTE_TO_ON_SCENE_MS) {
-      await caseRecord.update({ status: "on_scene" });
-      if (vehicle) await vehicle.update({ status: "busy" });
-      console.log(`Case ${caseRecord.caseNumber} -> on_scene`);
-    } else if (caseRecord.status === "on_scene" && elapsedMs > ON_SCENE_TO_CLOSED_MS) {
-      await caseRecord.update({ status: "closed" });
-      if (vehicle) await vehicle.update({ status: "available" });
-      console.log(`Case ${caseRecord.caseNumber} -> closed`);
-    }
+  if (movedCount > 0) {
+    console.log(`Simulator tick: repositioned ${movedCount} vehicle(s)`);
   }
 };
 

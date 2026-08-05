@@ -41,6 +41,41 @@
         @click="resetFilters"
         class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600 cursor-pointer disabled:opacity-40 disabled:cursor-default"
       >Reset Filters</button>
+
+      <button
+        type="button"
+        :disabled="simulating"
+        @click="handleSimulate"
+        class="ml-auto px-3 py-1.5 text-sm border rounded bg-teal-600 text-white border-teal-600 hover:bg-teal-700 cursor-pointer transition disabled:opacity-60 disabled:cursor-default"
+      >{{ simulating ? "Simulating…" : "Simulate New Case" }}</button>
+    </div>
+
+    <!-- Brief heads-up toast when a simulated case is created — auto-dismisses, no action needed.
+         z-index is far above Leaflet's own panes/controls (which reach ~1000), so it doesn't get
+         rendered behind the map when the two overlap. -->
+    <div
+      v-if="simulateToast"
+      class="fixed top-4 right-4 bg-white border border-gray-200 shadow-lg rounded-lg text-sm max-w-xs"
+      style="z-index: 9999;"
+    >
+      <div class="px-4 py-3">
+        <span
+          class="inline-block text-[10px] font-bold uppercase tracking-wide text-white px-2 py-0.5 rounded-full mb-1.5"
+          :style="{ backgroundColor: simulateToast.isError ? '#ef4444' : AGENCY_COLORS[simulateToast.agencyCode] || '#0d9488' }"
+        >{{ simulateToast.isError ? "Error" : simulateToast.agencyCode }}</span>
+        <p class="font-medium text-gray-800">{{ simulateToast.title }}</p>
+        <p v-if="simulateToast.detail" class="text-gray-500 text-xs mt-0.5">{{ simulateToast.detail }}</p>
+        <div class="flex items-center gap-2 mt-2.5">
+          <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <div
+              ref="toastProgressRef"
+              class="h-full rounded-full"
+              :style="{ backgroundColor: simulateToast.isError ? '#ef4444' : '#0d9488' }"
+            ></div>
+          </div>
+          <span class="text-[11px] text-gray-400 tabular-nums w-6 text-right">{{ toastCountdown }}s</span>
+        </div>
+      </div>
     </div>
 
     <LoadingSpinner v-if="loading" />
@@ -75,7 +110,10 @@
             { 'bg-yellow-100': highlightedCaseId === c.id },
           ]"
         >
-          <td class="py-3 px-6 font-medium whitespace-nowrap">{{ c.caseNumber }}</td>
+          <td class="py-3 px-6 font-medium whitespace-nowrap">
+            {{ c.caseNumber }}
+            <span v-if="isNew(c)" class="ml-1.5 text-[10px] font-bold uppercase tracking-wide text-white bg-teal-600 px-1.5 py-0.5 rounded-full align-middle">New</span>
+          </td>
           <td class="py-3 px-6 whitespace-nowrap">{{ c.Agency?.code }}</td>
           <td class="py-3 px-6 text-gray-600 whitespace-nowrap">
             <div>{{ formatCreatedAt(c.createdAt) }}</div>
@@ -139,6 +177,9 @@ const props = defineProps({
   focusedCaseId: { type: String, default: null },
 });
 
+// Matches the agency colors used on the map/legend elsewhere in the app.
+const AGENCY_COLORS = { KKM: "#dc2626", PDRM: "#1e3a8a", JBPM: "#f59e0b" };
+
 const emit = defineEmits(["show-on-map"]);
 
 const authStore = useAuthStore();
@@ -163,6 +204,12 @@ const highlightedCaseId = ref(null);
 const rowRefs = {};
 let pollInterval;
 let highlightTimeout;
+const simulating = ref(false);
+const simulateToast = ref(null);
+const toastProgressRef = ref(null);
+const toastCountdown = ref(60);
+let simulateToastTimeout;
+let toastCountdownInterval;
 
 const registerRowRef = (id, el) => {
   if (el) rowRefs[id] = el;
@@ -251,6 +298,12 @@ const formatDuration = (createdAt) => {
   return `${minutes}m ago`;
 };
 
+// Re-evaluated on every render, so the badge naturally disappears once the
+// case ages past 5 minutes — no separate timer needed since the 5s poll
+// already re-renders the table regularly.
+const NEW_THRESHOLD_MS = 5 * 60 * 1000;
+const isNew = (c) => Date.now() - new Date(c.createdAt).getTime() < NEW_THRESHOLD_MS;
+
 const DEFAULT_SORT_FIELD = "createdAt";
 const DEFAULT_SORT_ORDER = "DESC";
 
@@ -280,6 +333,59 @@ const resetFilters = () => {
   agencyFilter.value = "";
   statusFilter.value = "";
   activeOnly.value = false;
+};
+
+const TOAST_DURATION_MS = 60000;
+const TOAST_DURATION_S = TOAST_DURATION_MS / 1000;
+
+const showSimulateToast = (toast) => {
+  simulateToast.value = toast;
+  clearTimeout(simulateToastTimeout);
+  simulateToastTimeout = setTimeout(() => {
+    simulateToast.value = null;
+    clearInterval(toastCountdownInterval);
+  }, TOAST_DURATION_MS);
+
+  clearInterval(toastCountdownInterval);
+  toastCountdown.value = TOAST_DURATION_S;
+  toastCountdownInterval = setInterval(() => {
+    toastCountdown.value = Math.max(0, toastCountdown.value - 1);
+    if (toastCountdown.value === 0) clearInterval(toastCountdownInterval);
+  }, 1000);
+
+  // Drive the progress bar manually (rather than a CSS transition triggered
+  // by a class/data change) so it reliably restarts from 100% even if a
+  // second toast replaces the first while one is still animating.
+  nextTick(() => {
+    const bar = toastProgressRef.value;
+    if (!bar) return;
+    bar.style.transition = "none";
+    bar.style.width = "100%";
+    void bar.offsetWidth; // force a reflow so the browser registers the reset before animating
+    bar.style.transition = `width ${TOAST_DURATION_MS}ms linear`;
+    bar.style.width = "0%";
+  });
+};
+
+const handleSimulate = async () => {
+  simulating.value = true;
+  try {
+    const result = await caseService.simulate();
+    showSimulateToast({
+      title: `New case reported: ${result.caseNumber}`,
+      detail: "Will progress through its stages automatically over the next minute.",
+      agencyCode: result.agencyCode,
+    });
+    await fetchCases();
+  } catch (err) {
+    showSimulateToast({
+      title: "Couldn't simulate a new case",
+      detail: err.response?.data?.message || "Please try again.",
+      isError: true,
+    });
+  } finally {
+    simulating.value = false;
+  }
 };
 
 // Triggered when a marker is clicked on the map — clears any table filter
@@ -345,5 +451,7 @@ onMounted(() => {
 onUnmounted(() => {
   clearInterval(pollInterval);
   clearTimeout(highlightTimeout);
+  clearTimeout(simulateToastTimeout);
+  clearInterval(toastCountdownInterval);
 });
 </script>

@@ -33,16 +33,21 @@ export const seedDatabase = async () => {
   const amb04 = await Vehicle.create({ agencyId: kkm.id, stationId: hospitalKL.id, callSign: "AMB-04", type: "ambulance", status: "dispatched", latitude: hospitalKL.latitude, longitude: hospitalKL.longitude });
   const amb02 = await Vehicle.create({ agencyId: kkm.id, stationId: hospitalSelayang.id, callSign: "AMB-02", type: "ambulance", status: "en_route", latitude: hospitalSelayang.latitude, longitude: hospitalSelayang.longitude });
   const amb03 = await Vehicle.create({ agencyId: kkm.id, stationId: hospitalSerdang.id, callSign: "AMB-03", type: "ambulance", status: "busy", latitude: hospitalSerdang.latitude, longitude: hospitalSerdang.longitude });
+  // Spare, unclaimed by any seed case — so "Simulate New Case" always has at
+  // least one free unit per agency to dispatch immediately after a reseed.
+  await Vehicle.create({ agencyId: kkm.id, stationId: hospitalSelayang.id, callSign: "AMB-05", type: "ambulance", status: "available", latitude: hospitalSelayang.latitude, longitude: hospitalSelayang.longitude });
 
   const pc01 = await Vehicle.create({ agencyId: pdrm.id, stationId: ipdDangWangi.id, callSign: "PC-01", type: "police_car", status: "available", latitude: ipdDangWangi.latitude, longitude: ipdDangWangi.longitude });
   const pc04 = await Vehicle.create({ agencyId: pdrm.id, stationId: ipdDangWangi.id, callSign: "PC-04", type: "police_car", status: "dispatched", latitude: ipdDangWangi.latitude, longitude: ipdDangWangi.longitude });
   const pc02 = await Vehicle.create({ agencyId: pdrm.id, stationId: ipdPJ.id, callSign: "PC-02", type: "police_car", status: "en_route", latitude: ipdPJ.latitude, longitude: ipdPJ.longitude });
   const pc03 = await Vehicle.create({ agencyId: pdrm.id, stationId: ipdShahAlam.id, callSign: "PC-03", type: "police_car", status: "busy", latitude: ipdShahAlam.latitude, longitude: ipdShahAlam.longitude });
+  await Vehicle.create({ agencyId: pdrm.id, stationId: ipdPJ.id, callSign: "PC-05", type: "police_car", status: "available", latitude: ipdPJ.latitude, longitude: ipdPJ.longitude });
 
   const ft01 = await Vehicle.create({ agencyId: jbpm.id, stationId: bombaHangTuah.id, callSign: "FT-01", type: "fire_truck", status: "available", latitude: bombaHangTuah.latitude, longitude: bombaHangTuah.longitude });
   const ft04 = await Vehicle.create({ agencyId: jbpm.id, stationId: bombaHangTuah.id, callSign: "FT-04", type: "fire_truck", status: "busy", latitude: bombaHangTuah.latitude, longitude: bombaHangTuah.longitude });
   const ft02 = await Vehicle.create({ agencyId: jbpm.id, stationId: bombaPJ.id, callSign: "FT-02", type: "fire_truck", status: "dispatched", latitude: bombaPJ.latitude, longitude: bombaPJ.longitude });
   const ft03 = await Vehicle.create({ agencyId: jbpm.id, stationId: bombaShahAlam.id, callSign: "FT-03", type: "fire_truck", status: "en_route", latitude: bombaShahAlam.latitude, longitude: bombaShahAlam.longitude });
+  await Vehicle.create({ agencyId: jbpm.id, stationId: bombaPJ.id, callSign: "FT-05", type: "fire_truck", status: "available", latitude: bombaPJ.latitude, longitude: bombaPJ.longitude });
 
   // Every agency has one case in every status: open, dispatched, en_route,
   // on_scene, closed — each active one with its own dedicated vehicle.

@@ -15,4 +15,9 @@ export const caseService = {
     const response = await api.patch(`/cases/${caseId}/dispatch`, { vehicleId });
     return response.data.data;
   },
+
+  async simulate() {
+    const response = await api.post("/cases/simulate");
+    return response.data.data;
+  },
 };

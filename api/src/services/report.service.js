@@ -3,7 +3,7 @@ import { getAllCases } from "./case.service.js";
 import { getAllVehicles } from "./vehicle.service.js";
 
 export const getCasesSummaryByStatus = async ({ agencyCode } = {}) => {
-  const cases = await getAllCases({ agencyCode });
+  const cases = await getAllCases({ agencyCode, includeAll: true });
   const summary = {};
   cases.forEach((c) => {
     summary[c.status] = (summary[c.status] || 0) + 1;
@@ -12,7 +12,7 @@ export const getCasesSummaryByStatus = async ({ agencyCode } = {}) => {
 };
 
 export const getCasesSummaryByAgency = async ({ agencyCode } = {}) => {
-  const cases = await getAllCases({ agencyCode });
+  const cases = await getAllCases({ agencyCode, includeAll: true });
   const summary = {};
   cases.forEach((c) => {
     const key = c.Agency?.code || "Unknown";
@@ -31,7 +31,7 @@ export const getVehicleUtilization = async ({ agencyCode } = {}) => {
 };
 
 export const generateCasesExcel = async ({ agencyCode, status } = {}) => {
-  const cases = await getAllCases({ agencyCode, status });
+  const cases = await getAllCases({ agencyCode, status, includeAll: true });
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Cases");
