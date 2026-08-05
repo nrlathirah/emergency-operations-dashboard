@@ -36,6 +36,20 @@
         Log In
       </button>
 
+      <div class="pt-1">
+        <p class="text-center text-[11px] text-gray-400 mb-2">Quick login for demo purposes</p>
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            v-for="role in quickLoginRoles"
+            :key="role.label"
+            type="button"
+            @click="quickFill(role)"
+            class="px-2 py-1.5 rounded-lg text-xs font-medium text-white cursor-pointer transition hover:opacity-90"
+            :style="{ backgroundColor: role.color }"
+          >{{ role.label }}</button>
+        </div>
+      </div>
+
       <p class="text-center text-[11px] text-gray-400 pt-2 border-t border-gray-100">
         Authorized personnel only · KKM · PDRM · JBPM
       </p>
@@ -53,6 +67,21 @@ const password = ref("");
 const error = ref("");
 const router = useRouter();
 const authStore = useAuthStore();
+
+// Seeded demo accounts (see api/src/seed.js) — colors match each agency's
+// header/badge color elsewhere in the app.
+const quickLoginRoles = [
+  { label: "Super Admin", email: "admin@ops.gov.my", color: "#581c87" },
+  { label: "KKM Staff", email: "ahmad.razak@kkm.gov.my", color: "#7f1d1d" },
+  { label: "PDRM Staff", email: "zul.hassan@pdrm.gov.my", color: "#1e3a8a" },
+  { label: "JBPM Staff", email: "faizal.anuar@jbpm.gov.my", color: "#92400e" },
+];
+
+const quickFill = (role) => {
+  email.value = role.email;
+  password.value = "password123";
+  error.value = "";
+};
 
 const handleLogin = async () => {
   error.value = "";
