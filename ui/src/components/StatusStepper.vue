@@ -17,7 +17,8 @@
       <div
         v-if="index < steps.length - 1"
         class="h-0.5 flex-1 mx-2 -mt-4"
-        :style="lineStyle(index)"
+        :class="{ 'progress-line--active': index === currentIndex }"
+        :style="index === currentIndex ? {} : lineStyle(index)"
       ></div>
     </template>
   </div>
@@ -56,3 +57,30 @@ const lineStyle = (index) => ({
   backgroundColor: index < currentIndex.value ? colors.main : "#e5e7eb",
 });
 </script>
+
+<style scoped>
+/* The segment leading from the current status toward the next one — a soft
+   base tint with a bright highlight sweeping across it on a loop, reading as
+   "in progress, heading there" instead of a static completed/pending line.
+   Only ever shows on the one segment right after the current step; there's
+   naturally no such segment once closed. */
+.progress-line--active {
+  position: relative;
+  background-color: #99f6e4;
+  overflow: hidden;
+}
+
+.progress-line--active::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 50%;
+  background: linear-gradient(to right, transparent, #0d9488, transparent);
+  animation: progress-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes progress-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(200%); }
+}
+</style>

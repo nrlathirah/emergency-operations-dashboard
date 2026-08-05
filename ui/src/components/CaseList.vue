@@ -34,7 +34,7 @@
         @click="toggleActiveOnly"
         class="px-3 py-1.5 text-sm border rounded cursor-pointer transition"
         :class="activeOnly ? 'bg-teal-600 text-white border-teal-600 hover:bg-teal-700' : 'hover:bg-gray-50 text-gray-600'"
-      >Active Only</button>
+      >Active Cases</button>
 
       <button
         :disabled="!agencyFilter && !statusFilter && !activeOnly"
@@ -414,7 +414,7 @@ watch(() => props.focusedCaseId, (value) => {
   jumpToCase(caseId);
 });
 
-// Picking a specific status from the dropdown overrides "Active Only" —
+// Picking a specific status from the dropdown overrides "Active Cases" —
 // the two would otherwise conflict (e.g. status=closed + non-closed-only).
 watch(statusFilter, (value) => {
   if (value) activeOnly.value = false;

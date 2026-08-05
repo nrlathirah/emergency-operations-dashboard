@@ -89,7 +89,7 @@ const headerColor = computed(() => {
 
 const badgeColor = computed(() => {
   if (authStore.user?.role === "super_admin") return "#7e22ce";
-  const colors = { KKM: "#dc2626", PDRM: "#1e3a8a", JBPM: "#f59e0b" };
+  const colors = { KKM: "#dc2626", PDRM: "#2563eb", JBPM: "#f59e0b" };
   return colors[authStore.user?.agency] || "#475569";
 });
 
