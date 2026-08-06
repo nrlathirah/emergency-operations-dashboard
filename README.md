@@ -13,7 +13,7 @@ A real-time, multi-agency emergency operations dashboard — live vehicle tracki
 
 ## Demo Login
 
-The dashboard requires login. Use any of these accounts (password for all: `password123`):
+The dashboard requires login. Click one of the quick-login buttons on the login page, or use any of these accounts manually (password for all: `password123`):
 
 | Email | Role | Access |
 |---|---|---|
@@ -32,13 +32,15 @@ To keep the dataset focused, this demo covers the **Klang Valley (Kuala Lumpur &
 
 ## Features
 
-- **Live map** — vehicles, stations (hospitals, police stations, fire stations), and active incidents shown with distinct icons, hover details, and a legend; positions update every few seconds
-- **Authentication & role-based access** — JWT login; agency `staff` see only their own agency's data, a `super_admin` role sees across all 3 agencies and manages users
+- **Live dashboard** — map and case table shown side by side, kept in sync: filtering the table refocuses the map, and clicking a marker or case jumps to the other; vehicles, stations, and active incidents are shown with distinct icons, an agency-scoped legend, hover details, and an animated progress sweep on active cases
+- **Authentication & role-based access** — JWT login; agency `staff` see only their own agency's data, a `super_admin` role sees across all 3 agencies and manages users; login page includes one-click quick-login buttons for each demo account
 - **Dispatch workflow** — one-click dispatch auto-assigns the nearest available vehicle (real distance calculation, not manual selection — this project displays and simulates, it doesn't control real dispatch decisions); the case and vehicle then progress automatically through a full lifecycle (`dispatched → en route → on scene → closed`)
+- **Live case simulation** — a "Simulate New Case" trigger creates a new incident on demand, with its own self-contained dispatch-to-close lifecycle, so the demo doesn't depend on waiting for the background simulator
 - **SLA tracking** — open cases are flagged once they exceed a priority-based response time target
-- **Case management** — filtering by agency/status, sortable columns
+- **Case management** — filtering by agency/status, sortable columns, pagination
 - **User management** — operator directory with search, sort, and pagination
 - **Reports** — case-status breakdown chart and Excel export
+- **Responsive design** — usable across desktop and mobile breakpoints, with loading states on async actions (login, export) for clear feedback
 - **Documented API** — full Postman collection included (`api/postman/`)
 
 ## Tech Stack
@@ -60,7 +62,7 @@ The backend follows a layered pattern: **route → controller → service**
 - **controller**: reads the request, calls a service, sends the response
 - **service**: contains the actual business logic / database query, including agency-scoping enforcement based on the requester's JWT
 
-A background simulator moves each vehicle's coordinates every 3 seconds and automatically progresses dispatched cases through their response lifecycle over time, which the frontend polls to create the "live" effect.
+A background simulator ticks every 3 seconds, positioning each active case's vehicle deterministically along the station→incident line based on the case's current status (not a random walk or time-based animation), and automatically progresses dispatched cases through their response lifecycle over time. The frontend polls this to create the "live" effect.
 
 ## Project Structure
 
