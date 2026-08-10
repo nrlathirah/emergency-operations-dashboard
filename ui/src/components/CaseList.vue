@@ -78,7 +78,10 @@
       </div>
     </div>
 
+    <p v-if="error && cases.length > 0" class="text-xs text-red-500 mb-2">⚠️ {{ error }} Showing last loaded data.</p>
+
     <LoadingSpinner v-if="loading" />
+    <ErrorBanner v-else-if="error && cases.length === 0" :message="error" @retry="fetchCases" />
     <div v-else class="flex-1 overflow-y-auto overflow-x-auto">
     <table class="min-w-[500px] text-sm border-collapse">
       <thead>
@@ -163,6 +166,7 @@ import { caseService } from "../services/caseService";
 import { vehicleService } from "../services/vehicleService";
 import { useAuthStore } from "../stores/auth";
 import LoadingSpinner from "./LoadingSpinner.vue";
+import ErrorBanner from "./ErrorBanner.vue";
 import StatusStepper from "./StatusStepper.vue";
 
 const props = defineProps({
@@ -194,6 +198,7 @@ const activeOnly = ref(false);
 const sortField = ref(null);
 const sortOrder = ref("ASC");
 const loading = ref(true);
+const error = ref(null);
 const highlightedCaseId = ref(null);
 const rowRefs = {};
 let pollInterval;
@@ -211,15 +216,27 @@ const registerRowRef = (id, el) => {
 };
 
 const fetchCases = async () => {
-  cases.value = await caseService.getAll({
-    agencyCode: agencyFilter.value || undefined,
-    status: statusFilter.value || undefined,
-  });
-  loading.value = false;
+  try {
+    cases.value = await caseService.getAll({
+      agencyCode: agencyFilter.value || undefined,
+      status: statusFilter.value || undefined,
+    });
+    error.value = null;
+  } catch (err) {
+    error.value = "Failed to load cases.";
+  } finally {
+    loading.value = false;
+  }
 };
 
 const fetchVehicles = async () => {
-  vehicles.value = await vehicleService.getAll();
+  try {
+    vehicles.value = await vehicleService.getAll();
+  } catch (err) {
+    // Non-critical — the table still renders fine without vehicle enrichment,
+    // just falling back to "—" for Station/Vehicle ID.
+    console.error("Failed to load vehicles:", err);
+  }
 };
 
 const assignedVehicleFor = (c) => vehicles.value.find((v) => v.id === c.vehicleId);

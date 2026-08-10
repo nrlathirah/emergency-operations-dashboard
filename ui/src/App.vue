@@ -42,6 +42,9 @@
     <main :class="authStore.isLoggedIn ? 'p-4 sm:p-6 max-w-screen-2xl mx-auto' : ''">
       <RouterView />
     </main>
+    <footer v-if="authStore.isLoggedIn" class="text-center text-xs text-gray-400 py-4 border-t border-gray-200">
+      Emergency Operations Dashboard · Multi-Agency Coordination Platform
+    </footer>
   </div>
 </template>
 

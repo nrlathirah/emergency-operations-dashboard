@@ -17,7 +17,10 @@
       </select>
     </div>
 
+    <p v-if="error && users.length > 0" class="text-xs text-red-500 mb-2">⚠️ {{ error }} Showing last loaded data.</p>
+
     <LoadingSpinner v-if="loading" />
+    <ErrorBanner v-else-if="error && users.length === 0" :message="error" @retry="fetchUsers" />
     <template v-else>
       <div class="overflow-x-auto">
       <table class="w-full min-w-[600px] text-sm border-collapse">
@@ -69,6 +72,7 @@ import { ref, computed, watch, onMounted } from "vue";
 import { userService } from "../services/userService";
 import { useAuthStore } from "../stores/auth";
 import LoadingSpinner from "./LoadingSpinner.vue";
+import ErrorBanner from "./ErrorBanner.vue";
 
 const authStore = useAuthStore();
 const isSuperAdmin = computed(() => authStore.user?.role === "super_admin");
@@ -82,21 +86,28 @@ const page = ref(1);
 const limit = 5;
 const total = ref(0);
 const loading = ref(true);
+const error = ref(null);
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit)));
 
 const fetchUsers = async () => {
-  const result = await userService.getAll({
-    search: search.value || undefined,
-    agencyCode: agencyFilter.value || undefined,
-    sort: sortField.value,
-    order: sortOrder.value,
-    page: page.value,
-    limit,
-  });
-  users.value = result.data;
-  total.value = result.total;
-  loading.value = false;
+  try {
+    const result = await userService.getAll({
+      search: search.value || undefined,
+      agencyCode: agencyFilter.value || undefined,
+      sort: sortField.value,
+      order: sortOrder.value,
+      page: page.value,
+      limit,
+    });
+    users.value = result.data;
+    total.value = result.total;
+    error.value = null;
+  } catch (err) {
+    error.value = "Failed to load users.";
+  } finally {
+    loading.value = false;
+  }
 };
 
 const toggleSort = (field) => {

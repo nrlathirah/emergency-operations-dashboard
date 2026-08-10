@@ -11,9 +11,11 @@
     <div class="relative">
       <div id="map" style="height: 500px; width: 100%;" class="rounded"></div>
       <div v-if="mapLoading" class="absolute inset-0 flex items-center justify-center bg-white/70 rounded">
-        <LoadingSpinner />
+        <ErrorBanner v-if="error" :message="error" @retry="loadInitialData" />
+        <LoadingSpinner v-else />
       </div>
     </div>
+    <p v-if="error && !mapLoading" class="text-xs text-red-500 mt-2">⚠️ {{ error }} Showing last loaded data.</p>
 
     <div class="flex flex-wrap gap-4 mt-3 text-xs text-gray-600">
       <span v-if="showAgency('KKM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyStationTypeVisible('hospital') }">
@@ -73,6 +75,7 @@ import { caseService } from "../services/caseService";
 import { stationService } from "../services/stationService";
 import { useAuthStore } from "../stores/auth";
 import LoadingSpinner from "./LoadingSpinner.vue";
+import ErrorBanner from "./ErrorBanner.vue";
 
 const props = defineProps({
   agencyFilter: { type: String, default: "" },
@@ -99,6 +102,7 @@ const stationMarkers = {};
 const routeLines = {};
 let pollTimer;
 const mapLoading = ref(true);
+const error = ref(null);
 
 const DEFAULT_CENTER = [3.139, 101.6869];
 const DEFAULT_ZOOM = 11;
@@ -475,21 +479,42 @@ const renderVehicles = async (activeCases) => {
 };
 
 const refresh = async () => {
-  const activeCases = await renderIncidents();
-  await renderVehicles(activeCases);
+  try {
+    const activeCases = await renderIncidents();
+    await renderVehicles(activeCases);
 
-  // Auto-clear focus if the focused incident/station's story is no longer active
-  if (focus.value?.type === "incident" && !activeCasesData.value.some((c) => c.id === focus.value.id)) {
-    clearFocus();
-  } else if (
-    focus.value?.type === "station" &&
-    !activeVehiclesData.value.some((v) => v.stationId === focus.value.id)
-  ) {
-    clearFocus();
+    // Auto-clear focus if the focused incident/station's story is no longer active
+    if (focus.value?.type === "incident" && !activeCasesData.value.some((c) => c.id === focus.value.id)) {
+      clearFocus();
+    } else if (
+      focus.value?.type === "station" &&
+      !activeVehiclesData.value.some((v) => v.stationId === focus.value.id)
+    ) {
+      clearFocus();
+    }
+
+    applyOpacity();
+    error.value = null;
+  } catch (err) {
+    // On a background poll failure, keep showing whatever was last rendered
+    // rather than clearing the map — only the initial load treats this as
+    // blocking (see loadInitialData).
+    error.value = "Failed to refresh map data.";
+  } finally {
+    mapLoading.value = false;
   }
+};
 
-  applyOpacity();
-  mapLoading.value = false;
+const loadInitialData = async () => {
+  try {
+    error.value = null;
+    await renderStations();
+  } catch (err) {
+    error.value = "Failed to load map data.";
+    mapLoading.value = false;
+    return;
+  }
+  await refresh();
 };
 
 const addCoverageMask = () => {
@@ -531,8 +556,7 @@ onMounted(async () => {
   }).addTo(map);
 
   addCoverageMask();
-  await renderStations();
-  await refresh();
+  await loadInitialData();
 
   pollTimer = setInterval(refresh, 3000);
 });
