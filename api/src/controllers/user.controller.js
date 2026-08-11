@@ -1,4 +1,4 @@
-import { getAllUsers } from "#services/user.service.js";
+import { getAllUsers, createUser, updateUserStatus, changeOwnPassword, resetUserPassword } from "#services/user.service.js";
 import { getScopedAgency } from "#utils/scope.util.js";
 
 export const listUsers = async (req, res, next) => {
@@ -23,5 +23,51 @@ export const listUsers = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+export const createUserController = async (req, res, next) => {
+  try {
+    const { name, email, password, role, agencyCode } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email, and password are required." });
+    }
+
+    const user = await createUser({ name, email, password, role: role || "staff", agencyCode });
+    res.status(201).json({ data: user });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const updateUserStatusController = async (req, res, next) => {
+  try {
+    const user = await updateUserStatus({ userId: req.params.id, status: req.body.status });
+    res.status(200).json({ data: user });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const changePasswordController = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current and new password are required." });
+    }
+    await changeOwnPassword({ userId: req.user.id, currentPassword, newPassword });
+    res.status(200).json({ message: "Password changed successfully." });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const resetPasswordController = async (req, res, next) => {
+  try {
+    const { newPassword } = req.body;
+    await resetUserPassword({ userId: req.params.id, newPassword });
+    res.status(200).json({ message: "Password reset successfully." });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };

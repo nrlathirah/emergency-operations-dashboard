@@ -19,12 +19,7 @@
 
       <div>
         <label class="block text-sm text-gray-600 mb-1">Password</label>
-        <input
-          v-model="password"
-          type="password"
-          required
-          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-        />
+        <PasswordInput v-model="password" size="lg" required />
       </div>
 
       <p v-if="error" class="text-red-600 text-sm text-center">{{ error }}</p>
@@ -68,6 +63,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
+import PasswordInput from "../components/PasswordInput.vue";
 
 const email = ref("");
 const password = ref("");
@@ -97,7 +93,7 @@ const handleLogin = async () => {
   loading.value = true;
   try {
     await authStore.login(email.value, password.value);
-    router.push("/");
+    router.push(authStore.user?.mustChangePassword ? "/change-password-required" : "/");
   } catch (err) {
     error.value = "Invalid email or password. Please try again.";
   } finally {

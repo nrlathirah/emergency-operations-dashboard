@@ -86,7 +86,10 @@ export const seedDatabase = async () => {
   ];
 
   for (const u of users) {
-    await User.create(u);
+    // Demo/quick-login accounts skip the forced first-login password change
+    // (defaultValue: true on the model) — they're meant for frictionless
+    // portfolio demoing, not the real admin-created-user flow.
+    await User.create({ ...u, mustChangePassword: false });
   }
 
   console.log("Seed complete");

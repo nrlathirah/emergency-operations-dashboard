@@ -15,3 +15,11 @@ export const authenticate = (req, res, next) => {
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
+
+// Must run after authenticate — relies on req.user already being set.
+export const requireSuperAdmin = (req, res, next) => {
+  if (req.user?.role !== "super_admin") {
+    return res.status(403).json({ message: "Super admin access required" });
+  }
+  next();
+};

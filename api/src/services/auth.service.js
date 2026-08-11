@@ -31,6 +31,7 @@ export const login = async ({ email, password }) => {
       email: user.email,
       role: user.role,
       agency: user.Agency?.code || null,
+      mustChangePassword: user.mustChangePassword,
     },
   };
 };

@@ -17,6 +17,7 @@
               :style="{ backgroundColor: badgeColor }"
             >{{ roleLabel }}</span>
           </div>
+          <button @click="showChangePassword = true" class="bg-black/20 px-3 py-1.5 rounded hover:bg-black/30 transition cursor-pointer">Change Password</button>
           <button @click="handleLogout" class="bg-black/20 px-3 py-1.5 rounded hover:bg-black/30 transition cursor-pointer">Logout</button>
         </div>
       </div>
@@ -45,13 +46,53 @@
     <footer v-if="authStore.isLoggedIn" class="text-center text-xs text-gray-400 py-4 border-t border-gray-200">
       Emergency Operations Dashboard · Multi-Agency Coordination Platform
     </footer>
+
+    <!-- Change Password modal. z-index far above Leaflet's own panes/controls
+         (which reach ~1000) — otherwise the map renders on top of this. -->
+    <div v-if="showChangePassword" class="fixed inset-0 flex items-center justify-center bg-black/40 px-4" style="z-index: 9999;">
+      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-800">
+        <h3 class="text-base font-semibold mb-4">Change Password</h3>
+        <form @submit.prevent="handleChangePassword" class="space-y-3">
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Current Password</label>
+            <PasswordInput v-model="passwordForm.current" required />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">New Password</label>
+            <PasswordInput v-model="passwordForm.new" required minlength="6" />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Confirm New Password</label>
+            <PasswordInput v-model="passwordForm.confirm" required minlength="6" />
+          </div>
+
+          <p v-if="passwordError" class="text-red-600 text-xs">{{ passwordError }}</p>
+          <p v-if="passwordSuccess" class="text-teal-600 text-xs">{{ passwordSuccess }}</p>
+
+          <div class="flex gap-2 pt-2">
+            <button
+              type="button"
+              @click="closeChangePassword"
+              class="flex-1 px-3 py-2 border rounded text-sm hover:bg-gray-50 cursor-pointer"
+            >Cancel</button>
+            <button
+              type="submit"
+              :disabled="changingPassword"
+              class="flex-1 px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer disabled:opacity-60 disabled:cursor-default"
+            >{{ changingPassword ? "Saving…" : "Save" }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "./stores/auth";
+import { userService } from "./services/userService";
+import PasswordInput from "./components/PasswordInput.vue";
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -107,5 +148,36 @@ const canManageUsers = computed(() => authStore.user?.role === "super_admin");
 const handleLogout = () => {
   authStore.logout();
   router.push("/login");
+};
+
+const showChangePassword = ref(false);
+const changingPassword = ref(false);
+const passwordError = ref("");
+const passwordSuccess = ref("");
+const passwordForm = ref({ current: "", new: "", confirm: "" });
+
+const closeChangePassword = () => {
+  showChangePassword.value = false;
+};
+
+const handleChangePassword = async () => {
+  passwordError.value = "";
+  passwordSuccess.value = "";
+
+  if (passwordForm.value.new !== passwordForm.value.confirm) {
+    passwordError.value = "New password and confirmation don't match.";
+    return;
+  }
+
+  changingPassword.value = true;
+  try {
+    await userService.changeMyPassword(passwordForm.value.current, passwordForm.value.new);
+    passwordSuccess.value = "Password changed successfully.";
+    passwordForm.value = { current: "", new: "", confirm: "" };
+  } catch (err) {
+    passwordError.value = err.response?.data?.message || "Failed to change password.";
+  } finally {
+    changingPassword.value = false;
+  }
 };
 </script>

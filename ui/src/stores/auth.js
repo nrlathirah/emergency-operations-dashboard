@@ -23,5 +23,13 @@ export const useAuthStore = defineStore("auth", {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
     },
+    // Clears the forced-change flag locally right after a successful
+    // password change, so the router guard stops redirecting without
+    // needing a fresh login/token.
+    clearMustChangePassword() {
+      if (!this.user) return;
+      this.user = { ...this.user, mustChangePassword: false };
+      localStorage.setItem("user", JSON.stringify(this.user));
+    },
   },
 });
