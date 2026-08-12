@@ -14,6 +14,7 @@ export const User = sequelize.define(
     // set the password — created or reset. Forces a mandatory change on next
     // login so the admin's knowledge of the password is only ever temporary.
     mustChangePassword: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    lastLoginAt: { type: DataTypes.DATE, allowNull: true },
   },
   {
     defaultScope: {

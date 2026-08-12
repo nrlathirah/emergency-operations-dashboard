@@ -1,10 +1,11 @@
 import { api } from "./api";
 
 export const userService = {
-  async getAll({ search, agencyCode, sort, order, page, limit } = {}) {
+  async getAll({ search, agencyCode, status, sort, order, page, limit } = {}) {
     const params = {};
     if (search) params.search = search;
     if (agencyCode) params.agency = agencyCode;
+    if (status) params.status = status;
     if (sort) params.sort = sort;
     if (order) params.order = order;
     if (page) params.page = page;
@@ -12,6 +13,18 @@ export const userService = {
 
     const response = await api.get("/users", { params });
     return response.data; // { data, total, page, limit }
+  },
+
+  // Uses the shared `api` axios instance (not a plain <a href>) so the
+  // Authorization header actually gets attached to the request.
+  async downloadUsersExcel({ search, agencyCode, status } = {}) {
+    const params = {};
+    if (search) params.search = search;
+    if (agencyCode) params.agency = agencyCode;
+    if (status) params.status = status;
+
+    const response = await api.get("/users/export", { params, responseType: "blob" });
+    return response.data;
   },
 
   async create({ name, email, password, role, agencyCode }) {
@@ -34,5 +47,13 @@ export const userService = {
   async resetPassword(userId, newPassword) {
     const response = await api.patch(`/users/${userId}/reset-password`, { newPassword });
     return response.data;
+  },
+
+  async getAuditLog({ page, limit } = {}) {
+    const params = {};
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    const response = await api.get("/users/audit-log", { params });
+    return response.data; // { data, total, page, limit }
   },
 };

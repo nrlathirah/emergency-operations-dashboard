@@ -4,6 +4,7 @@ import { Vehicle } from "#models/vehicle.model.js";
 import { Case } from "#models/case.model.js";
 import { User } from "#models/user.model.js";
 import { Station } from "#models/station.model.js";
+import { AuditLog } from "#models/auditLog.model.js";
 
 Agency.hasMany(Vehicle, { foreignKey: "agencyId" });
 Vehicle.belongsTo(Agency, { foreignKey: "agencyId" });
@@ -23,9 +24,13 @@ Station.belongsTo(Agency, { foreignKey: "agencyId" });
 Station.hasMany(Vehicle, { foreignKey: "stationId" });
 Vehicle.belongsTo(Station, { foreignKey: "stationId" });
 
+User.hasMany(AuditLog, { foreignKey: "actorId", as: "ActionsPerformed" });
+AuditLog.belongsTo(User, { foreignKey: "actorId", as: "Actor" });
+AuditLog.belongsTo(User, { foreignKey: "targetUserId", as: "Target" });
+
 export const syncDatabase = async () => {
   await sequelize.sync();
   console.log("Database synced");
 };
 
-export { sequelize, Agency, Vehicle, Case, User, Station };
+export { sequelize, Agency, Vehicle, Case, User, Station, AuditLog };
