@@ -2,10 +2,16 @@
   <div class="bg-white rounded-lg shadow p-4">
     <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
       <h2 class="text-lg font-semibold">User Management</h2>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
         <button
           type="button"
-          :disabled="exporting"
+          @click="showActivityDrawer = true"
+          class="px-3 py-1.5 border rounded text-sm hover:bg-gray-50 cursor-pointer transition"
+        >🕒 Activity</button>
+        <button
+          type="button"
+          :disabled="exporting || total === 0"
+          :title="total === 0 ? 'No users to export' : ''"
           @click="handleExport"
           class="px-3 py-1.5 border rounded text-sm hover:bg-gray-50 cursor-pointer transition disabled:opacity-60 disabled:cursor-default"
         >{{ exporting ? "Generating…" : "Export to Excel" }}</button>
@@ -35,6 +41,11 @@
         <option value="active">Active</option>
         <option value="inactive">Inactive</option>
       </select>
+      <select v-model="roleFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
+        <option value="">All Roles</option>
+        <option value="staff">Staff</option>
+        <option value="super_admin">Super Admin</option>
+      </select>
     </div>
 
     <p v-if="error && users.length > 0" class="text-xs text-red-500 mb-2">⚠️ {{ error }} Showing last loaded data.</p>
@@ -48,28 +59,28 @@
           <tr class="border-b border-gray-200 text-left text-gray-500">
             <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('name')">Name {{ sortIndicator('name') }}</th>
             <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('email')">Email {{ sortIndicator('email') }}</th>
-            <th class="py-2 pr-4 whitespace-nowrap">Agency</th>
             <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('role')">Role {{ sortIndicator('role') }}</th>
+            <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('agency')">Agency {{ sortIndicator('agency') }}</th>
             <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('status')">Status {{ sortIndicator('status') }}</th>
-            <th class="py-2 pr-4 whitespace-nowrap">Last Login</th>
             <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('createdAt')">Created {{ sortIndicator('createdAt') }}</th>
-            <th class="py-2 pr-4 whitespace-nowrap">Actions</th>
+            <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('lastLoginAt')">Last Login {{ sortIndicator('lastLoginAt') }}</th>
+            <th class="py-2 pr-4 whitespace-nowrap"></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="u in users" :key="u.id" class="border-b border-gray-100 hover:bg-gray-50">
             <td class="py-2 pr-4 font-medium whitespace-nowrap">{{ u.name }}</td>
             <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">{{ u.email }}</td>
-            <td class="py-2 pr-4 whitespace-nowrap">{{ u.Agency?.code || "—" }}</td>
             <td class="py-2 pr-4 capitalize whitespace-nowrap">{{ u.role }}</td>
+            <td class="py-2 pr-4 whitespace-nowrap">{{ u.Agency?.code || "—" }}</td>
             <td class="py-2 pr-4 whitespace-nowrap">
               <span
                 class="px-2 py-0.5 rounded-full text-xs"
                 :class="u.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
               >{{ u.status }}</span>
             </td>
-            <td class="py-2 pr-4 text-gray-500 whitespace-nowrap">{{ formatDate(u.lastLoginAt) || "Never" }}</td>
             <td class="py-2 pr-4 text-gray-500 whitespace-nowrap">{{ formatDate(u.createdAt) }}</td>
+            <td class="py-2 pr-4 text-gray-500 whitespace-nowrap">{{ formatDate(u.lastLoginAt) || "Never" }}</td>
             <td class="py-2 pr-4 whitespace-nowrap">
               <button
                 type="button"
@@ -78,6 +89,17 @@
                 class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 cursor-pointer text-gray-500 text-lg leading-none"
                 :aria-label="`Actions for ${u.name}`"
               >⋮</button>
+            </td>
+          </tr>
+          <tr v-if="users.length === 0">
+            <td colspan="8" class="py-8 text-center text-gray-400 text-sm">
+              <p>No users found{{ hasActiveFilters ? " matching your filters" : "" }}.</p>
+              <button
+                v-if="hasActiveFilters"
+                type="button"
+                @click="clearFilters"
+                class="mt-2 text-teal-600 hover:underline cursor-pointer text-xs"
+              >Clear filters</button>
             </td>
           </tr>
         </tbody>
@@ -118,33 +140,66 @@
         >{{ actionError }}</div>
       </Teleport>
 
-      <div class="flex items-center gap-3 mt-4 text-sm">
-        <button
-          :disabled="page === 1"
-          @click="page--"
-          class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
-        >Previous</button>
-        <span class="text-gray-600">Page {{ page }} of {{ totalPages }}</span>
-        <button
-          :disabled="page === totalPages"
-          @click="page++"
-          class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
-        >Next</button>
-      </div>
-
-      <div class="mt-6 pt-4 border-t border-gray-100">
-        <h3 class="text-sm font-semibold text-gray-700 mb-2">Recent Activity</h3>
-        <ul v-if="auditLogs.length" class="space-y-1.5 text-xs text-gray-600">
-          <li v-for="log in auditLogs" :key="log.id">
-            <span class="font-medium text-gray-800">{{ log.Actor?.name || "Unknown" }}</span>
-            {{ auditActionLabel(log.action) }}
-            <span v-if="log.Target" class="font-medium text-gray-800">{{ log.Target.name }}</span>
-            <span class="text-gray-400">· {{ formatDate(log.createdAt) }}</span>
-          </li>
-        </ul>
-        <p v-else class="text-xs text-gray-400">No activity yet.</p>
+      <div class="flex items-center gap-3 mt-4 text-sm flex-wrap">
+        <span class="text-gray-500 text-xs">Showing {{ rangeStart }}–{{ rangeEnd }} of {{ total }} users</span>
+        <div class="flex items-center gap-3 sm:ml-auto">
+          <button
+            :disabled="page === 1"
+            @click="page--"
+            class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
+          >Previous</button>
+          <span class="text-gray-600">Page {{ page }} of {{ totalPages }}</span>
+          <button
+            :disabled="page === totalPages"
+            @click="page++"
+            class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
+          >Next</button>
+        </div>
       </div>
     </template>
+
+    <!-- Recent Activity slide-over drawer -->
+    <Teleport to="body">
+      <div v-if="showActivityDrawer" class="fixed inset-0" style="z-index: 9999;">
+        <div class="absolute inset-0 bg-black/40" @click="showActivityDrawer = false"></div>
+        <div class="absolute right-0 top-0 h-full w-full max-w-sm bg-white shadow-xl flex flex-col">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <h3 class="text-sm font-semibold text-gray-800">🕒 Recent Activity</h3>
+            <button
+              type="button"
+              @click="showActivityDrawer = false"
+              class="text-gray-400 hover:text-gray-600 cursor-pointer text-lg leading-none"
+              aria-label="Close"
+            >✕</button>
+          </div>
+          <div class="flex-1 overflow-y-auto px-4 py-3">
+            <p v-if="auditError" class="text-xs text-red-500 mb-3">
+              ⚠️ {{ auditError }}
+              <button type="button" @click="fetchAuditLog()" class="underline cursor-pointer">Retry</button>
+            </p>
+            <ul v-if="auditLogs.length" class="space-y-3 text-xs text-gray-600">
+              <li v-for="log in auditLogs" :key="log.id" class="pb-3 border-b border-gray-50 last:border-0">
+                <span class="font-medium text-gray-800">{{ log.Actor?.name || "Unknown" }}</span>
+                {{ auditActionLabel(log.action) }}
+                <span v-if="log.Target" class="font-medium text-gray-800">{{ log.Target.name }}</span>
+                <div class="text-gray-400 mt-0.5">{{ formatDate(log.createdAt) }}</div>
+              </li>
+            </ul>
+            <p v-else-if="!auditError" class="text-xs text-gray-400">No activity yet.</p>
+          </div>
+          <div v-if="auditLogs.length" class="px-4 py-3 border-t border-gray-100 text-center">
+            <p class="text-[11px] text-gray-400 mb-2">Showing {{ auditLogs.length }} of {{ auditTotal }}</p>
+            <button
+              v-if="auditLogs.length < auditTotal"
+              type="button"
+              :disabled="auditLoadingMore"
+              @click="loadMoreAuditLog"
+              class="px-3 py-1.5 border rounded text-xs hover:bg-gray-50 cursor-pointer disabled:opacity-60 disabled:cursor-default"
+            >{{ auditLoadingMore ? "Loading…" : "Load More" }}</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- Add User modal -->
     <div v-if="showAddUser" class="fixed inset-0 flex items-center justify-center bg-black/40 px-4" style="z-index: 9999;">
@@ -341,18 +396,37 @@ const users = ref([]);
 const search = ref("");
 const agencyFilter = ref("");
 const statusFilter = ref("");
+const roleFilter = ref("");
 const sortField = ref("name");
 const sortOrder = ref("ASC");
 const page = ref(1);
 const limit = 10;
 const total = ref(0);
+
+const hasActiveFilters = computed(
+  () => !!(search.value || agencyFilter.value || statusFilter.value || roleFilter.value)
+);
+const clearFilters = () => {
+  search.value = "";
+  agencyFilter.value = "";
+  statusFilter.value = "";
+  roleFilter.value = "";
+};
 const loading = ref(true);
 const error = ref(null);
 const togglingId = ref(null);
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit)));
+const rangeStart = computed(() => (total.value === 0 ? 0 : (page.value - 1) * limit + 1));
+const rangeEnd = computed(() => Math.min(page.value * limit, total.value));
 
+const showActivityDrawer = ref(false);
 const auditLogs = ref([]);
+const auditTotal = ref(0);
+const auditPage = ref(1);
+const auditLoadingMore = ref(false);
+const auditError = ref("");
+const AUDIT_PAGE_SIZE = 10;
 const AUDIT_ACTION_LABELS = {
   create_user: "created user",
   activate_user: "activated",
@@ -361,13 +435,25 @@ const AUDIT_ACTION_LABELS = {
 };
 const auditActionLabel = (action) => AUDIT_ACTION_LABELS[action] || action;
 
-const fetchAuditLog = async () => {
+// `reset` starts back at page 1 and replaces the list — used on mount and
+// after any action, so the newest entry always surfaces at the top.
+const fetchAuditLog = async (reset = true) => {
+  if (reset) auditPage.value = 1;
   try {
-    const result = await userService.getAuditLog({ limit: 10 });
-    auditLogs.value = result.data;
+    const result = await userService.getAuditLog({ page: auditPage.value, limit: AUDIT_PAGE_SIZE });
+    auditLogs.value = reset ? result.data : [...auditLogs.value, ...result.data];
+    auditTotal.value = result.total;
+    auditError.value = "";
   } catch (err) {
-    // Non-critical — the activity feed just stays empty/stale on failure.
+    auditError.value = "Couldn't load activity.";
   }
+};
+
+const loadMoreAuditLog = async () => {
+  auditLoadingMore.value = true;
+  auditPage.value += 1;
+  await fetchAuditLog(false);
+  auditLoadingMore.value = false;
 };
 
 const fetchUsers = async () => {
@@ -376,6 +462,7 @@ const fetchUsers = async () => {
       search: search.value || undefined,
       agencyCode: agencyFilter.value || undefined,
       status: statusFilter.value || undefined,
+      role: roleFilter.value || undefined,
       sort: sortField.value,
       order: sortOrder.value,
       page: page.value,
@@ -400,6 +487,7 @@ const handleExport = async () => {
       search: search.value || undefined,
       agencyCode: agencyFilter.value || undefined,
       status: statusFilter.value || undefined,
+      role: roleFilter.value || undefined,
     });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -414,12 +502,24 @@ const handleExport = async () => {
   }
 };
 
+// First click on a column starts at whichever direction reads most natural
+// for that data — alphabetical for text, newest-first for dates.
+const SORT_DEFAULT_DIRECTION = {
+  name: "ASC",
+  email: "ASC",
+  role: "ASC",
+  agency: "ASC",
+  status: "ASC",
+  createdAt: "DESC",
+  lastLoginAt: "DESC",
+};
+
 const toggleSort = (field) => {
   if (sortField.value === field) {
     sortOrder.value = sortOrder.value === "ASC" ? "DESC" : "ASC";
   } else {
     sortField.value = field;
-    sortOrder.value = "ASC";
+    sortOrder.value = SORT_DEFAULT_DIRECTION[field] || "ASC";
   }
 };
 
@@ -461,7 +561,9 @@ const toggleActionMenu = (u, event) => {
     return;
   }
   const rect = event.currentTarget.getBoundingClientRect();
-  actionMenuPos.value = { top: rect.bottom + 4, left: rect.right - 176 };
+  const MENU_WIDTH = 176; // matches the drawer's w-44
+  const left = Math.min(Math.max(8, rect.right - MENU_WIDTH), window.innerWidth - MENU_WIDTH - 8);
+  actionMenuPos.value = { top: rect.bottom + 4, left };
   actionMenuUser.value = u;
 };
 
@@ -555,7 +657,7 @@ const handleResetPassword = async () => {
   }
 };
 
-watch([search, agencyFilter, statusFilter, sortField, sortOrder], () => {
+watch([search, agencyFilter, statusFilter, roleFilter, sortField, sortOrder], () => {
   page.value = 1;
   fetchUsers();
 });

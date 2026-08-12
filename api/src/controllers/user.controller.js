@@ -11,6 +11,7 @@ export const listUsers = async (req, res, next) => {
       search: req.query.search,
       agencyCode: getScopedAgency(req),
       status: req.query.status,
+      role: req.query.role,
       sort: req.query.sort,
       order: req.query.order,
       page,
@@ -34,6 +35,7 @@ export const exportUsersExcel = async (req, res, next) => {
       search: req.query.search,
       agencyCode: getScopedAgency(req),
       status: req.query.status,
+      role: req.query.role,
     });
 
     res.setHeader(

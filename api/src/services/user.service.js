@@ -4,9 +4,9 @@ import { User, Agency } from "#models/index.js";
 import { Op } from "sequelize";
 import { recordAuditLog } from "./audit.service.js";
 
-const ALLOWED_SORT_FIELDS = ["name", "email", "role", "status", "createdAt"];
+const ALLOWED_SORT_FIELDS = ["name", "email", "role", "status", "createdAt", "lastLoginAt"];
 
-export const getAllUsers = async ({ search, agencyCode, status, sort, order, page = 1, limit = 5 } = {}) => {
+export const getAllUsers = async ({ search, agencyCode, status, role, sort, order, page = 1, limit = 5 } = {}) => {
   const where = {};
   if (search) {
     where[Op.or] = [
@@ -17,18 +17,27 @@ export const getAllUsers = async ({ search, agencyCode, status, sort, order, pag
   if (["active", "inactive"].includes(status)) {
     where.status = status;
   }
+  if (["staff", "super_admin"].includes(role)) {
+    where.role = role;
+  }
 
   const include = [{ model: Agency, attributes: ["code", "name"] }];
   if (agencyCode) include[0].where = { code: agencyCode };
 
-  const sortField = ALLOWED_SORT_FIELDS.includes(sort) ? sort : "name";
   const sortOrder = order === "DESC" ? "DESC" : "ASC";
   const offset = (page - 1) * limit;
+
+  // Agency isn't a column on User itself — it's the joined table's `code`,
+  // so it needs Sequelize's [Model, column, direction] order syntax instead.
+  const orderClause =
+    sort === "agency"
+      ? [[Agency, "code", sortOrder]]
+      : [[ALLOWED_SORT_FIELDS.includes(sort) ? sort : "name", sortOrder]];
 
   const { rows, count } = await User.findAndCountAll({
     where,
     include,
-    order: [[sortField, sortOrder]],
+    order: orderClause,
     limit,
     offset,
   });
@@ -39,7 +48,7 @@ export const getAllUsers = async ({ search, agencyCode, status, sort, order, pag
 // Reuses the same filters as getAllUsers but returns every matching row
 // (no pagination) as an .xlsx buffer. Password is never included — the
 // default scope excludes it, and this never opts into `withPassword`.
-export const generateUsersExcel = async ({ search, agencyCode, status } = {}) => {
+export const generateUsersExcel = async ({ search, agencyCode, status, role } = {}) => {
   const where = {};
   if (search) {
     where[Op.or] = [
@@ -50,6 +59,9 @@ export const generateUsersExcel = async ({ search, agencyCode, status } = {}) =>
   if (["active", "inactive"].includes(status)) {
     where.status = status;
   }
+  if (["staff", "super_admin"].includes(role)) {
+    where.role = role;
+  }
 
   const include = [{ model: Agency, attributes: ["code", "name"] }];
   if (agencyCode) include[0].where = { code: agencyCode };
@@ -59,15 +71,45 @@ export const generateUsersExcel = async ({ search, agencyCode, status } = {}) =>
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Users");
 
+  // Column keys/widths only here — no `header`, since headers are written
+  // manually below (after the title/filter info rows, not in row 1).
+  const dateColumn = { width: 20, style: { numFmt: "dd mmm yyyy hh:mm AM/PM" } };
   sheet.columns = [
-    { header: "Name", key: "name", width: 25 },
-    { header: "Email", key: "email", width: 30 },
-    { header: "Agency", key: "agency", width: 10 },
-    { header: "Role", key: "role", width: 15 },
-    { header: "Status", key: "status", width: 12 },
-    { header: "Last Login", key: "lastLogin", width: 20 },
-    { header: "Created", key: "created", width: 20 },
+    { key: "name", width: 25 },
+    { key: "email", width: 30 },
+    { key: "role", width: 15 },
+    { key: "agency", width: 10 },
+    { key: "status", width: 12 },
+    { key: "created", ...dateColumn },
+    { key: "lastLogin", ...dateColumn },
   ];
+  const columnCount = sheet.columns.length;
+
+  const filterParts = [];
+  if (search) filterParts.push(`Search: "${search}"`);
+  if (agencyCode) filterParts.push(`Agency: ${agencyCode}`);
+  if (["active", "inactive"].includes(status)) filterParts.push(`Status: ${status}`);
+  if (["staff", "super_admin"].includes(role)) filterParts.push(`Role: ${role === "super_admin" ? "Super Admin" : "Staff"}`);
+
+  const titleRow = sheet.addRow(["Users Report"]);
+  titleRow.font = { bold: true, size: 14 };
+  sheet.mergeCells(1, 1, 1, columnCount);
+
+  const generatedRow = sheet.addRow([
+    `Generated: ${new Date().toLocaleString("en-MY", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}`,
+  ]);
+  generatedRow.font = { italic: true, color: { argb: "FF666666" } };
+  sheet.mergeCells(2, 1, 2, columnCount);
+
+  const filterRow = sheet.addRow([`Filters: ${filterParts.length ? filterParts.join(" | ") : "None"}`]);
+  filterRow.font = { italic: true, color: { argb: "FF666666" } };
+  sheet.mergeCells(3, 1, 3, columnCount);
+
+  sheet.addRow([]); // spacer
+
+  const HEADER_ROW = 5;
+  const headerRow = sheet.addRow(["Name", "Email", "Role", "Agency", "Status", "Created", "Last Login"]);
+  headerRow.font = { bold: true };
 
   users.forEach((u) => {
     sheet.addRow({
@@ -76,10 +118,18 @@ export const generateUsersExcel = async ({ search, agencyCode, status } = {}) =>
       agency: u.Agency?.code || "—",
       role: u.role,
       status: u.status,
-      lastLogin: u.lastLoginAt ? u.lastLoginAt.toISOString() : "Never",
-      created: u.createdAt.toISOString(),
+      lastLogin: u.lastLoginAt || "Never",
+      created: u.createdAt,
     });
   });
+
+  // Filter dropdown arrows already active on open — no manual "Data > Filter" step.
+  sheet.autoFilter = {
+    from: { row: HEADER_ROW, column: 1 },
+    to: { row: HEADER_ROW + users.length, column: columnCount },
+  };
+  // Keep the title/filter info and header row visible while scrolling.
+  sheet.views = [{ state: "frozen", ySplit: HEADER_ROW }];
 
   return workbook.xlsx.writeBuffer();
 };

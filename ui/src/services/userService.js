@@ -1,11 +1,12 @@
 import { api } from "./api";
 
 export const userService = {
-  async getAll({ search, agencyCode, status, sort, order, page, limit } = {}) {
+  async getAll({ search, agencyCode, status, role, sort, order, page, limit } = {}) {
     const params = {};
     if (search) params.search = search;
     if (agencyCode) params.agency = agencyCode;
     if (status) params.status = status;
+    if (role) params.role = role;
     if (sort) params.sort = sort;
     if (order) params.order = order;
     if (page) params.page = page;
@@ -17,11 +18,12 @@ export const userService = {
 
   // Uses the shared `api` axios instance (not a plain <a href>) so the
   // Authorization header actually gets attached to the request.
-  async downloadUsersExcel({ search, agencyCode, status } = {}) {
+  async downloadUsersExcel({ search, agencyCode, status, role } = {}) {
     const params = {};
     if (search) params.search = search;
     if (agencyCode) params.agency = agencyCode;
     if (status) params.status = status;
+    if (role) params.role = role;
 
     const response = await api.get("/users/export", { params, responseType: "blob" });
     return response.data;
