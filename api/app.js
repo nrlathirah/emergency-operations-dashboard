@@ -1,12 +1,15 @@
+// Must be the very first import — ES module imports are hoisted and
+// evaluated in order before this file's own code runs, so this needs to
+// execute before #models/index.js (which reads process.env.DATABASE_URL
+// at import time via database.js) is evaluated. A later `dotenv.config()`
+// call further down would be too late for that check.
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import { syncDatabase, Agency } from "#models/index.js";
 import { seedDatabase } from "./src/seed.js";
 import { startVehicleSimulator } from "#services/simulator.service.js";
 import { mountRoutes } from "./src/routes/index.js";
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4000;
