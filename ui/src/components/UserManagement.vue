@@ -58,6 +58,12 @@
         <option value="staff">Staff</option>
         <option value="super_admin">Super Admin</option>
       </select>
+      <button
+        v-if="hasActiveFilters"
+        type="button"
+        @click="clearFilters"
+        class="px-3 py-1.5 border rounded text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-700 cursor-pointer transition"
+      >✕ Reset Filters</button>
     </div>
 
     <p v-if="error && users.length > 0" class="text-xs text-red-500 mb-2">⚠️ {{ error }} Showing last loaded data.</p>
@@ -134,18 +140,44 @@
           class="fixed w-44 bg-white border border-gray-200 rounded-lg shadow-lg py-1 text-sm"
           :style="{ top: actionMenuPos.top + 'px', left: actionMenuPos.left + 'px', zIndex: 9999 }"
         >
-          <button
-            type="button"
-            :disabled="togglingId === actionMenuUser.id"
-            @click="toggleStatus(actionMenuUser); closeActionMenu()"
-            class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer disabled:opacity-50 disabled:cursor-default"
-            :class="actionMenuUser.status === 'active' ? 'text-red-600' : 'text-teal-600'"
-          >{{ actionMenuUser.status === "active" ? "Deactivate" : "Activate" }}</button>
-          <button
-            type="button"
-            @click="openResetPassword(actionMenuUser); closeActionMenu()"
-            class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-600"
-          >Reset Password</button>
+          <template v-if="!confirmingDeactivate">
+            <button
+              v-if="actionMenuUser.status === 'active'"
+              type="button"
+              @click="confirmingDeactivate = true"
+              class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer text-red-600"
+            >Deactivate</button>
+            <button
+              v-else
+              type="button"
+              :disabled="togglingId === actionMenuUser.id"
+              @click="toggleStatus(actionMenuUser); closeActionMenu()"
+              class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer text-teal-600 disabled:opacity-50 disabled:cursor-default"
+            >Activate</button>
+            <button
+              type="button"
+              @click="openResetPassword(actionMenuUser); closeActionMenu()"
+              class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-600"
+            >Reset Password</button>
+          </template>
+          <template v-else>
+            <div class="px-3 py-2">
+              <p class="text-[11px] text-gray-600 mb-2">Deactivate {{ actionMenuUser.name }}? They won't be able to log in until reactivated.</p>
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  :disabled="togglingId === actionMenuUser.id"
+                  @click="confirmDeactivate(actionMenuUser)"
+                  class="px-2.5 py-1 bg-red-600 text-white rounded text-[11px] font-medium hover:bg-red-700 cursor-pointer disabled:opacity-60 disabled:cursor-default transition"
+                >{{ togglingId === actionMenuUser.id ? "…" : "Yes, Deactivate" }}</button>
+                <button
+                  type="button"
+                  @click="confirmingDeactivate = false"
+                  class="px-2.5 py-1 border border-gray-300 text-gray-500 rounded text-[11px] hover:bg-gray-50 cursor-pointer transition"
+                >Cancel</button>
+              </div>
+            </div>
+          </template>
         </div>
       </Teleport>
 
@@ -747,7 +779,10 @@ const toggleStatus = async (u) => {
 const actionMenuUser = ref(null);
 const actionMenuPos = ref({ top: 0, left: 0 });
 
+const confirmingDeactivate = ref(false);
+
 const toggleActionMenu = (u, event) => {
+  confirmingDeactivate.value = false;
   if (actionMenuUser.value?.id === u.id) {
     actionMenuUser.value = null;
     return;
@@ -761,6 +796,12 @@ const toggleActionMenu = (u, event) => {
 
 const closeActionMenu = () => {
   actionMenuUser.value = null;
+  confirmingDeactivate.value = false;
+};
+
+const confirmDeactivate = (u) => {
+  toggleStatus(u);
+  closeActionMenu();
 };
 
 const handleOutsideMenuClick = (e) => {

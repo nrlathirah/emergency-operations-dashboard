@@ -37,10 +37,11 @@
       >Active Cases</button>
 
       <button
-        :disabled="!agencyFilter && !statusFilter && !activeOnly"
+        v-if="hasActiveFilters"
+        type="button"
         @click="resetFilters"
-        class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600 cursor-pointer disabled:opacity-40 disabled:cursor-default"
-      >Reset Filters</button>
+        class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600 cursor-pointer transition"
+      >✕ Reset Filters</button>
 
       <button
         type="button"
@@ -337,6 +338,8 @@ const sortIndicator = (field) => {
   const effectiveOrder = sortField.value ? sortOrder.value : DEFAULT_SORT_ORDER;
   return effectiveOrder === "ASC" ? "▲" : "▼";
 };
+
+const hasActiveFilters = computed(() => !!(agencyFilter.value || statusFilter.value || activeOnly.value));
 
 const resetFilters = () => {
   agencyFilter.value = "";

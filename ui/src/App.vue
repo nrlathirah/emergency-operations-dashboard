@@ -9,19 +9,22 @@
             <p class="text-xs text-white/70 leading-tight">{{ headerSubtitle }}</p>
           </div>
         </div>
-        <div class="relative text-sm" data-user-menu>
+        <div class="relative text-sm ml-auto" data-user-menu @click.stop>
           <button
             type="button"
-            @click="showUserMenu = !showUserMenu"
+            @click="toggleUserMenu"
             class="flex items-center gap-2 px-2 py-1 rounded hover:bg-black/10 transition cursor-pointer"
           >
-            <div class="flex flex-col items-end leading-tight">
+            <div class="hidden sm:flex flex-col items-end leading-tight">
               <span class="font-medium">{{ authStore.user.name }}</span>
               <span
                 class="text-[11px] uppercase tracking-wide px-2 py-0.5 rounded-full mt-0.5"
                 :style="{ backgroundColor: badgeColor }"
               >{{ roleLabel }}</span>
             </div>
+            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-semibold">
+              {{ authStore.user.name.charAt(0).toUpperCase() }}
+            </span>
             <span class="text-[10px] text-white/70">▾</span>
           </button>
 
@@ -30,16 +33,44 @@
             class="absolute right-0 top-full mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg py-1 text-sm"
             style="z-index: 9999;"
           >
-            <button
-              type="button"
-              @click="showChangePassword = true; showUserMenu = false"
-              class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer"
-            >🔒 Change Password</button>
-            <button
-              type="button"
-              @click="handleLogout"
-              class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer text-red-600"
-            >🚪 Logout</button>
+            <!-- Only shown on mobile, where the trigger button hides the
+                 name/role to save header space — desktop already shows it. -->
+            <div class="sm:hidden px-3 py-2 border-b border-gray-100">
+              <p class="font-medium text-gray-800">{{ authStore.user.name }}</p>
+              <span
+                class="inline-block text-[11px] uppercase tracking-wide font-semibold mt-1"
+                :style="{ color: badgeColor }"
+              >{{ roleLabel }}</span>
+            </div>
+            <template v-if="!confirmingLogout">
+              <button
+                type="button"
+                @click="showChangePassword = true; showUserMenu = false"
+                class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer"
+              >🔒 Change Password</button>
+              <button
+                type="button"
+                @click="confirmingLogout = true"
+                class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer text-red-600"
+              >🚪 Logout</button>
+            </template>
+            <template v-else>
+              <div class="px-3 py-2">
+                <p class="text-[11px] text-gray-600 mb-2">Log out of your account?</p>
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    @click="handleLogout"
+                    class="px-2.5 py-1 bg-red-600 text-white rounded text-[11px] font-medium hover:bg-red-700 cursor-pointer transition"
+                  >Yes, Logout</button>
+                  <button
+                    type="button"
+                    @click="confirmingLogout = false"
+                    class="px-2.5 py-1 border border-gray-300 text-gray-500 rounded text-[11px] hover:bg-gray-50 cursor-pointer transition"
+                  >Cancel</button>
+                </div>
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -173,8 +204,18 @@ const handleLogout = () => {
 };
 
 const showUserMenu = ref(false);
+const confirmingLogout = ref(false);
+
+const toggleUserMenu = () => {
+  showUserMenu.value = !showUserMenu.value;
+  confirmingLogout.value = false;
+};
+
 const handleOutsideUserMenuClick = (e) => {
-  if (!e.target.closest("[data-user-menu]")) showUserMenu.value = false;
+  if (!e.target.closest("[data-user-menu]")) {
+    showUserMenu.value = false;
+    confirmingLogout.value = false;
+  }
 };
 onMounted(() => window.addEventListener("click", handleOutsideUserMenuClick));
 onUnmounted(() => window.removeEventListener("click", handleOutsideUserMenuClick));

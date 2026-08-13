@@ -31,10 +31,17 @@
       >{{ submitting ? "Saving…" : "Set New Password" }}</button>
 
       <button
+        v-if="!confirmingLogout"
         type="button"
-        @click="handleLogout"
+        @click="confirmingLogout = true"
         class="w-full text-center text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
       >Not you? Log out</button>
+      <div v-else class="text-center text-xs">
+        <span class="text-gray-500">Log out of this account? </span>
+        <button type="button" @click="handleLogout" class="text-red-600 font-medium hover:underline cursor-pointer">Yes</button>
+        <span class="text-gray-300"> · </span>
+        <button type="button" @click="confirmingLogout = false" class="text-gray-500 hover:underline cursor-pointer">Cancel</button>
+      </div>
     </form>
   </div>
 </template>
@@ -51,6 +58,7 @@ const newPassword = ref("");
 const confirmPassword = ref("");
 const error = ref("");
 const submitting = ref(false);
+const confirmingLogout = ref(false);
 const router = useRouter();
 const authStore = useAuthStore();
 
