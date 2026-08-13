@@ -19,8 +19,10 @@ The dashboard requires login. Click one of the quick-login buttons on the login 
 |---|---|---|
 | `admin@ops.gov.my` | super_admin | All 3 agencies, plus User Management |
 | `ahmad.razak@kkm.gov.my` | staff | KKM only |
-| `rosnah.ibrahim@pdrm.gov.my` | staff | PDRM only |
+| `zul.hassan@pdrm.gov.my` | staff | PDRM only |
 | `faizal.anuar@jbpm.gov.my` | staff | JBPM only |
+
+> These 4 accounts are shared demo credentials — the app blocks self-service password reset/change and admin deactivation on them specifically, so the login page always keeps working for the next visitor.
 
 ## Problem & Motivation
 
@@ -38,7 +40,8 @@ To keep the dataset focused, this demo covers the **Klang Valley (Kuala Lumpur &
 - **Live case simulation** — a "Simulate New Case" trigger creates a new incident on demand, with its own self-contained dispatch-to-close lifecycle, so the demo doesn't depend on waiting for the background simulator
 - **SLA tracking** — open cases are flagged once they exceed a priority-based response time target
 - **Case management** — filtering by agency/status, sortable columns, pagination
-- **User management** — operator directory with search, sort, and pagination
+- **User management (RBAC-gated)** — super-admin-only directory with search, filtering by agency/status/role, sortable columns on every field, and an Excel export that respects whatever's currently filtered (with a title/date/filter-summary header baked into the sheet); admins can create users (auto-generated temporary password, shown once), activate/deactivate accounts, and reset passwords — every action is written to a searchable audit trail
+- **Account security** — admin-created accounts must set their own password on first login; a self-service "Forgot Password" flow lets any user request a reset without an admin's direct involvement (queued for admin approval — no email infrastructure required); guardrails prevent deactivating the last super admin or breaking the shared demo accounts above
 - **Reports** — case-status breakdown chart and Excel export
 - **Responsive design** — usable across desktop and mobile breakpoints, with loading states on async actions (login, export) for clear feedback
 - **Documented API** — full Postman collection included (`api/postman/`)
@@ -70,11 +73,11 @@ A background simulator ticks every 3 seconds, positioning each active case's veh
 emergency-operations-dashboard/
 ├── api/                    # Express backend
 │   ├── src/
-│   │   ├── models/         # Sequelize models (Agency, Vehicle, Case, User, Station)
+│   │   ├── models/         # Sequelize models (Agency, Vehicle, Case, User, Station, AuditLog, PasswordResetRequest)
 │   │   ├── routes/         # Route definitions
 │   │   ├── controllers/    # Request handling
 │   │   ├── services/       # Business logic + DB queries
-│   │   ├── middlewares/    # JWT authentication
+│   │   ├── middlewares/    # JWT authentication + super-admin authorization
 │   │   ├── utils/          # Agency-scoping helper
 │   │   └── seed.js         # Seeds demo data
 │   └── postman/            # API test collection
