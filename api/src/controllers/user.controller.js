@@ -1,5 +1,6 @@
 import { getAllUsers, generateUsersExcel, createUser, updateUserStatus, changeOwnPassword, resetUserPassword } from "#services/user.service.js";
 import { getAuditLogs } from "#services/audit.service.js";
+import { getPendingResetRequests, dismissPasswordResetRequest } from "#services/passwordResetRequest.service.js";
 import { getScopedAgency } from "#utils/scope.util.js";
 
 export const listUsers = async (req, res, next) => {
@@ -106,6 +107,24 @@ export const resetPasswordController = async (req, res, next) => {
     const { newPassword } = req.body;
     await resetUserPassword({ userId: req.params.id, newPassword, actorId: req.user.id });
     res.status(200).json({ message: "Password reset successfully." });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const listResetRequestsController = async (req, res, next) => {
+  try {
+    const requests = await getPendingResetRequests();
+    res.status(200).json({ data: requests });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const dismissResetRequestController = async (req, res, next) => {
+  try {
+    await dismissPasswordResetRequest({ requestId: req.params.id, actorId: req.user.id });
+    res.status(200).json({ message: "Request dismissed." });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

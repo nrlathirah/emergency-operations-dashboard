@@ -9,16 +9,38 @@
             <p class="text-xs text-white/70 leading-tight">{{ headerSubtitle }}</p>
           </div>
         </div>
-        <div class="flex items-center gap-3 text-sm">
-          <div class="flex flex-col items-end leading-tight">
-            <span class="font-medium">{{ authStore.user.name }}</span>
-            <span
-              class="text-[11px] uppercase tracking-wide px-2 py-0.5 rounded-full mt-0.5"
-              :style="{ backgroundColor: badgeColor }"
-            >{{ roleLabel }}</span>
+        <div class="relative text-sm" data-user-menu>
+          <button
+            type="button"
+            @click="showUserMenu = !showUserMenu"
+            class="flex items-center gap-2 px-2 py-1 rounded hover:bg-black/10 transition cursor-pointer"
+          >
+            <div class="flex flex-col items-end leading-tight">
+              <span class="font-medium">{{ authStore.user.name }}</span>
+              <span
+                class="text-[11px] uppercase tracking-wide px-2 py-0.5 rounded-full mt-0.5"
+                :style="{ backgroundColor: badgeColor }"
+              >{{ roleLabel }}</span>
+            </div>
+            <span class="text-[10px] text-white/70">▾</span>
+          </button>
+
+          <div
+            v-if="showUserMenu"
+            class="absolute right-0 top-full mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg py-1 text-sm"
+            style="z-index: 9999;"
+          >
+            <button
+              type="button"
+              @click="showChangePassword = true; showUserMenu = false"
+              class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer"
+            >🔒 Change Password</button>
+            <button
+              type="button"
+              @click="handleLogout"
+              class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer text-red-600"
+            >🚪 Logout</button>
           </div>
-          <button @click="showChangePassword = true" class="bg-black/20 px-3 py-1.5 rounded hover:bg-black/30 transition cursor-pointer">Change Password</button>
-          <button @click="handleLogout" class="bg-black/20 px-3 py-1.5 rounded hover:bg-black/30 transition cursor-pointer">Logout</button>
         </div>
       </div>
       <nav class="mt-3 flex flex-wrap text-sm">
@@ -88,7 +110,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "./stores/auth";
 import { userService } from "./services/userService";
@@ -149,6 +171,13 @@ const handleLogout = () => {
   authStore.logout();
   router.push("/login");
 };
+
+const showUserMenu = ref(false);
+const handleOutsideUserMenuClick = (e) => {
+  if (!e.target.closest("[data-user-menu]")) showUserMenu.value = false;
+};
+onMounted(() => window.addEventListener("click", handleOutsideUserMenuClick));
+onUnmounted(() => window.removeEventListener("click", handleOutsideUserMenuClick));
 
 const showChangePassword = ref(false);
 const changingPassword = ref(false);

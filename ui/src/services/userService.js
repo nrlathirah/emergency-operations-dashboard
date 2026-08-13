@@ -58,4 +58,14 @@ export const userService = {
     const response = await api.get("/users/audit-log", { params });
     return response.data; // { data, total, page, limit }
   },
+
+  async getResetRequests() {
+    const response = await api.get("/users/reset-requests");
+    return response.data.data;
+  },
+
+  async dismissResetRequest(requestId) {
+    const response = await api.post(`/users/reset-requests/${requestId}/dismiss`);
+    return response.data;
+  },
 };

@@ -5,6 +5,18 @@
       <div class="flex items-center gap-2 flex-wrap">
         <button
           type="button"
+          data-reset-requests-menu
+          @click="toggleResetRequestsPopover($event)"
+          class="relative px-3 py-1.5 border rounded text-sm hover:bg-gray-50 cursor-pointer transition"
+        >
+          🔔 Reset Requests
+          <span
+            v-if="resetRequests.length"
+            class="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] leading-none rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center"
+          >{{ resetRequests.length }}</span>
+        </button>
+        <button
+          type="button"
           @click="showActivityDrawer = true"
           class="px-3 py-1.5 border rounded text-sm hover:bg-gray-50 cursor-pointer transition"
         >🕒 Activity</button>
@@ -68,7 +80,13 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="u in users" :key="u.id" class="border-b border-gray-100 hover:bg-gray-50">
+          <tr
+            v-for="u in users"
+            :key="u.id"
+            :ref="(el) => setRowRef(u.id, el)"
+            class="border-b border-gray-100 transition-colors duration-700"
+            :class="highlightedUserId === u.id ? 'bg-amber-100' : 'hover:bg-gray-50'"
+          >
             <td class="py-2 pr-4 font-medium whitespace-nowrap">{{ u.name }}</td>
             <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">{{ u.email }}</td>
             <td class="py-2 pr-4 capitalize whitespace-nowrap">{{ u.role }}</td>
@@ -112,6 +130,7 @@
         <div
           v-if="actionMenuUser"
           data-action-menu
+          @click.stop
           class="fixed w-44 bg-white border border-gray-200 rounded-lg shadow-lg py-1 text-sm"
           :style="{ top: actionMenuPos.top + 'px', left: actionMenuPos.left + 'px', zIndex: 9999 }"
         >
@@ -197,6 +216,94 @@
               class="px-3 py-1.5 border rounded text-xs hover:bg-gray-50 cursor-pointer disabled:opacity-60 disabled:cursor-default"
             >{{ auditLoadingMore ? "Loading…" : "Load More" }}</button>
           </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Password Reset Requests popover — a lightweight notice, not an
+         action drawer. Clicking a name scrolls to and highlights that row
+         in the table; the actual reset happens through the same "⋮" →
+         Reset Password flow used everywhere else, so there's one reset
+         path instead of two. -->
+    <Teleport to="body">
+      <div
+        v-if="showResetRequestsPopover"
+        data-reset-requests-menu
+        @click.stop
+        class="fixed w-80 bg-white border border-gray-200 rounded-xl shadow-xl text-sm overflow-hidden"
+        :style="{ top: resetRequestsPopoverPos.top + 'px', left: resetRequestsPopoverPos.left + 'px', zIndex: 9999 }"
+      >
+        <div class="flex items-center justify-between px-4 py-3 bg-amber-50 border-b border-amber-100">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🔔</span>
+            <h4 class="text-sm font-semibold text-gray-800">Password Reset Requests</h4>
+          </div>
+          <button
+            type="button"
+            @click="closeResetRequestsPopover"
+            class="text-gray-400 hover:text-gray-600 cursor-pointer text-base leading-none"
+            aria-label="Close"
+          >✕</button>
+        </div>
+
+        <p v-if="resetRequestsError" class="text-xs text-red-500 px-4 py-3">
+          ⚠️ {{ resetRequestsError }}
+          <button type="button" @click="fetchResetRequests" class="underline cursor-pointer">Retry</button>
+        </p>
+
+        <ul v-if="resetRequests.length" class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+          <li v-for="req in resetRequests" :key="req.id" class="px-4 py-3">
+            <template v-if="confirmingDismissId !== req.id">
+              <div class="flex items-start gap-3">
+                <button
+                  type="button"
+                  @click="scrollToUser(req)"
+                  class="flex items-start gap-3 flex-1 min-w-0 text-left cursor-pointer group"
+                >
+                  <span class="flex-shrink-0 w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-semibold">
+                    {{ (req.User?.name || req.email).charAt(0).toUpperCase() }}
+                  </span>
+                  <span class="min-w-0">
+                    <span class="block font-medium text-gray-800 truncate group-hover:text-teal-600 transition">{{ req.User?.name || req.email }}</span>
+                    <span class="block text-[11px] text-gray-400">Requested {{ formatDate(req.createdAt) }}</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  @click="confirmingDismissId = req.id"
+                  title="Remove request"
+                  aria-label="Remove request"
+                  class="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-gray-300 hover:text-red-600 hover:bg-red-50 cursor-pointer transition"
+                >✕</button>
+              </div>
+            </template>
+            <template v-else>
+              <div class="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                <p class="text-amber-700 text-[11px] mb-2">Remove without resetting? They won't be notified — they'll have to try again or contact you directly.</p>
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    :disabled="processingRequestId === req.id"
+                    @click="handleDismissRequest(req)"
+                    class="px-2.5 py-1 bg-red-600 text-white rounded text-[11px] font-medium hover:bg-red-700 cursor-pointer disabled:opacity-60 disabled:cursor-default transition"
+                  >{{ processingRequestId === req.id ? "…" : "Yes, Remove" }}</button>
+                  <button
+                    type="button"
+                    @click="confirmingDismissId = null"
+                    class="px-2.5 py-1 border border-gray-300 text-gray-500 rounded text-[11px] hover:bg-gray-50 cursor-pointer transition"
+                  >Cancel</button>
+                </div>
+              </div>
+            </template>
+          </li>
+        </ul>
+        <div v-else-if="!resetRequestsError" class="text-center px-4 py-8">
+          <div class="text-2xl mb-1">✅</div>
+          <p class="text-xs text-gray-400">All caught up — no pending requests.</p>
+        </div>
+
+        <div v-if="resetRequests.length" class="px-4 py-2 bg-gray-50 border-t border-gray-100">
+          <p class="text-[10px] text-gray-400">Click a name to locate them in the table below.</p>
         </div>
       </div>
     </Teleport>
@@ -365,7 +472,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import { userService } from "../services/userService";
 import { useAuthStore } from "../stores/auth";
 import LoadingSpinner from "./LoadingSpinner.vue";
@@ -454,6 +561,91 @@ const loadMoreAuditLog = async () => {
   auditPage.value += 1;
   await fetchAuditLog(false);
   auditLoadingMore.value = false;
+};
+
+const showResetRequestsPopover = ref(false);
+const resetRequestsPopoverPos = ref({ top: 0, left: 0 });
+const resetRequests = ref([]);
+const resetRequestsError = ref("");
+const processingRequestId = ref(null);
+const confirmingDismissId = ref(null);
+
+const fetchResetRequests = async () => {
+  try {
+    resetRequests.value = await userService.getResetRequests();
+    resetRequestsError.value = "";
+  } catch (err) {
+    resetRequestsError.value = "Couldn't load requests.";
+  }
+};
+
+const toggleResetRequestsPopover = (event) => {
+  if (showResetRequestsPopover.value) {
+    showResetRequestsPopover.value = false;
+    return;
+  }
+  confirmingDismissId.value = null;
+  const rect = event.currentTarget.getBoundingClientRect();
+  resetRequestsPopoverPos.value = { top: rect.bottom + 4, left: rect.left };
+  showResetRequestsPopover.value = true;
+  fetchResetRequests();
+};
+
+const closeResetRequestsPopover = () => {
+  showResetRequestsPopover.value = false;
+};
+
+const handleOutsideResetRequestsClick = (e) => {
+  if (!e.target.closest("[data-reset-requests-menu]")) closeResetRequestsPopover();
+};
+
+const handleDismissRequest = async (req) => {
+  processingRequestId.value = req.id;
+  try {
+    await userService.dismissResetRequest(req.id);
+    // Refetch rather than locally filter, so a stray duplicate request for
+    // the same user (e.g. from a double-submit) stays visible instead of
+    // looking like dismissing "did nothing" once this one disappears.
+    await fetchResetRequests();
+  } catch (err) {
+    resetRequestsError.value = err.response?.data?.message || "Failed to dismiss request.";
+  } finally {
+    processingRequestId.value = null;
+    confirmingDismissId.value = null;
+  }
+};
+
+// Table rows register themselves here by user id so a reset request can be
+// scrolled to and highlighted without needing a separate "resolve" action —
+// the actual reset happens through the row's own "⋮" → Reset Password.
+const rowRefs = {};
+const setRowRef = (id, el) => {
+  if (el) rowRefs[id] = el;
+  else delete rowRefs[id];
+};
+
+const highlightedUserId = ref(null);
+let highlightTimeout;
+
+const scrollToUser = async (req) => {
+  closeResetRequestsPopover();
+
+  // Clear filters and search by exact email so the row is guaranteed to be
+  // on the very next page fetched, regardless of current filter/page state.
+  search.value = req.User?.email || req.email;
+  agencyFilter.value = "";
+  statusFilter.value = "";
+  roleFilter.value = "";
+  page.value = 1;
+  await fetchUsers();
+  await nextTick();
+
+  const el = rowRefs[req.userId];
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  highlightedUserId.value = req.userId;
+  clearTimeout(highlightTimeout);
+  highlightTimeout = setTimeout(() => (highlightedUserId.value = null), 2500);
 };
 
 const fetchUsers = async () => {
@@ -578,10 +770,14 @@ const handleOutsideMenuClick = (e) => {
 onMounted(() => {
   window.addEventListener("click", handleOutsideMenuClick);
   window.addEventListener("scroll", closeActionMenu, true);
+  window.addEventListener("click", handleOutsideResetRequestsClick);
+  window.addEventListener("scroll", closeResetRequestsPopover, true);
 });
 onUnmounted(() => {
   window.removeEventListener("click", handleOutsideMenuClick);
   window.removeEventListener("scroll", closeActionMenu, true);
+  window.removeEventListener("click", handleOutsideResetRequestsClick);
+  window.removeEventListener("scroll", closeResetRequestsPopover, true);
 });
 
 const showAddUser = ref(false);
@@ -650,6 +846,7 @@ const handleResetPassword = async () => {
     await userService.resetPassword(resetTarget.value.id, resetPasswordValue.value);
     resetCredentials.value = resetPasswordValue.value;
     fetchAuditLog();
+    fetchResetRequests();
   } catch (err) {
     resetError.value = err.response?.data?.message || "Failed to reset password.";
   } finally {
@@ -666,5 +863,6 @@ watch(page, fetchUsers);
 onMounted(() => {
   fetchUsers();
   fetchAuditLog();
+  fetchResetRequests();
 });
 </script>

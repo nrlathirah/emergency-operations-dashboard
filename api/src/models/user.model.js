@@ -15,6 +15,11 @@ export const User = sequelize.define(
     // login so the admin's knowledge of the password is only ever temporary.
     mustChangePassword: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     lastLoginAt: { type: DataTypes.DATE, allowNull: true },
+    // Quick-login buttons on the login page (see ui LoginPage.vue) expose
+    // this account's credentials publicly for portfolio demoing — the
+    // self-service forgot-password flow must never be able to touch it,
+    // or any visitor could change the shared demo password for everyone.
+    isDemoAccount: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
   },
   {
     defaultScope: {

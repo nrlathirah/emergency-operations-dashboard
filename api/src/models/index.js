@@ -5,6 +5,7 @@ import { Case } from "#models/case.model.js";
 import { User } from "#models/user.model.js";
 import { Station } from "#models/station.model.js";
 import { AuditLog } from "#models/auditLog.model.js";
+import { PasswordResetRequest } from "#models/passwordResetRequest.model.js";
 
 Agency.hasMany(Vehicle, { foreignKey: "agencyId" });
 Vehicle.belongsTo(Agency, { foreignKey: "agencyId" });
@@ -28,9 +29,13 @@ User.hasMany(AuditLog, { foreignKey: "actorId", as: "ActionsPerformed" });
 AuditLog.belongsTo(User, { foreignKey: "actorId", as: "Actor" });
 AuditLog.belongsTo(User, { foreignKey: "targetUserId", as: "Target" });
 
+User.hasMany(PasswordResetRequest, { foreignKey: "userId" });
+PasswordResetRequest.belongsTo(User, { foreignKey: "userId", as: "User" });
+PasswordResetRequest.belongsTo(User, { foreignKey: "resolvedBy", as: "ResolvedByUser" });
+
 export const syncDatabase = async () => {
   await sequelize.sync();
   console.log("Database synced");
 };
 
-export { sequelize, Agency, Vehicle, Case, User, Station, AuditLog };
+export { sequelize, Agency, Vehicle, Case, User, Station, AuditLog, PasswordResetRequest };

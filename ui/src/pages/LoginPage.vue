@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 px-4">
-    <form @submit.prevent="handleLogin" class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm space-y-5">
+    <form v-if="!showForgotPassword" @submit.prevent="handleLogin" class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm space-y-5">
       <div class="text-center">
         <div class="text-4xl mb-2">🚨</div>
         <h1 class="text-lg font-semibold text-slate-900">Emergency Operations Dashboard</h1>
@@ -18,7 +18,14 @@
       </div>
 
       <div>
-        <label class="block text-sm text-gray-600 mb-1">Password</label>
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-sm text-gray-600">Password</label>
+          <button
+            type="button"
+            @click="openForgotPassword"
+            class="text-xs text-teal-600 hover:underline cursor-pointer"
+          >Forgot password?</button>
+        </div>
         <PasswordInput v-model="password" size="lg" required />
       </div>
 
@@ -56,6 +63,63 @@
         Authorized personnel only · KKM · PDRM · JBPM
       </p>
     </form>
+
+    <!-- Forgot password — always shows the same generic confirmation
+         regardless of whether the email matched anything, so this can't be
+         used to probe for which emails are registered. -->
+    <div v-else class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm">
+      <template v-if="!resetRequestSent">
+        <div class="text-center mb-5">
+          <div class="text-3xl mb-2">🔑</div>
+          <h1 class="text-lg font-semibold text-slate-900">Forgot Password</h1>
+          <p class="text-xs text-gray-500 mt-1">Enter your email and an admin will be notified to reset it for you.</p>
+        </div>
+        <form @submit.prevent="handleForgotPassword" class="space-y-4">
+          <div>
+            <label class="block text-sm text-gray-600 mb-1">Email</label>
+            <input
+              v-model="resetEmail"
+              type="email"
+              required
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+            />
+          </div>
+          <button
+            type="submit"
+            :disabled="resetSubmitting"
+            class="w-full bg-teal-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal-700 transition cursor-pointer disabled:opacity-70 disabled:cursor-default"
+          >{{ resetSubmitting ? "Submitting…" : "Submit Request" }}</button>
+          <button
+            type="button"
+            @click="showForgotPassword = false"
+            class="w-full text-center text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
+          >Back to login</button>
+        </form>
+      </template>
+      <template v-else>
+        <div class="text-center">
+          <!-- Demo account emails are already public (they're on the Quick
+               Login buttons right below), so saying so here leaks nothing —
+               it just saves a tester from waiting on a request that will
+               never be picked up. -->
+          <template v-if="resetWasDemoAccount">
+            <div class="text-3xl mb-2">ℹ️</div>
+            <h1 class="text-lg font-semibold text-slate-900">This Is a Shared Demo Account</h1>
+            <p class="text-sm text-gray-500 mt-2">Forgot Password isn't available for it, since its credentials are already public on this page. Use the Quick Login button below, or log in directly with <code class="text-xs bg-gray-100 px-1 py-0.5 rounded">password123</code>.</p>
+          </template>
+          <template v-else>
+            <div class="text-3xl mb-2">✅</div>
+            <h1 class="text-lg font-semibold text-slate-900">Request Submitted</h1>
+            <p class="text-sm text-gray-500 mt-2">If that email is registered, your request has been noted (or you already have one pending) — an admin will review it soon. No need to submit again.</p>
+          </template>
+          <button
+            type="button"
+            @click="showForgotPassword = false"
+            class="mt-5 w-full bg-teal-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal-700 transition cursor-pointer"
+          >Back to login</button>
+        </div>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -63,6 +127,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/auth";
+import { authService } from "../services/authService";
 import PasswordInput from "../components/PasswordInput.vue";
 
 const email = ref("");
@@ -99,5 +164,40 @@ const handleLogin = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const showForgotPassword = ref(false);
+const resetEmail = ref("");
+const resetSubmitting = ref(false);
+const resetRequestSent = ref(false);
+const resetWasDemoAccount = ref(false);
+
+const openForgotPassword = () => {
+  resetEmail.value = email.value; // carry over whatever they'd already typed
+  resetRequestSent.value = false;
+  resetWasDemoAccount.value = false;
+  showForgotPassword.value = true;
+};
+
+const handleForgotPassword = async () => {
+  if (resetSubmitting.value) return; // guard against a duplicate submit sneaking in
+  resetSubmitting.value = true;
+
+  const isDemoAccount = quickLoginRoles.some(
+    (r) => r.email.toLowerCase() === resetEmail.value.trim().toLowerCase()
+  );
+  resetWasDemoAccount.value = isDemoAccount;
+
+  if (!isDemoAccount) {
+    try {
+      await authService.requestPasswordReset(resetEmail.value);
+    } catch (err) {
+      // Still show the generic confirmation — never leak whether it failed
+      // because the email didn't exist vs. an actual server error.
+    }
+  }
+
+  resetSubmitting.value = false;
+  resetRequestSent.value = true;
 };
 </script>

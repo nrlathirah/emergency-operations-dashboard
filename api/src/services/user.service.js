@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 import { User, Agency } from "#models/index.js";
 import { Op } from "sequelize";
 import { recordAuditLog } from "./audit.service.js";
+import { resolveAnyPendingRequestForUser } from "./passwordResetRequest.service.js";
 
 const ALLOWED_SORT_FIELDS = ["name", "email", "role", "status", "createdAt", "lastLoginAt"];
 
@@ -176,6 +177,14 @@ export const updateUserStatus = async ({ userId, status, actorId }) => {
     throw new Error("User not found.");
   }
 
+  // Anyone who clicks a Quick Login button is effectively logged in as this
+  // account — including as super admin. Deactivating it would break the
+  // login for every future visitor, and there's no "trusted" way to tell
+  // the real owner apart from a stranger using the same public credentials.
+  if (user.isDemoAccount && status === "inactive") {
+    throw new Error("This is a shared demo account and can't be deactivated.");
+  }
+
   // Deactivating the last active super admin would lock everyone out of
   // Users management with no way back in short of touching the DB directly.
   if (user.role === "super_admin" && user.status === "active" && status === "inactive") {
@@ -206,6 +215,12 @@ export const changeOwnPassword = async ({ userId, currentPassword, newPassword }
   if (!user) {
     throw new Error("User not found.");
   }
+  if (user.isDemoAccount) {
+    // The current password is public (it's on the Quick Login buttons), so
+    // knowing it proves nothing here — anyone could self-service their way
+    // into breaking the shared demo credentials otherwise.
+    throw new Error("This is a shared demo account and its password can't be changed.");
+  }
 
   const isValid = await bcrypt.compare(currentPassword || "", user.password);
   if (!isValid) {
@@ -229,9 +244,22 @@ export const resetUserPassword = async ({ userId, newPassword, actorId }) => {
   if (!user) {
     throw new Error("User not found.");
   }
+  if (user.isDemoAccount) {
+    throw new Error("This is a shared demo account and its password can't be reset here.");
+  }
 
   // The admin now knows this password — force the user to set their own on
   // next login so that knowledge stays temporary.
   await user.update({ password: newPassword, mustChangePassword: true });
-  await recordAuditLog({ actorId, action: "reset_password", targetUserId: user.id });
+
+  // A single reset path handles both "admin decided to reset this" and "user
+  // asked via Forgot Password" — clear any pending request for them too.
+  const clearedRequest = await resolveAnyPendingRequestForUser({ userId: user.id, actorId });
+
+  await recordAuditLog({
+    actorId,
+    action: "reset_password",
+    targetUserId: user.id,
+    detail: clearedRequest ? "also cleared their pending self-service request" : undefined,
+  });
 };

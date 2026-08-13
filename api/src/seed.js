@@ -85,11 +85,21 @@ export const seedDatabase = async () => {
     { name: "System Administrator", email: "admin@ops.gov.my", password: "password123", role: "super_admin", agencyId: null },
   ];
 
+  // Exactly the 4 accounts exposed via the login page's Quick Login buttons
+  // (see ui LoginPage.vue quickLoginRoles) — flagged so the self-service
+  // forgot-password flow can never touch their shared demo credentials.
+  const QUICK_LOGIN_EMAILS = new Set([
+    "admin@ops.gov.my",
+    "ahmad.razak@kkm.gov.my",
+    "zul.hassan@pdrm.gov.my",
+    "faizal.anuar@jbpm.gov.my",
+  ]);
+
   for (const u of users) {
     // Demo/quick-login accounts skip the forced first-login password change
     // (defaultValue: true on the model) — they're meant for frictionless
     // portfolio demoing, not the real admin-created-user flow.
-    await User.create({ ...u, mustChangePassword: false });
+    await User.create({ ...u, mustChangePassword: false, isDemoAccount: QUICK_LOGIN_EMAILS.has(u.email) });
   }
 
   console.log("Seed complete");
