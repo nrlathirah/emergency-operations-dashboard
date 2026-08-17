@@ -95,7 +95,15 @@
       </thead>
       <tbody v-if="displayCases.length === 0">
         <tr>
-          <td colspan="4" class="py-10 text-center text-gray-400 text-sm">No cases found matching your filters.</td>
+          <td colspan="4" class="py-10 text-center text-gray-400 text-sm">
+            <p>No cases found matching your filters.</p>
+            <button
+              v-if="hasActiveFilters"
+              type="button"
+              @click="resetFilters"
+              class="mt-2 text-teal-600 hover:underline cursor-pointer text-xs"
+            >Clear filters</button>
+          </td>
         </tr>
       </tbody>
       <tbody
@@ -145,18 +153,29 @@
     </table>
     </div>
 
-    <div v-if="!loading" class="flex items-center gap-3 mt-4 text-sm">
-      <button
-        :disabled="page === 1"
-        @click="page--"
-        class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
-      >Previous</button>
-      <span class="text-gray-600">Page {{ page }} of {{ totalPages }}</span>
-      <button
-        :disabled="page === totalPages"
-        @click="page++"
-        class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
-      >Next</button>
+    <div v-if="!loading" class="flex items-center gap-3 mt-4 text-sm flex-wrap">
+      <span class="text-gray-500 text-xs">Showing {{ rangeStart }}–{{ rangeEnd }} of {{ displayCases.length }} cases</span>
+      <label class="flex items-center gap-1.5 text-xs text-gray-500">
+        Per page
+        <select v-model.number="pageSize" class="border rounded px-2 py-1 text-xs cursor-pointer hover:bg-gray-50 transition">
+          <option :value="10">10</option>
+          <option :value="25">25</option>
+          <option :value="50">50</option>
+        </select>
+      </label>
+      <div class="flex items-center gap-3 sm:ml-auto">
+        <button
+          :disabled="page === 1"
+          @click="page--"
+          class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
+        >Previous</button>
+        <span class="text-gray-600">Page {{ page }} of {{ totalPages }}</span>
+        <button
+          :disabled="page === totalPages"
+          @click="page++"
+          class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
+        >Next</button>
+      </div>
     </div>
   </div>
 </template>
@@ -280,13 +299,15 @@ const displayCases = computed(() => {
   });
 });
 
-const PAGE_SIZE = 10;
+const pageSize = ref(10);
 const page = ref(1);
-const totalPages = computed(() => Math.max(1, Math.ceil(displayCases.value.length / PAGE_SIZE)));
+const totalPages = computed(() => Math.max(1, Math.ceil(displayCases.value.length / pageSize.value)));
 const pagedCases = computed(() => {
-  const start = (page.value - 1) * PAGE_SIZE;
-  return displayCases.value.slice(start, start + PAGE_SIZE);
+  const start = (page.value - 1) * pageSize.value;
+  return displayCases.value.slice(start, start + pageSize.value);
 });
+const rangeStart = computed(() => (displayCases.value.length === 0 ? 0 : (page.value - 1) * pageSize.value + 1));
+const rangeEnd = computed(() => Math.min(page.value * pageSize.value, displayCases.value.length));
 
 const formatCreatedAt = (createdAt) =>
   new Date(createdAt).toLocaleString("en-MY", {
@@ -412,7 +433,7 @@ const jumpToCase = async (caseId) => {
 
   const index = displayCases.value.findIndex((c) => c.id === caseId);
   if (index !== -1) {
-    page.value = Math.floor(index / PAGE_SIZE) + 1;
+    page.value = Math.floor(index / pageSize.value) + 1;
     await nextTick();
   }
 
@@ -445,7 +466,7 @@ watch([agencyFilter, statusFilter], fetchCases);
 // Jump back to page 1 whenever the filtered/sorted set changes shape, and
 // clamp down if a background poll shrinks the result set out from under
 // whatever page the user was on (e.g. a case's status moved it out of view).
-watch([agencyFilter, statusFilter, activeOnly, sortField, sortOrder], () => {
+watch([agencyFilter, statusFilter, activeOnly, sortField, sortOrder, pageSize], () => {
   page.value = 1;
 });
 watch(totalPages, () => {

@@ -93,7 +93,14 @@
             class="border-b border-gray-100 transition-colors duration-700"
             :class="highlightedUserId === u.id ? 'bg-amber-100' : 'hover:bg-gray-50'"
           >
-            <td class="py-2 pr-4 font-medium whitespace-nowrap">{{ u.name }}</td>
+            <td class="py-2 pr-4 font-medium whitespace-nowrap">
+              <div class="flex items-center gap-2">
+                <span class="flex-shrink-0 w-7 h-7 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-semibold">
+                  {{ u.name.charAt(0).toUpperCase() }}
+                </span>
+                {{ u.name }}
+              </div>
+            </td>
             <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">{{ u.email }}</td>
             <td class="py-2 pr-4 capitalize whitespace-nowrap">{{ u.role }}</td>
             <td class="py-2 pr-4 whitespace-nowrap">{{ u.Agency?.code || "—" }}</td>
@@ -203,6 +210,14 @@
 
       <div class="flex items-center gap-3 mt-4 text-sm flex-wrap">
         <span class="text-gray-500 text-xs">Showing {{ rangeStart }}–{{ rangeEnd }} of {{ total }} users</span>
+        <label class="flex items-center gap-1.5 text-xs text-gray-500">
+          Per page
+          <select v-model.number="limit" class="border rounded px-2 py-1 text-xs cursor-pointer hover:bg-gray-50 transition">
+            <option :value="10">10</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+          </select>
+        </label>
         <div class="flex items-center gap-3 sm:ml-auto">
           <button
             :disabled="page === 1"
@@ -654,7 +669,7 @@ const roleFilter = ref("");
 const sortField = ref("name");
 const sortOrder = ref("ASC");
 const page = ref(1);
-const limit = 10;
+const limit = ref(10);
 const total = ref(0);
 
 const hasActiveFilters = computed(
@@ -670,9 +685,9 @@ const loading = ref(true);
 const error = ref(null);
 const togglingId = ref(null);
 
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit)));
-const rangeStart = computed(() => (total.value === 0 ? 0 : (page.value - 1) * limit + 1));
-const rangeEnd = computed(() => Math.min(page.value * limit, total.value));
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit.value)));
+const rangeStart = computed(() => (total.value === 0 ? 0 : (page.value - 1) * limit.value + 1));
+const rangeEnd = computed(() => Math.min(page.value * limit.value, total.value));
 
 const showActivityDrawer = ref(false);
 const auditLogs = ref([]);
@@ -856,7 +871,7 @@ const fetchUsers = async () => {
       sort: sortField.value,
       order: sortOrder.value,
       page: page.value,
-      limit,
+      limit: limit.value,
     });
     users.value = result.data;
     total.value = result.total;
@@ -1091,7 +1106,7 @@ const handleResetPassword = async () => {
   }
 };
 
-watch([search, agencyFilter, statusFilter, roleFilter, sortField, sortOrder], () => {
+watch([search, agencyFilter, statusFilter, roleFilter, sortField, sortOrder, limit], () => {
   page.value = 1;
   fetchUsers();
 });
