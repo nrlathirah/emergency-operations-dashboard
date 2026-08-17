@@ -1,6 +1,6 @@
 import { getAllUsers, generateUsersExcel, createUser, updateUserName, updateUserStatus, changeOwnPassword, changeOwnName, resetUserPassword } from "#services/user.service.js";
 import { getAuditLogs } from "#services/audit.service.js";
-import { getPendingResetRequests, dismissPasswordResetRequest } from "#services/passwordResetRequest.service.js";
+import { getPendingResetRequests, dismissPasswordResetRequest, getResetRequestHistory } from "#services/passwordResetRequest.service.js";
 import { getScopedAgency } from "#utils/scope.util.js";
 
 export const listUsers = async (req, res, next) => {
@@ -145,5 +145,21 @@ export const dismissResetRequestController = async (req, res, next) => {
     res.status(200).json({ message: "Request dismissed." });
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+};
+
+export const listResetRequestHistoryController = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const result = await getResetRequestHistory({ page, limit });
+    res.status(200).json({
+      data: result.requests,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+    });
+  } catch (error) {
+    next(error);
   }
 };

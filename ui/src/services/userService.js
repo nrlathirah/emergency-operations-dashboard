@@ -79,4 +79,12 @@ export const userService = {
     const response = await api.post(`/users/reset-requests/${requestId}/dismiss`);
     return response.data;
   },
+
+  async getResetRequestHistory({ page, limit } = {}) {
+    const params = {};
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    const response = await api.get("/users/reset-requests/history", { params });
+    return response.data; // { data, total, page, limit }
+  },
 };

@@ -51,3 +51,21 @@ export const dismissPasswordResetRequest = async ({ requestId, actorId }) => {
   }
   await request.update({ status: "dismissed", resolvedAt: new Date(), resolvedBy: actorId });
 };
+
+// Past requests (resolved or dismissed) — once a request leaves the pending
+// list it otherwise vanishes with no way to look back at it, even though
+// the row itself is never deleted.
+export const getResetRequestHistory = async ({ page = 1, limit = 10 } = {}) => {
+  const offset = (page - 1) * limit;
+  const { rows, count } = await PasswordResetRequest.findAndCountAll({
+    where: { status: ["resolved", "dismissed"] },
+    include: [
+      { model: User, as: "User", attributes: ["name", "email"], include: [{ model: Agency, attributes: ["code"] }] },
+      { model: User, as: "ResolvedByUser", attributes: ["name", "email"] },
+    ],
+    order: [["resolvedAt", "DESC"]],
+    limit,
+    offset,
+  });
+  return { requests: rows, total: count, page, limit };
+};

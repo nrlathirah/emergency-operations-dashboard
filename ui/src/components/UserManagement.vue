@@ -283,65 +283,124 @@
           >✕</button>
         </div>
 
-        <p v-if="resetRequestsError" class="text-xs text-red-500 px-4 py-3">
-          ⚠️ {{ resetRequestsError }}
-          <button type="button" @click="fetchResetRequests" class="underline cursor-pointer">Retry</button>
-        </p>
+        <div class="flex border-b border-gray-100 text-xs">
+          <button
+            type="button"
+            @click="resetRequestsTab = 'pending'"
+            class="flex-1 px-3 py-2 font-medium cursor-pointer transition"
+            :class="resetRequestsTab === 'pending' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700'"
+          >Pending{{ resetRequests.length ? ` (${resetRequests.length})` : "" }}</button>
+          <button
+            type="button"
+            @click="openHistoryTab"
+            class="flex-1 px-3 py-2 font-medium cursor-pointer transition"
+            :class="resetRequestsTab === 'history' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700'"
+          >History</button>
+        </div>
 
-        <ul v-if="resetRequests.length" class="max-h-80 overflow-y-auto divide-y divide-gray-50">
-          <li v-for="req in resetRequests" :key="req.id" class="px-4 py-3">
-            <template v-if="confirmingDismissId !== req.id">
+        <template v-if="resetRequestsTab === 'pending'">
+          <p v-if="resetRequestsError" class="text-xs text-red-500 px-4 py-3">
+            ⚠️ {{ resetRequestsError }}
+            <button type="button" @click="fetchResetRequests" class="underline cursor-pointer">Retry</button>
+          </p>
+
+          <ul v-if="resetRequests.length" class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+            <li v-for="req in resetRequests" :key="req.id" class="px-4 py-3">
+              <template v-if="confirmingDismissId !== req.id">
+                <div class="flex items-start gap-3">
+                  <button
+                    type="button"
+                    @click="scrollToUser(req)"
+                    class="flex items-start gap-3 flex-1 min-w-0 text-left cursor-pointer group"
+                  >
+                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-semibold">
+                      {{ (req.User?.name || req.email).charAt(0).toUpperCase() }}
+                    </span>
+                    <span class="min-w-0">
+                      <span class="block font-medium text-gray-800 truncate group-hover:text-teal-600 transition">{{ req.User?.name || req.email }}</span>
+                      <span class="block text-[11px] text-gray-400">Requested {{ formatDate(req.createdAt) }}</span>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    @click="confirmingDismissId = req.id"
+                    title="Remove request"
+                    aria-label="Remove request"
+                    class="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-gray-300 hover:text-red-600 hover:bg-red-50 cursor-pointer transition"
+                  >✕</button>
+                </div>
+              </template>
+              <template v-else>
+                <div class="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                  <p class="text-amber-700 text-[11px] mb-2">Remove without resetting? They won't be notified — they'll have to try again or contact you directly.</p>
+                  <div class="flex gap-2">
+                    <button
+                      type="button"
+                      :disabled="processingRequestId === req.id"
+                      @click="handleDismissRequest(req)"
+                      class="px-2.5 py-1 bg-red-600 text-white rounded text-[11px] font-medium hover:bg-red-700 cursor-pointer disabled:opacity-60 disabled:cursor-default transition"
+                    >{{ processingRequestId === req.id ? "…" : "Yes, Remove" }}</button>
+                    <button
+                      type="button"
+                      @click="confirmingDismissId = null"
+                      class="px-2.5 py-1 border border-gray-300 text-gray-500 rounded text-[11px] hover:bg-gray-50 cursor-pointer transition"
+                    >Cancel</button>
+                  </div>
+                </div>
+              </template>
+            </li>
+          </ul>
+          <div v-else-if="!resetRequestsError" class="text-center px-4 py-8">
+            <div class="text-2xl mb-1">✅</div>
+            <p class="text-xs text-gray-400">All caught up — no pending requests.</p>
+          </div>
+
+          <div v-if="resetRequests.length" class="px-4 py-2 bg-gray-50 border-t border-gray-100">
+            <p class="text-[10px] text-gray-400">Click a name to locate them in the table below.</p>
+          </div>
+        </template>
+
+        <template v-else>
+          <p v-if="resetHistoryError" class="text-xs text-red-500 px-4 py-3">
+            ⚠️ {{ resetHistoryError }}
+            <button type="button" @click="fetchResetRequestHistory()" class="underline cursor-pointer">Retry</button>
+          </p>
+
+          <ul v-if="resetHistory.length" class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+            <li v-for="req in resetHistory" :key="req.id" class="px-4 py-3 text-xs">
               <div class="flex items-start gap-3">
-                <button
-                  type="button"
-                  @click="scrollToUser(req)"
-                  class="flex items-start gap-3 flex-1 min-w-0 text-left cursor-pointer group"
-                >
-                  <span class="flex-shrink-0 w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-semibold">
-                    {{ (req.User?.name || req.email).charAt(0).toUpperCase() }}
-                  </span>
-                  <span class="min-w-0">
-                    <span class="block font-medium text-gray-800 truncate group-hover:text-teal-600 transition">{{ req.User?.name || req.email }}</span>
-                    <span class="block text-[11px] text-gray-400">Requested {{ formatDate(req.createdAt) }}</span>
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  @click="confirmingDismissId = req.id"
-                  title="Remove request"
-                  aria-label="Remove request"
-                  class="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-gray-300 hover:text-red-600 hover:bg-red-50 cursor-pointer transition"
-                >✕</button>
-              </div>
-            </template>
-            <template v-else>
-              <div class="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-                <p class="text-amber-700 text-[11px] mb-2">Remove without resetting? They won't be notified — they'll have to try again or contact you directly.</p>
-                <div class="flex gap-2">
-                  <button
-                    type="button"
-                    :disabled="processingRequestId === req.id"
-                    @click="handleDismissRequest(req)"
-                    class="px-2.5 py-1 bg-red-600 text-white rounded text-[11px] font-medium hover:bg-red-700 cursor-pointer disabled:opacity-60 disabled:cursor-default transition"
-                  >{{ processingRequestId === req.id ? "…" : "Yes, Remove" }}</button>
-                  <button
-                    type="button"
-                    @click="confirmingDismissId = null"
-                    class="px-2.5 py-1 border border-gray-300 text-gray-500 rounded text-[11px] hover:bg-gray-50 cursor-pointer transition"
-                  >Cancel</button>
+                <span class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-semibold">
+                  {{ (req.User?.name || req.email).charAt(0).toUpperCase() }}
+                </span>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-center gap-2">
+                    <span class="font-medium text-gray-800 truncate">{{ req.User?.name || req.email }}</span>
+                    <span
+                      class="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
+                      :class="req.status === 'resolved' ? 'bg-teal-100 text-teal-700' : 'bg-gray-100 text-gray-500'"
+                    >{{ req.status === "resolved" ? "Resolved" : "Dismissed" }}</span>
+                  </div>
+                  <div class="text-gray-400 mt-0.5">Requested {{ formatDate(req.createdAt) }}</div>
+                  <div class="text-gray-400">By {{ req.ResolvedByUser?.name || "Unknown" }} · {{ formatDate(req.resolvedAt) }}</div>
                 </div>
               </div>
-            </template>
-          </li>
-        </ul>
-        <div v-else-if="!resetRequestsError" class="text-center px-4 py-8">
-          <div class="text-2xl mb-1">✅</div>
-          <p class="text-xs text-gray-400">All caught up — no pending requests.</p>
-        </div>
+            </li>
+          </ul>
+          <div v-else-if="!resetHistoryError" class="text-center px-4 py-8">
+            <p class="text-xs text-gray-400">No history yet.</p>
+          </div>
 
-        <div v-if="resetRequests.length" class="px-4 py-2 bg-gray-50 border-t border-gray-100">
-          <p class="text-[10px] text-gray-400">Click a name to locate them in the table below.</p>
-        </div>
+          <div v-if="resetHistory.length" class="px-4 py-2 bg-gray-50 border-t border-gray-100 text-center">
+            <p class="text-[11px] text-gray-400 mb-2">Showing {{ resetHistory.length }} of {{ resetHistoryTotal }}</p>
+            <button
+              v-if="resetHistory.length < resetHistoryTotal"
+              type="button"
+              :disabled="resetHistoryLoadingMore"
+              @click="loadMoreResetHistory"
+              class="px-3 py-1.5 border rounded text-xs hover:bg-gray-50 cursor-pointer disabled:opacity-60 disabled:cursor-default"
+            >{{ resetHistoryLoadingMore ? "Loading…" : "Load More" }}</button>
+          </div>
+        </template>
       </div>
     </Teleport>
 
@@ -657,10 +716,43 @@ const toggleResetRequestsPopover = (event) => {
     return;
   }
   confirmingDismissId.value = null;
+  resetRequestsTab.value = "pending";
   const rect = event.currentTarget.getBoundingClientRect();
   resetRequestsPopoverPos.value = { top: rect.bottom + 4, left: rect.left };
   showResetRequestsPopover.value = true;
   fetchResetRequests();
+};
+
+const resetRequestsTab = ref("pending");
+const resetHistory = ref([]);
+const resetHistoryTotal = ref(0);
+const resetHistoryPage = ref(1);
+const resetHistoryError = ref("");
+const resetHistoryLoadingMore = ref(false);
+const RESET_HISTORY_PAGE_SIZE = 10;
+
+const fetchResetRequestHistory = async (reset = true) => {
+  if (reset) resetHistoryPage.value = 1;
+  try {
+    const result = await userService.getResetRequestHistory({ page: resetHistoryPage.value, limit: RESET_HISTORY_PAGE_SIZE });
+    resetHistory.value = reset ? result.data : [...resetHistory.value, ...result.data];
+    resetHistoryTotal.value = result.total;
+    resetHistoryError.value = "";
+  } catch (err) {
+    resetHistoryError.value = "Couldn't load history.";
+  }
+};
+
+const loadMoreResetHistory = async () => {
+  resetHistoryLoadingMore.value = true;
+  resetHistoryPage.value += 1;
+  await fetchResetRequestHistory(false);
+  resetHistoryLoadingMore.value = false;
+};
+
+const openHistoryTab = () => {
+  resetRequestsTab.value = "history";
+  fetchResetRequestHistory();
 };
 
 const closeResetRequestsPopover = () => {
