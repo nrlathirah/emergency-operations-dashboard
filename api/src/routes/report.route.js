@@ -7,6 +7,7 @@ import {
   getCasesByCategory,
   getCasesTrendReport,
   getResponseTimeReport,
+  getCasesTable,
   exportCasesExcel,
 } from "#controllers/report.controller.js";
 import { authenticate } from "#middlewares/auth.middleware.js";
@@ -19,6 +20,7 @@ router.get("/cases-by-priority", authenticate, getCasesByPriority);
 router.get("/cases-by-category", authenticate, getCasesByCategory);
 router.get("/cases-trend", authenticate, getCasesTrendReport);
 router.get("/response-time", authenticate, getResponseTimeReport);
+router.get("/cases-table", authenticate, getCasesTable);
 router.get("/cases/export", authenticate, exportCasesExcel);
 
 export default router;

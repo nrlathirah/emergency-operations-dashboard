@@ -8,6 +8,7 @@ import {
   getCasesTrend,
   getAverageResponseTime,
 } from "#services/report.service.js";
+import { getCasesPage } from "#services/case.service.js";
 import { getScopedAgency } from "#utils/scope.util.js";
 
 export const getCasesSummary = async (req, res, next) => {
@@ -69,6 +70,29 @@ export const getResponseTimeReport = async (req, res, next) => {
   try {
     const data = await getAverageResponseTime({ agencyCode: getScopedAgency(req) });
     res.status(200).json({ data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCasesTable = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const result = await getCasesPage({
+      agencyCode: getScopedAgency(req),
+      status: req.query.status,
+      sort: req.query.sort,
+      order: req.query.order,
+      page,
+      limit,
+    });
+    res.status(200).json({
+      data: result.cases,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+    });
   } catch (error) {
     next(error);
   }

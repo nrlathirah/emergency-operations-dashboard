@@ -46,6 +46,12 @@
         <VehicleUtilizationChart :agency-code="agencyFilter" />
       </ReportCard>
     </div>
+
+    <div class="mt-6">
+      <ReportCard title="Case History">
+        <CasesDataTable :agency-code="agencyFilter" :is-super-admin="isSuperAdmin" />
+      </ReportCard>
+    </div>
   </div>
 </template>
 
@@ -58,6 +64,7 @@ import CasesByCategoryChart from "../components/CasesByCategoryChart.vue";
 import CasesTrendChart from "../components/CasesTrendChart.vue";
 import ResponseTimeCard from "../components/ResponseTimeCard.vue";
 import VehicleUtilizationChart from "../components/VehicleUtilizationChart.vue";
+import CasesDataTable from "../components/CasesDataTable.vue";
 import ReportCard from "../components/ReportCard.vue";
 import { reportService } from "../services/reportService";
 import { useAuthStore } from "../stores/auth";

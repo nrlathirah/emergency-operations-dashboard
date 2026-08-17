@@ -30,6 +30,31 @@ export const getAllCases = async ({ agencyCode, status, sort, order, includeAll 
   return Case.findAll({ where, include, order: [[sortField, sortOrder]] });
 };
 
+// Server-side paginated case listing for the Reports data table — unlike
+// getAllCases (used by the Live Dashboard's polling table, which always
+// wants the full active/recent set client-side), this can page through the
+// entire retained history without shipping hundreds of rows in one response.
+export const getCasesPage = async ({ agencyCode, status, sort, order, page = 1, limit = 10 } = {}) => {
+  const where = {};
+  if (status) where.status = status;
+
+  const include = [{ model: Agency, attributes: ["code", "name"] }];
+  if (agencyCode) include[0].where = { code: agencyCode };
+
+  const sortField = ALLOWED_SORT_FIELDS.includes(sort) ? sort : "createdAt";
+  const sortOrder = order === "ASC" ? "ASC" : "DESC";
+
+  const { rows, count } = await Case.findAndCountAll({
+    where,
+    include,
+    order: [[sortField, sortOrder]],
+    limit,
+    offset: (page - 1) * limit,
+  });
+
+  return { cases: rows, total: count, page, limit };
+};
+
 export const dispatchCase = async ({ caseId, vehicleId, requesterRole, requesterAgencyCode }) => {
   const caseRecord = await Case.findByPk(caseId, {
     include: [{ model: Agency, attributes: ["code", "name"] }],

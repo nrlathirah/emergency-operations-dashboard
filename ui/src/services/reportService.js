@@ -43,6 +43,18 @@ export const reportService = {
     return response.data.data;
   },
 
+  async getCasesTable({ agencyCode, status, sort, order, page, limit } = {}) {
+    const params = {};
+    if (agencyCode) params.agency = agencyCode;
+    if (status) params.status = status;
+    if (sort) params.sort = sort;
+    if (order) params.order = order;
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    const response = await api.get("/reports/cases-table", { params });
+    return response.data; // { data, total, page, limit }
+  },
+
   // Uses the shared `api` axios instance (not a plain URL/<a href>) so the
   // Authorization header actually gets attached — a plain link navigation
   // can't send custom headers, and this endpoint requires auth.
