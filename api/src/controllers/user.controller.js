@@ -86,7 +86,7 @@ export const listAuditLogController = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 15;
-    const result = await getAuditLogs({ page, limit });
+    const result = await getAuditLogs({ page, limit, targetUserId: req.query.targetUserId });
     res.status(200).json({
       data: result.logs,
       total: result.total,

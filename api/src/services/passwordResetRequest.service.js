@@ -1,4 +1,5 @@
 import { sequelize, User, Agency, PasswordResetRequest } from "#models/index.js";
+import { recordAuditLog } from "./audit.service.js";
 
 // Always resolves the same way regardless of whether the email matches a
 // real, active account — the caller (public, unauthenticated) must never be
@@ -50,6 +51,12 @@ export const dismissPasswordResetRequest = async ({ requestId, actorId }) => {
     throw new Error("Request not found or already handled.");
   }
   await request.update({ status: "dismissed", resolvedAt: new Date(), resolvedBy: actorId });
+  await recordAuditLog({
+    actorId,
+    action: "dismiss_reset_request",
+    targetUserId: request.userId,
+    detail: "declined a self-service forgot-password request",
+  });
 };
 
 // Past requests (resolved or dismissed) — once a request leaves the pending

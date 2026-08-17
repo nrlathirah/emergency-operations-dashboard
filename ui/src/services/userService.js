@@ -62,10 +62,11 @@ export const userService = {
     return response.data;
   },
 
-  async getAuditLog({ page, limit } = {}) {
+  async getAuditLog({ page, limit, targetUserId } = {}) {
     const params = {};
     if (page) params.page = page;
     if (limit) params.limit = limit;
+    if (targetUserId) params.targetUserId = targetUserId;
     const response = await api.get("/users/audit-log", { params });
     return response.data; // { data, total, page, limit }
   },

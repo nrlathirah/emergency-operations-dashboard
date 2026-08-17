@@ -17,7 +17,7 @@
         </button>
         <button
           type="button"
-          @click="showActivityDrawer = true"
+          @click="openActivityDrawer()"
           class="px-3 py-1.5 border rounded text-sm hover:bg-gray-50 cursor-pointer transition"
         >🕒 Activity</button>
         <button
@@ -164,6 +164,11 @@
               @click="openResetPassword(actionMenuUser); closeActionMenu()"
               class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-600"
             >Reset Password</button>
+            <button
+              type="button"
+              @click="openActivityDrawer(actionMenuUser); closeActionMenu()"
+              class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer text-gray-600"
+            >View History</button>
           </template>
           <template v-else>
             <div class="px-3 py-2">
@@ -219,14 +224,24 @@
       <div v-if="showActivityDrawer" class="fixed inset-0" style="z-index: 9999;">
         <div class="absolute inset-0 bg-black/40" @click="showActivityDrawer = false"></div>
         <div class="absolute right-0 top-0 h-full w-full max-w-sm bg-white shadow-xl flex flex-col">
-          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <h3 class="text-sm font-semibold text-gray-800">🕒 Recent Activity</h3>
+          <div class="px-4 py-3 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-semibold text-gray-800">
+                🕒 {{ auditFilterUser ? `Activity — ${auditFilterUser.name}` : "Recent Activity" }}
+              </h3>
+              <button
+                type="button"
+                @click="showActivityDrawer = false"
+                class="text-gray-400 hover:text-gray-600 cursor-pointer text-lg leading-none"
+                aria-label="Close"
+              >✕</button>
+            </div>
             <button
+              v-if="auditFilterUser"
               type="button"
-              @click="showActivityDrawer = false"
-              class="text-gray-400 hover:text-gray-600 cursor-pointer text-lg leading-none"
-              aria-label="Close"
-            >✕</button>
+              @click="openActivityDrawer()"
+              class="text-[11px] text-teal-600 hover:underline cursor-pointer mt-1"
+            >← View all activity</button>
           </div>
           <div class="flex-1 overflow-y-auto px-4 py-3">
             <p v-if="auditError" class="text-xs text-red-500 mb-3">
@@ -241,7 +256,9 @@
                 <div class="text-gray-400 mt-0.5">{{ formatDate(log.createdAt) }}</div>
               </li>
             </ul>
-            <p v-else-if="!auditError" class="text-xs text-gray-400">No activity yet.</p>
+            <p v-else-if="!auditError" class="text-xs text-gray-400">
+              {{ auditFilterUser ? `No activity yet for ${auditFilterUser.name}.` : "No activity yet." }}
+            </p>
           </div>
           <div v-if="auditLogs.length" class="px-4 py-3 border-t border-gray-100 text-center">
             <p class="text-[11px] text-gray-400 mb-2">Showing {{ auditLogs.length }} of {{ auditTotal }}</p>
@@ -378,7 +395,7 @@
                     <span
                       class="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
                       :class="req.status === 'resolved' ? 'bg-teal-100 text-teal-700' : 'bg-gray-100 text-gray-500'"
-                    >{{ req.status === "resolved" ? "Resolved" : "Dismissed" }}</span>
+                    >{{ req.status === "resolved" ? "Reset" : "Removed" }}</span>
                   </div>
                   <div class="text-gray-400 mt-0.5">Requested {{ formatDate(req.createdAt) }}</div>
                   <div class="text-gray-400">By {{ req.ResolvedByUser?.name || "Unknown" }} · {{ formatDate(req.resolvedAt) }}</div>
@@ -670,15 +687,24 @@ const AUDIT_ACTION_LABELS = {
   deactivate_user: "deactivated",
   reset_password: "reset the password for",
   update_name: "renamed",
+  dismiss_reset_request: "removed a reset request from",
 };
 const auditActionLabel = (action) => AUDIT_ACTION_LABELS[action] || action;
 
 // `reset` starts back at page 1 and replaces the list — used on mount and
 // after any action, so the newest entry always surfaces at the top.
+// Set to a user when opened via "View History" on a row, so the drawer
+// scopes to just their entries instead of the global feed.
+const auditFilterUser = ref(null);
+
 const fetchAuditLog = async (reset = true) => {
   if (reset) auditPage.value = 1;
   try {
-    const result = await userService.getAuditLog({ page: auditPage.value, limit: AUDIT_PAGE_SIZE });
+    const result = await userService.getAuditLog({
+      page: auditPage.value,
+      limit: AUDIT_PAGE_SIZE,
+      targetUserId: auditFilterUser.value?.id,
+    });
     auditLogs.value = reset ? result.data : [...auditLogs.value, ...result.data];
     auditTotal.value = result.total;
     auditError.value = "";
@@ -692,6 +718,14 @@ const loadMoreAuditLog = async () => {
   auditPage.value += 1;
   await fetchAuditLog(false);
   auditLoadingMore.value = false;
+};
+
+// No user → global feed (the header "Activity" button); a user → scoped to
+// just their history (the row's "⋮" → View History).
+const openActivityDrawer = (user = null) => {
+  auditFilterUser.value = user;
+  showActivityDrawer.value = true;
+  fetchAuditLog();
 };
 
 const showResetRequestsPopover = ref(false);
