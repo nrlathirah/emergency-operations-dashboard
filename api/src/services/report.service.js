@@ -30,6 +30,70 @@ export const getVehicleUtilization = async ({ agencyCode } = {}) => {
   return summary;
 };
 
+export const getCasesSummaryByPriority = async ({ agencyCode } = {}) => {
+  const cases = await getAllCases({ agencyCode, includeAll: true });
+  const summary = {};
+  cases.forEach((c) => {
+    summary[c.priority] = (summary[c.priority] || 0) + 1;
+  });
+  return summary;
+};
+
+export const getCasesSummaryByCategory = async ({ agencyCode } = {}) => {
+  const cases = await getAllCases({ agencyCode, includeAll: true });
+  const summary = {};
+  cases.forEach((c) => {
+    summary[c.category] = (summary[c.category] || 0) + 1;
+  });
+  return summary;
+};
+
+// Daily case counts for the last `days` days, zero-filled so gaps (no cases
+// that day) render as a dip on the trend line instead of just vanishing.
+export const getCasesTrend = async ({ agencyCode, days = 30 } = {}) => {
+  const cases = await getAllCases({ agencyCode, includeAll: true });
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+
+  const counts = {};
+  cases.forEach((c) => {
+    const createdAt = new Date(c.createdAt);
+    if (createdAt.getTime() < cutoff) return;
+    const dateKey = createdAt.toISOString().slice(0, 10);
+    counts[dateKey] = (counts[dateKey] || 0) + 1;
+  });
+
+  const trend = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const dateKey = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    trend.push({ date: dateKey, count: counts[dateKey] || 0 });
+  }
+  return trend;
+};
+
+// Response time is derived from `updatedAt - createdAt` on closed cases —
+// the model has no dedicated "resolvedAt" column, and a closed case's last
+// update is, by construction, the moment it was closed.
+export const getAverageResponseTime = async ({ agencyCode } = {}) => {
+  const closedCases = await getAllCases({ agencyCode, status: "closed" });
+  const durationsMinutes = closedCases.map((c) => (new Date(c.updatedAt) - new Date(c.createdAt)) / 60000);
+
+  const average = (values) => (values.length ? Math.round(values.reduce((sum, v) => sum + v, 0) / values.length) : 0);
+
+  const byPriorityMinutes = {};
+  ["low", "medium", "high"].forEach((priority) => {
+    const subset = closedCases
+      .filter((c) => c.priority === priority)
+      .map((c) => (new Date(c.updatedAt) - new Date(c.createdAt)) / 60000);
+    byPriorityMinutes[priority] = average(subset);
+  });
+
+  return {
+    overallMinutes: average(durationsMinutes),
+    byPriorityMinutes,
+    sampleSize: closedCases.length,
+  };
+};
+
 export const generateCasesExcel = async ({ agencyCode, status } = {}) => {
   const cases = await getAllCases({ agencyCode, status, includeAll: true });
 

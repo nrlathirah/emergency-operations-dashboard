@@ -3,6 +3,10 @@ import {
   getCasesSummaryByStatus,
   getCasesSummaryByAgency,
   getVehicleUtilization,
+  getCasesSummaryByPriority,
+  getCasesSummaryByCategory,
+  getCasesTrend,
+  getAverageResponseTime,
 } from "#services/report.service.js";
 import { getScopedAgency } from "#utils/scope.util.js";
 
@@ -28,6 +32,43 @@ export const getVehicleUtilizationReport = async (req, res, next) => {
   try {
     const summary = await getVehicleUtilization({ agencyCode: getScopedAgency(req) });
     res.status(200).json({ data: summary });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCasesByPriority = async (req, res, next) => {
+  try {
+    const summary = await getCasesSummaryByPriority({ agencyCode: getScopedAgency(req) });
+    res.status(200).json({ data: summary });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCasesByCategory = async (req, res, next) => {
+  try {
+    const summary = await getCasesSummaryByCategory({ agencyCode: getScopedAgency(req) });
+    res.status(200).json({ data: summary });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCasesTrendReport = async (req, res, next) => {
+  try {
+    const days = parseInt(req.query.days) || 30;
+    const trend = await getCasesTrend({ agencyCode: getScopedAgency(req), days });
+    res.status(200).json({ data: trend });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getResponseTimeReport = async (req, res, next) => {
+  try {
+    const data = await getAverageResponseTime({ agencyCode: getScopedAgency(req) });
+    res.status(200).json({ data });
   } catch (error) {
     next(error);
   }

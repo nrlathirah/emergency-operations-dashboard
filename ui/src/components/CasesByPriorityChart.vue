@@ -1,0 +1,61 @@
+<template>
+  <div>
+    <div class="flex justify-end gap-2 mb-2">
+      <button @click="handleDownloadImage" class="px-2 py-1 text-xs border rounded hover:bg-gray-50 text-gray-600 cursor-pointer">📷 PNG</button>
+      <button @click="handleDownloadCsv" class="px-2 py-1 text-xs border rounded hover:bg-gray-50 text-gray-600 cursor-pointer">📄 CSV</button>
+    </div>
+    <ErrorBanner v-if="error" :message="error" @retry="loadChart" />
+    <LoadingSpinner v-else-if="!chartData" />
+    <Bar v-else ref="chartRef" :data="chartData" :options="chartOptions" />
+  </div>
+</template>
+
+<script setup>
+import { ref, watch, onMounted } from "vue";
+import { Bar } from "vue-chartjs";
+import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from "chart.js";
+import { reportService } from "../services/reportService";
+import LoadingSpinner from "./LoadingSpinner.vue";
+import ErrorBanner from "./ErrorBanner.vue";
+import { downloadChartImage, downloadChartCsv } from "../utils/chartExport";
+
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
+
+const props = defineProps({
+  agencyCode: { type: String, default: "" },
+});
+
+const chartData = ref(null);
+const chartOptions = { responsive: true };
+const chartRef = ref(null);
+const error = ref(null);
+
+const PRIORITY_COLORS = { low: "#16a34a", medium: "#f59e0b", high: "#dc2626" };
+const PRIORITY_ORDER = ["low", "medium", "high"];
+
+const loadChart = async () => {
+  try {
+    error.value = null;
+    const summary = await reportService.getCasesByPriority(props.agencyCode || undefined);
+    const labels = Object.keys(summary).sort((a, b) => PRIORITY_ORDER.indexOf(a) - PRIORITY_ORDER.indexOf(b));
+    chartData.value = {
+      labels,
+      datasets: [
+        {
+          label: "Cases by Priority",
+          backgroundColor: labels.map((l) => PRIORITY_COLORS[l] || "#6b7280"),
+          data: labels.map((l) => summary[l]),
+        },
+      ],
+    };
+  } catch (err) {
+    error.value = "Failed to load chart data.";
+  }
+};
+
+const handleDownloadImage = () => downloadChartImage(chartRef.value?.chart, "cases-by-priority");
+const handleDownloadCsv = () => downloadChartCsv(chartData.value, "cases-by-priority");
+
+watch(() => props.agencyCode, loadChart);
+onMounted(loadChart);
+</script>
