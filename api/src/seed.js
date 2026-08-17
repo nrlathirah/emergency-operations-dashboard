@@ -1,4 +1,5 @@
 import { sequelize, Agency, Vehicle, Case, User, Station } from "#models/index.js";
+import { generateHistoricalCases } from "#utils/caseGenerator.js";
 
 const minutesAgo = (mins) => new Date(Date.now() - mins * 60000);
 
@@ -68,6 +69,20 @@ export const seedDatabase = async () => {
   await Case.create({ agencyId: jbpm.id, caseNumber: formatCaseNumber("JBPM", 1), category: "fire", priority: "high", status: "on_scene", vehicleId: ft04.id, location: "Jalan Tun Razak, KL", latitude: 3.1420, longitude: 101.7050, createdAt: minutesAgo(25) });
   await Case.create({ agencyId: jbpm.id, caseNumber: formatCaseNumber("JBPM", 3), category: "fire", priority: "high", status: "dispatched", vehicleId: ft02.id, location: "Jalan Sungai Besi, Petaling Jaya", latitude: 3.1080, longitude: 101.6180, createdAt: minutesAgo(55) });
   await Case.create({ agencyId: jbpm.id, caseNumber: formatCaseNumber("JBPM", 4), category: "rescue", priority: "medium", status: "en_route", vehicleId: ft03.id, location: "Jalan Shah Alam Selatan", latitude: 3.0700, longitude: 101.5250, createdAt: minutesAgo(110) });
+
+  // Bulk of historical, already-`closed` cases spread over the past 90 days
+  // — gives report/chart pages (trends, category/priority mix, response
+  // time) real variety to show instead of just the 5 live-status cases
+  // above. `silent: true` so the explicit historical `updatedAt` values
+  // above aren't clobbered by Sequelize's normal auto-timestamp behavior.
+  await Case.bulkCreate(
+    [
+      ...generateHistoricalCases({ agency: kkm, stations: [hospitalKL, hospitalSelayang, hospitalSerdang], vehicles: [amb01, amb02, amb03, amb04], count: 60, daysBack: 90, startSeq: 6 }),
+      ...generateHistoricalCases({ agency: pdrm, stations: [ipdDangWangi, ipdPJ, ipdShahAlam], vehicles: [pc01, pc02, pc03, pc04], count: 60, daysBack: 90, startSeq: 6 }),
+      ...generateHistoricalCases({ agency: jbpm, stations: [bombaHangTuah, bombaPJ, bombaShahAlam], vehicles: [ft01, ft02, ft03, ft04], count: 60, daysBack: 90, startSeq: 6 }),
+    ],
+    { silent: true }
+  );
 
   const users = [
     { name: "Ahmad Razak", email: "ahmad.razak@kkm.gov.my", password: "password123", role: "staff", agencyId: kkm.id },
