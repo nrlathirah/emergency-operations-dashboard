@@ -45,6 +45,14 @@ PasswordResetRequest.belongsTo(User, { foreignKey: "resolvedBy", as: "ResolvedBy
 // the FK constraint. alter:true's blast radius (it reconciles the *entire*
 // schema, not just what actually changed) makes it unsafe to run against
 // production on every boot.
+const columnExists = async (column) => {
+  const [[{ exists }]] = await sequelize.query(
+    `SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'Users' AND column_name = :column) AS exists;`,
+    { replacements: { column } }
+  );
+  return exists;
+};
+
 const migrateUserColumns = async () => {
   // Check the dialect the `sequelize` instance actually bound to (not
   // process.env.DATABASE_URL directly) — database.js decides that at
@@ -52,10 +60,17 @@ const migrateUserColumns = async () => {
   // so the env var can disagree with what `sequelize` really is.
   if (sequelize.getDialect() !== "postgres") return;
 
-  const [[{ exists }]] = await sequelize.query(`
+  const [[{ exists: usersTableExists }]] = await sequelize.query(`
     SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'Users') AS exists;
   `);
-  if (!exists) return; // fresh DB — sync() below creates the table with every column already
+  if (!usersTableExists) return; // fresh DB — sync() below creates the table with every column already
+
+  // Note whether each column is genuinely new *before* adding it — the
+  // one-time backfills below must only run then. Re-running them on every
+  // boot would also undo legitimate future forced-password states set by
+  // createUser/resetUserPassword after this migration first runs.
+  const mustChangePasswordIsNew = !(await columnExists("mustChangePassword"));
+  const isDemoAccountIsNew = !(await columnExists("isDemoAccount"));
 
   await sequelize.query(`
     ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "mustChangePassword" BOOLEAN NOT NULL DEFAULT true;
@@ -67,24 +82,34 @@ const migrateUserColumns = async () => {
     ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "isDemoAccount" BOOLEAN NOT NULL DEFAULT false;
   `);
 
-  // The column above defaults every pre-existing row to false — including
-  // the real quick-login accounts, which would otherwise leave the demo
+  // The column above defaults every pre-existing row to true (an admin-set
+  // password requiring change) — but every pre-existing row here is really
+  // seeded/demo data, not something created through the app's own
+  // createUser flow, so it should read the same way a fresh seed would.
+  if (mustChangePasswordIsNew) {
+    await sequelize.query(`UPDATE "Users" SET "mustChangePassword" = false;`);
+  }
+
+  // Same story for isDemoAccount defaulting every pre-existing row to
+  // false — the real quick-login accounts would otherwise leave the demo
   // protections (see passwordResetRequest.service.js, user.service.js)
-  // silently inactive for them. Re-flag them explicitly; safe to repeat.
-  // Keep this list in sync with ui LoginPage.vue's quickLoginRoles.
-  await sequelize.query(
-    `UPDATE "Users" SET "isDemoAccount" = true WHERE email IN (:emails);`,
-    {
-      replacements: {
-        emails: [
-          "admin@ops.gov.my",
-          "ahmad.razak@kkm.gov.my",
-          "zul.hassan@pdrm.gov.my",
-          "faizal.anuar@jbpm.gov.my",
-        ],
-      },
-    }
-  );
+  // silently inactive for them. Keep this list in sync with ui
+  // LoginPage.vue's quickLoginRoles.
+  if (isDemoAccountIsNew) {
+    await sequelize.query(
+      `UPDATE "Users" SET "isDemoAccount" = true WHERE email IN (:emails);`,
+      {
+        replacements: {
+          emails: [
+            "admin@ops.gov.my",
+            "ahmad.razak@kkm.gov.my",
+            "zul.hassan@pdrm.gov.my",
+            "faizal.anuar@jbpm.gov.my",
+          ],
+        },
+      }
+    );
+  }
 };
 
 export const syncDatabase = async () => {

@@ -34,6 +34,11 @@ export const userService = {
     return response.data.data;
   },
 
+  async updateName(userId, name) {
+    const response = await api.patch(`/users/${userId}/name`, { name });
+    return response.data.data;
+  },
+
   async updateStatus(userId, status) {
     const response = await api.patch(`/users/${userId}/status`, { status });
     return response.data.data;
@@ -42,6 +47,12 @@ export const userService = {
   // Self-service — the logged-in user changes their own password.
   async changeMyPassword(currentPassword, newPassword) {
     const response = await api.patch("/users/me/password", { currentPassword, newPassword });
+    return response.data;
+  },
+
+  // Self-service — the logged-in user renames themselves.
+  async changeMyName(name) {
+    const response = await api.patch("/users/me/name", { name });
     return response.data;
   },
 

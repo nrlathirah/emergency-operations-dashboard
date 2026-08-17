@@ -1,4 +1,4 @@
-import { getAllUsers, generateUsersExcel, createUser, updateUserStatus, changeOwnPassword, resetUserPassword } from "#services/user.service.js";
+import { getAllUsers, generateUsersExcel, createUser, updateUserName, updateUserStatus, changeOwnPassword, changeOwnName, resetUserPassword } from "#services/user.service.js";
 import { getAuditLogs } from "#services/audit.service.js";
 import { getPendingResetRequests, dismissPasswordResetRequest } from "#services/passwordResetRequest.service.js";
 import { getScopedAgency } from "#utils/scope.util.js";
@@ -64,6 +64,15 @@ export const createUserController = async (req, res, next) => {
   }
 };
 
+export const updateUserNameController = async (req, res, next) => {
+  try {
+    const user = await updateUserName({ userId: req.params.id, name: req.body.name, actorId: req.user.id });
+    res.status(200).json({ data: user });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
 export const updateUserStatusController = async (req, res, next) => {
   try {
     const user = await updateUserStatus({ userId: req.params.id, status: req.body.status, actorId: req.user.id });
@@ -97,6 +106,15 @@ export const changePasswordController = async (req, res, next) => {
     }
     await changeOwnPassword({ userId: req.user.id, currentPassword, newPassword });
     res.status(200).json({ message: "Password changed successfully." });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const changeNameController = async (req, res, next) => {
+  try {
+    await changeOwnName({ userId: req.user.id, name: req.body.name });
+    res.status(200).json({ message: "Name updated successfully." });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }

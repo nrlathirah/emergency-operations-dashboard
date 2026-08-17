@@ -45,6 +45,11 @@
             <template v-if="!confirmingLogout">
               <button
                 type="button"
+                @click="openEditName"
+                class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer"
+              >✏️ Edit Name</button>
+              <button
+                type="button"
                 @click="showChangePassword = true; showUserMenu = false"
                 class="w-full text-left px-3 py-2 hover:bg-gray-50 cursor-pointer"
               >🔒 Change Password</button>
@@ -99,6 +104,39 @@
     <footer v-if="authStore.isLoggedIn" class="text-center text-xs text-gray-400 py-4 border-t border-gray-200">
       Emergency Operations Dashboard · Multi-Agency Coordination Platform
     </footer>
+
+    <!-- Edit Name modal -->
+    <div v-if="showEditName" class="fixed inset-0 flex items-center justify-center bg-black/40 px-4" style="z-index: 9999;">
+      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-800">
+        <h3 class="text-base font-semibold mb-4">Edit Name</h3>
+        <form @submit.prevent="handleEditName" class="space-y-3">
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Name</label>
+            <input
+              v-model="editNameValue"
+              type="text"
+              required
+              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+            />
+          </div>
+
+          <p v-if="editNameError" class="text-red-600 text-xs">{{ editNameError }}</p>
+
+          <div class="flex gap-2 pt-2">
+            <button
+              type="button"
+              @click="closeEditName"
+              class="flex-1 px-3 py-2 border rounded text-sm hover:bg-gray-50 cursor-pointer"
+            >Cancel</button>
+            <button
+              type="submit"
+              :disabled="savingName"
+              class="flex-1 px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer disabled:opacity-60 disabled:cursor-default"
+            >{{ savingName ? "Saving…" : "Save" }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- Change Password modal. z-index far above Leaflet's own panes/controls
          (which reach ~1000) — otherwise the map renders on top of this. -->
@@ -219,6 +257,36 @@ const handleOutsideUserMenuClick = (e) => {
 };
 onMounted(() => window.addEventListener("click", handleOutsideUserMenuClick));
 onUnmounted(() => window.removeEventListener("click", handleOutsideUserMenuClick));
+
+const showEditName = ref(false);
+const editNameValue = ref("");
+const editNameError = ref("");
+const savingName = ref(false);
+
+const openEditName = () => {
+  editNameValue.value = authStore.user.name;
+  editNameError.value = "";
+  showEditName.value = true;
+  showUserMenu.value = false;
+};
+
+const closeEditName = () => {
+  showEditName.value = false;
+};
+
+const handleEditName = async () => {
+  editNameError.value = "";
+  savingName.value = true;
+  try {
+    await userService.changeMyName(editNameValue.value);
+    authStore.updateName(editNameValue.value.trim());
+    closeEditName();
+  } catch (err) {
+    editNameError.value = err.response?.data?.message || "Failed to update name.";
+  } finally {
+    savingName.value = false;
+  }
+};
 
 const showChangePassword = ref(false);
 const changingPassword = ref(false);

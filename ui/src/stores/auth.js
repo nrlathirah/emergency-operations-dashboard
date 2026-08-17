@@ -31,5 +31,12 @@ export const useAuthStore = defineStore("auth", {
       this.user = { ...this.user, mustChangePassword: false };
       localStorage.setItem("user", JSON.stringify(this.user));
     },
+    // Reflects a self-service name change locally right away, so the header
+    // updates without needing a fresh login/token.
+    updateName(name) {
+      if (!this.user) return;
+      this.user = { ...this.user, name };
+      localStorage.setItem("user", JSON.stringify(this.user));
+    },
   },
 });

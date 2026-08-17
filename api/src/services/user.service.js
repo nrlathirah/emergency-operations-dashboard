@@ -167,6 +167,31 @@ export const createUser = async ({ name, email, password, role, agencyCode, acto
   return User.findByPk(created.id, { include: [{ model: Agency, attributes: ["code", "name"] }] });
 };
 
+export const updateUserName = async ({ userId, name, actorId }) => {
+  if (!name || !name.trim()) {
+    throw new Error("Name is required.");
+  }
+
+  const user = await User.findByPk(userId);
+  if (!user) {
+    throw new Error("User not found.");
+  }
+  // Unlike password/status changes, renaming doesn't affect login access —
+  // no reason to block it for the shared demo accounts.
+
+  const oldName = user.name;
+  const newName = name.trim();
+  await user.update({ name: newName });
+  await recordAuditLog({
+    actorId,
+    action: "update_name",
+    targetUserId: user.id,
+    detail: `"${oldName}" → "${newName}"`,
+  });
+
+  return User.findByPk(user.id, { include: [{ model: Agency, attributes: ["code", "name"] }] });
+};
+
 export const updateUserStatus = async ({ userId, status, actorId }) => {
   if (!["active", "inactive"].includes(status)) {
     throw new Error("Status must be 'active' or 'inactive'.");
@@ -229,6 +254,25 @@ export const changeOwnPassword = async ({ userId, currentPassword, newPassword }
 
   // They set this one themselves — no longer forced to change it again.
   await user.update({ password: newPassword, mustChangePassword: false });
+};
+
+// Self-service — the logged-in user renames themselves. Unlike an admin
+// renaming someone else (see updateUserName), this is reachable by anyone
+// who's simply logged in, so the shared demo accounts stay off-limits here.
+export const changeOwnName = async ({ userId, name }) => {
+  if (!name || !name.trim()) {
+    throw new Error("Name is required.");
+  }
+
+  const user = await User.findByPk(userId);
+  if (!user) {
+    throw new Error("User not found.");
+  }
+  if (user.isDemoAccount) {
+    throw new Error("This is a shared demo account and its name can't be changed.");
+  }
+
+  await user.update({ name: name.trim() });
 };
 
 // Admin-triggered fallback for a user who forgot their password entirely
