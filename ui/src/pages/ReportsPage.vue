@@ -19,37 +19,32 @@
       <p v-if="exportError" class="text-red-600 text-xs">{{ exportError }}</p>
     </div>
 
-    <div class="mb-6">
-      <h3 class="text-sm font-medium text-gray-600 mb-2">Average Response Time (Closed Cases)</h3>
-      <ResponseTimeCard :agency-code="agencyFilter" />
+    <div class="grid grid-cols-1 gap-6 mb-6">
+      <ReportCard title="Average Response Time (Closed Cases)">
+        <ResponseTimeCard :agency-code="agencyFilter" />
+      </ReportCard>
+
+      <ReportCard title="Cases Trend (Last 30 Days)">
+        <CasesTrendChart :agency-code="agencyFilter" />
+      </ReportCard>
     </div>
 
-    <div class="mb-6">
-      <h3 class="text-sm font-medium text-gray-600 mb-2">Cases Trend (Last 30 Days)</h3>
-      <CasesTrendChart :agency-code="agencyFilter" />
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div>
-        <h3 class="text-sm font-medium text-gray-600 mb-2">Cases by Status</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-stretch">
+      <ReportCard title="Cases by Status">
         <CasesChart :agency-code="agencyFilter" />
-      </div>
-      <div>
-        <h3 class="text-sm font-medium text-gray-600 mb-2">Cases by Priority</h3>
+      </ReportCard>
+      <ReportCard title="Cases by Priority">
         <CasesByPriorityChart :agency-code="agencyFilter" />
-      </div>
-      <div v-if="isSuperAdmin">
-        <h3 class="text-sm font-medium text-gray-600 mb-2">Cases by Agency</h3>
+      </ReportCard>
+      <ReportCard v-if="isSuperAdmin" title="Cases by Agency">
         <CasesByAgencyChart :agency-code="agencyFilter" />
-      </div>
-      <div>
-        <h3 class="text-sm font-medium text-gray-600 mb-2">Cases by Category</h3>
+      </ReportCard>
+      <ReportCard title="Cases by Category">
         <CasesByCategoryChart :agency-code="agencyFilter" />
-      </div>
-      <div>
-        <h3 class="text-sm font-medium text-gray-600 mb-2">Vehicle Utilization</h3>
+      </ReportCard>
+      <ReportCard title="Vehicle Utilization">
         <VehicleUtilizationChart :agency-code="agencyFilter" />
-      </div>
+      </ReportCard>
     </div>
   </div>
 </template>
@@ -63,6 +58,7 @@ import CasesByCategoryChart from "../components/CasesByCategoryChart.vue";
 import CasesTrendChart from "../components/CasesTrendChart.vue";
 import ResponseTimeCard from "../components/ResponseTimeCard.vue";
 import VehicleUtilizationChart from "../components/VehicleUtilizationChart.vue";
+import ReportCard from "../components/ReportCard.vue";
 import { reportService } from "../services/reportService";
 import { useAuthStore } from "../stores/auth";
 

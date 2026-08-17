@@ -6,7 +6,9 @@
     </div>
     <ErrorBanner v-if="error" :message="error" @retry="loadChart" />
     <LoadingSpinner v-else-if="!chartData" />
-    <Bar v-else ref="chartRef" :data="chartData" :options="chartOptions" />
+    <div v-else class="h-64">
+      <Bar ref="chartRef" :data="chartData" :options="chartOptions" />
+    </div>
   </div>
 </template>
 
@@ -26,7 +28,7 @@ const props = defineProps({
 });
 
 const chartData = ref(null);
-const chartOptions = { responsive: true, indexAxis: "y" };
+const chartOptions = { responsive: true, maintainAspectRatio: false, indexAxis: "y" };
 const chartRef = ref(null);
 const error = ref(null);
 
@@ -34,18 +36,28 @@ const error = ref(null);
 // semantic color to map them to like status/priority have.
 const PALETTE = ["#2563eb", "#dc2626", "#16a34a", "#f59e0b", "#7c3aed", "#0891b2", "#db2777", "#65a30d"];
 
+// With "All Agencies" selected, categories from all 3 agencies combine into
+// ~18 distinct values — too many bars to stay readable in a fixed-height
+// card, so anything past the top 7 gets folded into "Other".
+const TOP_N = 7;
+
 const loadChart = async () => {
   try {
     error.value = null;
     const summary = await reportService.getCasesByCategory(props.agencyCode || undefined);
-    const labels = Object.keys(summary).sort((a, b) => summary[b] - summary[a]);
+    const sorted = Object.entries(summary).sort((a, b) => b[1] - a[1]);
+    const top = sorted.slice(0, TOP_N);
+    const rest = sorted.slice(TOP_N);
+    const restTotal = rest.reduce((sum, [, count]) => sum + count, 0);
+    const entries = restTotal > 0 ? [...top, ["Other", restTotal]] : top;
+
     chartData.value = {
-      labels,
+      labels: entries.map(([label]) => label),
       datasets: [
         {
           label: "Cases by Category",
-          backgroundColor: labels.map((_, i) => PALETTE[i % PALETTE.length]),
-          data: labels.map((l) => summary[l]),
+          backgroundColor: entries.map((_, i) => PALETTE[i % PALETTE.length]),
+          data: entries.map(([, count]) => count),
         },
       ],
     };

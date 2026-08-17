@@ -1,7 +1,9 @@
 <template>
   <ErrorBanner v-if="error" :message="error" @retry="loadChart" />
   <LoadingSpinner v-else-if="!chartData" />
-  <Bar v-else :data="chartData" :options="chartOptions" />
+  <div v-else class="h-64">
+    <Bar :data="chartData" :options="chartOptions" />
+  </div>
 </template>
 
 
@@ -20,7 +22,7 @@ const props = defineProps({
 });
 
 const chartData = ref(null);
-const chartOptions = { responsive: true };
+const chartOptions = { responsive: true, maintainAspectRatio: false };
 const error = ref(null);
 
 const AGENCY_COLORS = { KKM: "#dc2626", PDRM: "#1e3a8a", JBPM: "#f59e0b" };

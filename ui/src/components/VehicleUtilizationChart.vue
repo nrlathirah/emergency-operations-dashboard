@@ -6,7 +6,9 @@
     </div>
     <ErrorBanner v-if="error" :message="error" @retry="loadChart" />
     <LoadingSpinner v-else-if="!chartData" />
-    <Doughnut v-else ref="chartRef" :data="chartData" :options="chartOptions" />
+    <div v-else class="h-64">
+      <Doughnut ref="chartRef" :data="chartData" :options="chartOptions" />
+    </div>
   </div>
 </template>
 
@@ -26,7 +28,7 @@ const props = defineProps({
 });
 
 const chartData = ref(null);
-const chartOptions = { responsive: true };
+const chartOptions = { responsive: true, maintainAspectRatio: false };
 const chartRef = ref(null);
 const error = ref(null);
 
