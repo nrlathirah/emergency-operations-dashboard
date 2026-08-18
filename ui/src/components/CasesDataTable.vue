@@ -1,89 +1,78 @@
 <template>
-  <div>
-    <div class="flex flex-wrap gap-3 mb-3">
-      <select v-model="statusFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
-        <option value="">All Statuses</option>
-        <option value="open">Open</option>
-        <option value="dispatched">Dispatched</option>
-        <option value="en_route">En Route</option>
-        <option value="on_scene">On Scene</option>
-        <option value="closed">Closed</option>
-      </select>
-      <button
-        v-if="statusFilter"
-        type="button"
-        @click="statusFilter = ''"
-        class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600 cursor-pointer transition"
-      >✕ Reset Filters</button>
+  <div class="rb-panel">
+    <div class="rb-panel-head">
+      <div>
+        <span class="rb-panel-tag">Manifest</span>
+        <h2>Case History</h2>
+        <p class="rb-panel-meta">Closed cases only — see the Live Dashboard for cases still in progress.</p>
+      </div>
+      <div class="relative" data-table-menu>
+        <button type="button" @click="menuOpen = !menuOpen" class="rb-icon-btn" title="More options" aria-label="More options">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
+        </button>
+        <div v-if="menuOpen" class="rb-chart-menu">
+          <button type="button" :disabled="exporting" @click="handleExport">{{ exporting ? "Generating…" : "Export to Excel" }}</button>
+          <button type="button" @click="handlePrint">Print</button>
+        </div>
+      </div>
     </div>
+    <p v-if="exportError" class="text-red-600 text-xs mb-3">{{ exportError }}</p>
 
     <ErrorBanner v-if="error" :message="error" @retry="fetchPage" />
     <LoadingSpinner v-else-if="loading" />
-    <div v-else class="overflow-x-auto">
-      <table class="min-w-[700px] text-sm border-collapse">
+    <div v-else class="rb-table-scroll">
+      <table class="rb-manifest">
         <thead>
-          <tr class="border-b border-gray-200 text-left text-gray-500">
-            <th class="py-2 px-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('caseNumber')">Case ID {{ sortIndicator("caseNumber") }}</th>
-            <th v-if="isSuperAdmin" class="py-2 px-4 whitespace-nowrap">Agency</th>
-            <th class="py-2 px-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('category')">Category {{ sortIndicator("category") }}</th>
-            <th class="py-2 px-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('priority')">Priority {{ sortIndicator("priority") }}</th>
-            <th class="py-2 px-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('status')">Status {{ sortIndicator("status") }}</th>
-            <th class="py-2 px-4 whitespace-nowrap">Location</th>
-            <th class="py-2 px-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('createdAt')">Created {{ sortIndicator("createdAt") }}</th>
-            <th class="py-2 px-4 whitespace-nowrap">Resolved In</th>
+          <tr>
+            <th class="sortable" @click="toggleSort('caseNumber')">Case ID {{ sortIndicator("caseNumber") }}</th>
+            <th v-if="isSuperAdmin">Agency</th>
+            <th class="sortable" @click="toggleSort('category')">Category {{ sortIndicator("category") }}</th>
+            <th class="sortable" @click="toggleSort('priority')">Priority {{ sortIndicator("priority") }}</th>
+            <th>Location</th>
+            <th class="sortable" @click="toggleSort('createdAt')">Created {{ sortIndicator("createdAt") }}</th>
+            <th>Resolved In</th>
           </tr>
         </thead>
         <tbody v-if="cases.length === 0">
           <tr>
-            <td :colspan="isSuperAdmin ? 8 : 7" class="py-10 text-center text-gray-400 text-sm">No cases found matching your filters.</td>
+            <td :colspan="isSuperAdmin ? 7 : 6" class="rb-empty">No closed cases found.</td>
           </tr>
         </tbody>
         <tbody v-else>
-          <tr v-for="c in cases" :key="c.id" class="border-t border-gray-100 hover:bg-gray-50">
-            <td class="py-2 px-4 font-medium whitespace-nowrap">{{ c.caseNumber }}</td>
-            <td v-if="isSuperAdmin" class="py-2 px-4 whitespace-nowrap">{{ c.Agency?.code || "—" }}</td>
-            <td class="py-2 px-4 whitespace-nowrap capitalize">{{ c.category }}</td>
-            <td class="py-2 px-4 whitespace-nowrap">
-              <span class="font-medium capitalize" :class="PRIORITY_TEXT_COLORS[c.priority]">{{ c.priority }}</span>
-            </td>
-            <td class="py-2 px-4 whitespace-nowrap capitalize">{{ c.status.replace("_", " ") }}</td>
-            <td class="py-2 px-4 text-gray-600">{{ c.location }}</td>
-            <td class="py-2 px-4 text-gray-600 whitespace-nowrap">{{ formatDate(c.createdAt) }}</td>
-            <td class="py-2 px-4 text-gray-600 whitespace-nowrap">{{ c.status === "closed" ? formatDuration(c.createdAt, c.updatedAt) : "—" }}</td>
+          <tr v-for="c in cases" :key="c.id">
+            <td class="rb-case-id">{{ c.caseNumber }}</td>
+            <td v-if="isSuperAdmin"><span class="rb-chip-agency" :data-agency="c.Agency?.code">{{ c.Agency?.code || "—" }}</span></td>
+            <td class="capitalize">{{ c.category }}</td>
+            <td><span class="rb-priority-tag" :data-priority="c.priority"><span class="rb-dot"></span>{{ capitalize(c.priority) }}</span></td>
+            <td class="rb-case-loc">{{ c.location }}</td>
+            <td class="rb-created-time tabular">{{ formatDate(c.createdAt) }}</td>
+            <td class="rb-resolved-time tabular">{{ formatDuration(c.createdAt, c.updatedAt) }}</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div v-if="!loading" class="flex items-center gap-3 mt-4 text-sm flex-wrap">
-      <span class="text-gray-500 text-xs">Showing {{ rangeStart }}–{{ rangeEnd }} of {{ total }} cases</span>
-      <label class="flex items-center gap-1.5 text-xs text-gray-500">
-        Per page
-        <select v-model.number="pageSize" class="border rounded px-2 py-1 text-xs cursor-pointer hover:bg-gray-50 transition">
-          <option :value="10">10</option>
-          <option :value="25">25</option>
-          <option :value="50">50</option>
-        </select>
-      </label>
-      <div class="flex items-center gap-3 sm:ml-auto">
-        <button
-          :disabled="page === 1"
-          @click="page--"
-          class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
-        >Previous</button>
-        <span class="text-gray-600">Page {{ page }} of {{ totalPages }}</span>
-        <button
-          :disabled="page === totalPages"
-          @click="page++"
-          class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
-        >Next</button>
+    <div v-if="!loading" class="rb-table-foot">
+      <span>Showing {{ rangeStart }}–{{ rangeEnd }} of {{ total }} cases</span>
+      <div class="rb-pager">
+        <label class="flex items-center gap-1.5">
+          Per page
+          <select v-model.number="pageSize">
+            <option :value="10">10</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+          </select>
+        </label>
+        <button :disabled="page === 1" @click="page--">Previous</button>
+        <span>Page {{ page }} of {{ totalPages }}</span>
+        <button :disabled="page === totalPages" @click="page++">Next</button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { reportService } from "../services/reportService";
 import LoadingSpinner from "./LoadingSpinner.vue";
 import ErrorBanner from "./ErrorBanner.vue";
@@ -93,14 +82,19 @@ const props = defineProps({
   isSuperAdmin: { type: Boolean, default: false },
 });
 
-const PRIORITY_TEXT_COLORS = { low: "text-green-600", medium: "text-amber-600", high: "text-red-600" };
+// "Case History" — closed/resolved cases only. Cases still in progress
+// belong on the Live Dashboard, not here, so there's no status filter to
+// pick from: this table's whole point is the closed subset.
+const STATUS = "closed";
 
 const cases = ref([]);
 const total = ref(0);
 const loading = ref(true);
 const error = ref(null);
+const exporting = ref(false);
+const exportError = ref("");
+const menuOpen = ref(false);
 
-const statusFilter = ref("");
 const page = ref(1);
 const pageSize = ref(10);
 const sortField = ref(null);
@@ -108,6 +102,8 @@ const sortOrder = ref("ASC");
 
 const DEFAULT_SORT_FIELD = "createdAt";
 const DEFAULT_SORT_ORDER = "DESC";
+
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const toggleSort = (field) => {
   if (sortField.value !== field) {
@@ -150,7 +146,7 @@ const fetchPage = async () => {
     error.value = null;
     const result = await reportService.getCasesTable({
       agencyCode: props.agencyCode || undefined,
-      status: statusFilter.value || undefined,
+      status: STATUS,
       sort: sortField.value || undefined,
       order: sortField.value ? sortOrder.value : undefined,
       page: page.value,
@@ -165,7 +161,78 @@ const fetchPage = async () => {
   }
 };
 
-watch([() => props.agencyCode, statusFilter, sortField, sortOrder, pageSize], () => {
+// Exports every closed case matching the table's current agency filter —
+// not just the current page — so the button's scope is exactly "what this
+// table is showing you", not a separate, unexplained bulk-export action.
+const handleExport = async () => {
+  if (exporting.value) return;
+  menuOpen.value = false;
+  exporting.value = true;
+  exportError.value = "";
+  try {
+    const blob = await reportService.downloadCasesExcel(props.agencyCode, STATUS);
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "cases-report.xlsx";
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    exportError.value = "Couldn't generate the export. Please try again.";
+  } finally {
+    exporting.value = false;
+  }
+};
+
+// Prints whatever page of the table is currently loaded, not the full
+// filtered set — a quick printout of what's on screen, distinct from the
+// full bulk Excel export above.
+const handlePrint = () => {
+  menuOpen.value = false;
+  const rowsHtml = cases.value
+    .map(
+      (c) => `<tr>
+        <td>${c.caseNumber}</td>
+        ${props.isSuperAdmin ? `<td>${c.Agency?.code || "—"}</td>` : ""}
+        <td>${capitalize(c.category)}</td>
+        <td>${capitalize(c.priority)}</td>
+        <td>${c.location}</td>
+        <td>${formatDate(c.createdAt)}</td>
+        <td>${formatDuration(c.createdAt, c.updatedAt)}</td>
+      </tr>`
+    )
+    .join("");
+  const agencyHeader = props.isSuperAdmin ? "<th>Agency</th>" : "";
+  const win = window.open("", "_blank", "width=800,height=700");
+  if (!win) return;
+  win.document.write(`<!doctype html><html><head><title>Case History</title>
+    <style>
+      body { font-family: system-ui, sans-serif; padding: 28px; color: #101A1C; }
+      h1 { font-size: 17px; margin: 0 0 16px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { border: 1px solid #D8E3E0; padding: 7px 12px; text-align: left; font-size: 12px; }
+      th { background: #E7EFED; }
+    </style>
+  </head><body>
+    <h1>Case History — Closed Cases</h1>
+    <table><thead><tr><th>Case ID</th>${agencyHeader}<th>Category</th><th>Priority</th><th>Location</th><th>Created</th><th>Resolved In</th></tr></thead>
+    <tbody>${rowsHtml}</tbody></table>
+  </body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => {
+    win.print();
+    win.close();
+  }, 250);
+};
+
+const handleOutsideClick = (e) => {
+  if (!e.target.closest("[data-table-menu]")) menuOpen.value = false;
+};
+onMounted(() => window.addEventListener("click", handleOutsideClick));
+onUnmounted(() => window.removeEventListener("click", handleOutsideClick));
+
+watch([() => props.agencyCode, sortField, sortOrder, pageSize], () => {
   page.value = 1;
   fetchPage();
 });

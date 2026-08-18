@@ -70,6 +70,32 @@ export const getCasesTrend = async ({ agencyCode, days = 30 } = {}) => {
   return trend;
 };
 
+// Case volume bucketed by hour of day (0-23), zero-filled so quiet hours
+// still show as an empty cell instead of just being absent.
+export const getCasesByHour = async ({ agencyCode } = {}) => {
+  const cases = await getAllCases({ agencyCode, includeAll: true });
+  const counts = new Array(24).fill(0);
+  cases.forEach((c) => {
+    const hour = new Date(c.createdAt).getHours();
+    counts[hour] += 1;
+  });
+  return counts.map((count, hour) => ({ hour, count }));
+};
+
+// Priority mix per agency — a cross-tab, not just a single breakdown, so
+// e.g. "does KKM run hotter/more urgent than PDRM" is visible at a glance
+// instead of only each dimension shown separately.
+export const getPriorityByAgency = async ({ agencyCode } = {}) => {
+  const cases = await getAllCases({ agencyCode, includeAll: true });
+  const byAgency = {};
+  cases.forEach((c) => {
+    const code = c.Agency?.code || "Unknown";
+    if (!byAgency[code]) byAgency[code] = { low: 0, medium: 0, high: 0 };
+    if (byAgency[code][c.priority] !== undefined) byAgency[code][c.priority] += 1;
+  });
+  return byAgency;
+};
+
 // Response time is derived from `updatedAt - createdAt` on closed cases —
 // the model has no dedicated "resolvedAt" column, and a closed case's last
 // update is, by construction, the moment it was closed.

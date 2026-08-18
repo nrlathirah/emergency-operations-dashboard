@@ -1,47 +1,46 @@
 <template>
-  <div class="min-h-screen bg-slate-50">
-    <header v-if="authStore.isLoggedIn" :style="{ backgroundColor: headerColor }" class="text-white px-4 sm:px-6 py-3 sm:py-4 shadow-md">
-      <div class="flex items-center justify-between flex-wrap gap-3">
-        <div class="flex items-center gap-3">
-          <span class="text-2xl">{{ headerIcon }}</span>
-          <div>
-            <h1 class="text-base sm:text-lg font-semibold leading-tight">Emergency Operations Dashboard</h1>
-            <p class="text-xs text-white/70 leading-tight">{{ headerSubtitle }}</p>
-          </div>
+  <div class="min-h-screen bg-gray-50">
+    <header v-if="authStore.isLoggedIn" class="app-header">
+      <div class="app-brand">
+        <span class="app-brand-mark" aria-hidden="true">{{ headerIcon }}</span>
+        <div class="app-brand-text">
+          <span class="eyebrow">{{ headerSubtitle }}</span>
+          <h1>Emergency Operations Dashboard</h1>
         </div>
-        <div class="relative text-sm ml-auto" data-user-menu @click.stop>
-          <button
-            type="button"
-            @click="toggleUserMenu"
-            class="flex items-center gap-2 px-2 py-1 rounded hover:bg-black/10 transition cursor-pointer"
-          >
-            <div class="hidden sm:flex flex-col items-end leading-tight">
-              <span class="font-medium">{{ authStore.user.name }}</span>
-              <span
-                class="text-[11px] uppercase tracking-wide px-2 py-0.5 rounded-full mt-0.5"
-                :style="{ backgroundColor: badgeColor }"
-              >{{ roleLabel }}</span>
-            </div>
-            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-semibold">
-              {{ authStore.user.name.charAt(0).toUpperCase() }}
-            </span>
-            <span class="text-[10px] text-white/70">▾</span>
-          </button>
+      </div>
+      <div class="relative text-sm ml-auto" data-user-menu @click.stop>
+        <button
+          type="button"
+          @click="toggleUserMenu"
+          class="app-account cursor-pointer px-2 py-1 rounded hover:bg-white/10 transition"
+        >
+          <div class="hidden sm:block app-account-info">
+            <span class="name">{{ authStore.user.name }}</span>
+            <span
+              class="role"
+              :style="{ backgroundColor: badgeColor }"
+            >{{ roleLabel }}</span>
+          </div>
+          <span class="app-avatar">
+            {{ authStore.user.name.charAt(0).toUpperCase() }}
+          </span>
+          <span class="app-chevron">▾</span>
+        </button>
 
-          <div
-            v-if="showUserMenu"
-            class="absolute right-0 top-full mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg py-1 text-sm"
-            style="z-index: 9999;"
-          >
-            <!-- Only shown on mobile, where the trigger button hides the
-                 name/role to save header space — desktop already shows it. -->
-            <div class="sm:hidden px-3 py-2 border-b border-gray-100">
-              <p class="font-medium text-gray-800">{{ authStore.user.name }}</p>
-              <span
-                class="inline-block text-[11px] uppercase tracking-wide font-semibold mt-1"
-                :style="{ color: badgeColor }"
-              >{{ roleLabel }}</span>
-            </div>
+        <div
+          v-if="showUserMenu"
+          class="absolute right-0 top-full mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg py-1 text-sm"
+          style="z-index: 9999;"
+        >
+          <!-- Only shown on mobile, where the trigger button hides the
+               name/role to save header space — desktop already shows it. -->
+          <div class="sm:hidden px-3 py-2 border-b border-gray-100">
+            <p class="font-medium text-gray-800">{{ authStore.user.name }}</p>
+            <span
+              class="inline-block text-[11px] uppercase tracking-wide font-semibold mt-1"
+              :style="{ color: badgeColor }"
+            >{{ roleLabel }}</span>
+          </div>
             <template v-if="!confirmingLogout">
               <button
                 type="button"
@@ -78,26 +77,12 @@
             </template>
           </div>
         </div>
-      </div>
-      <nav class="mt-3 flex flex-wrap text-sm">
-        <RouterLink
-          to="/"
-          class="px-3 py-1.5 rounded-t transition hover:bg-white/10"
-          active-class="bg-white/15 font-medium"
-        >Live Dashboard</RouterLink>
-        <RouterLink
-          v-if="canManageUsers"
-          to="/users"
-          class="px-3 py-1.5 rounded-t transition hover:bg-white/10"
-          active-class="bg-white/15 font-medium"
-        >Users</RouterLink>
-        <RouterLink
-          to="/reports"
-          class="px-3 py-1.5 rounded-t transition hover:bg-white/10"
-          active-class="bg-white/15 font-medium"
-        >Reports</RouterLink>
-      </nav>
     </header>
+    <nav v-if="authStore.isLoggedIn" class="app-nav">
+      <RouterLink to="/">Live Dashboard</RouterLink>
+      <RouterLink v-if="canManageUsers" to="/users">Users</RouterLink>
+      <RouterLink to="/reports">Reports</RouterLink>
+    </nav>
     <main :class="authStore.isLoggedIn ? 'p-4 sm:p-6 max-w-screen-2xl mx-auto' : ''">
       <RouterView />
     </main>
@@ -188,13 +173,6 @@ import PasswordInput from "./components/PasswordInput.vue";
 const authStore = useAuthStore();
 const router = useRouter();
 
-const AGENCY_THEME = {
-  super_admin: "#581c87", // deep purple — oversees every agency, distinct from all 3
-  KKM: "#7f1d1d",         // dark red
-  PDRM: "#1e3a8a",        // dark blue
-  JBPM: "#92400e",        // dark amber/gold
-};
-
 const AGENCY_FULL_NAMES = {
   KKM: "Kementerian Kesihatan Malaysia",
   PDRM: "Polis Diraja Malaysia",
@@ -217,15 +195,11 @@ const headerSubtitle = computed(() => {
   return AGENCY_FULL_NAMES[authStore.user?.agency] || "Multi-Agency Coordination Platform";
 });
 
-const headerColor = computed(() => {
-  if (authStore.user?.role === "super_admin") return AGENCY_THEME.super_admin;
-  return AGENCY_THEME[authStore.user?.agency] || "#0f172a";
-});
-
+// Matches the agency/priority color tokens defined in styles/design-system.css.
 const badgeColor = computed(() => {
-  if (authStore.user?.role === "super_admin") return "#7e22ce";
-  const colors = { KKM: "#dc2626", PDRM: "#2563eb", JBPM: "#f59e0b" };
-  return colors[authStore.user?.agency] || "#475569";
+  if (authStore.user?.role === "super_admin") return "#5B3E92";
+  const colors = { KKM: "#B3261E", PDRM: "#1E3A5F", JBPM: "#B75A00" };
+  return colors[authStore.user?.agency] || "#64716F";
 });
 
 const roleLabel = computed(() => {

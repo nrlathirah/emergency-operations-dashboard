@@ -1,16 +1,19 @@
 <template>
   <ErrorBanner v-if="error" :message="error" @retry="loadData" />
   <LoadingSpinner v-else-if="!data" />
-  <div v-else class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-    <div class="border rounded-lg p-3">
-      <p class="text-xs text-gray-500">Overall Avg.</p>
-      <p class="text-xl font-semibold text-gray-800">{{ formatDuration(data.overallMinutes) }}</p>
+  <div v-else class="rb-kpi-strip">
+    <div class="rb-kpi-tile">
+      <span class="rb-kpi-led"></span>
+      <span class="rb-kpi-label">Overall Avg. Response</span>
+      <span class="rb-kpi-value tabular">{{ formatDuration(data.overallMinutes) }}</span>
+      <span class="rb-kpi-sub tabular">{{ data.sampleSize }} closed case{{ data.sampleSize === 1 ? "" : "s" }}</span>
     </div>
-    <div v-for="priority in ['high', 'medium', 'low']" :key="priority" class="border rounded-lg p-3">
-      <p class="text-xs text-gray-500 capitalize">{{ priority }} Priority</p>
-      <p class="text-xl font-semibold" :class="PRIORITY_TEXT_COLORS[priority]">{{ formatDuration(data.byPriorityMinutes[priority]) }}</p>
+    <div v-for="priority in ['high', 'medium', 'low']" :key="priority" class="rb-kpi-tile" :data-priority="priority">
+      <span class="rb-kpi-led"></span>
+      <span class="rb-kpi-label capitalize">{{ priority }} Priority</span>
+      <span class="rb-kpi-value tabular">{{ formatDuration(data.byPriorityMinutes[priority]) }}</span>
+      <span class="rb-kpi-sub tabular">{{ countFor(priority) }} case{{ countFor(priority) === 1 ? "" : "s" }}</span>
     </div>
-    <p class="col-span-2 sm:col-span-4 text-xs text-gray-400">Based on {{ data.sampleSize }} closed case{{ data.sampleSize === 1 ? "" : "s" }}</p>
   </div>
 </template>
 
@@ -27,8 +30,6 @@ const props = defineProps({
 const data = ref(null);
 const error = ref(null);
 
-const PRIORITY_TEXT_COLORS = { low: "text-green-600", medium: "text-amber-600", high: "text-red-600" };
-
 const formatDuration = (minutes) => {
   if (!minutes) return "—";
   if (minutes < 60) return `${minutes}m`;
@@ -37,14 +38,26 @@ const formatDuration = (minutes) => {
   return rest ? `${hours}h ${rest}m` : `${hours}h`;
 };
 
+// The response-time endpoint returns average minutes per priority but not
+// the case count behind each average — priorityCounts fills that in from
+// the separate cases-by-priority endpoint so each tile can show both.
+const priorityCounts = ref({});
+
 const loadData = async () => {
   try {
     error.value = null;
-    data.value = await reportService.getResponseTime(props.agencyCode || undefined);
+    const [responseTime, priorityBreakdown] = await Promise.all([
+      reportService.getResponseTime(props.agencyCode || undefined),
+      reportService.getCasesByPriority(props.agencyCode || undefined),
+    ]);
+    data.value = responseTime;
+    priorityCounts.value = priorityBreakdown;
   } catch (err) {
     error.value = "Failed to load response time data.";
   }
 };
+
+const countFor = (priority) => priorityCounts.value[priority] || 0;
 
 watch(() => props.agencyCode, loadData);
 onMounted(loadData);

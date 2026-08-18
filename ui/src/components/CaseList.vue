@@ -62,7 +62,7 @@
       <div class="px-4 py-3">
         <span
           class="inline-block text-[10px] font-bold uppercase tracking-wide text-white px-2 py-0.5 rounded-full mb-1.5"
-          :style="{ backgroundColor: simulateToast.isError ? '#ef4444' : AGENCY_COLORS[simulateToast.agencyCode] || '#0d9488' }"
+          :style="{ backgroundColor: simulateToast.isError ? '#ef4444' : AGENCY_COLORS[simulateToast.agencyCode] || '#0C6E72' }"
         >{{ simulateToast.isError ? "Error" : simulateToast.agencyCode }}</span>
         <p class="font-medium text-gray-800">{{ simulateToast.title }}</p>
         <p v-if="simulateToast.detail" class="text-gray-500 text-xs mt-0.5">{{ simulateToast.detail }}</p>
@@ -71,7 +71,7 @@
             <div
               ref="toastProgressRef"
               class="h-full rounded-full"
-              :style="{ backgroundColor: simulateToast.isError ? '#ef4444' : '#0d9488' }"
+              :style="{ backgroundColor: simulateToast.isError ? '#ef4444' : '#0C6E72' }"
             ></div>
           </div>
           <span class="text-[11px] text-gray-400 tabular-nums w-6 text-right">{{ toastCountdown }}s</span>
@@ -142,7 +142,7 @@
           class="border-b-2 border-gray-200 transition-colors"
           :class="[
             c.status === 'closed' ? 'opacity-60 group-hover:bg-gray-200' : 'group-hover:bg-blue-50',
-            highlightedCaseId === c.id ? 'bg-yellow-100' : 'bg-slate-50',
+            highlightedCaseId === c.id ? 'bg-yellow-100' : 'bg-gray-50',
           ]"
         >
           <td colspan="4" class="pb-3 pt-1 px-6">
@@ -196,7 +196,7 @@ const props = defineProps({
 });
 
 // Matches the agency colors used on the map/legend elsewhere in the app.
-const AGENCY_COLORS = { KKM: "#dc2626", PDRM: "#1e3a8a", JBPM: "#f59e0b" };
+const AGENCY_COLORS = { KKM: "#B3261E", PDRM: "#1E3A5F", JBPM: "#B75A00" };
 
 const emit = defineEmits(["show-on-map"]);
 

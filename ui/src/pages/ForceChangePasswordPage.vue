@@ -3,7 +3,7 @@
     <form @submit.prevent="handleSubmit" class="bg-white rounded-xl shadow-lg p-8 w-full max-w-sm space-y-5">
       <div class="text-center">
         <div class="text-4xl mb-2">🔒</div>
-        <h1 class="text-lg font-semibold text-slate-900">Set a New Password</h1>
+        <h1 class="text-lg font-semibold text-gray-900">Set a New Password</h1>
         <p class="text-xs text-gray-500 mt-1">Your password was set by an admin — you must choose your own before continuing.</p>
       </div>
 

@@ -43,6 +43,18 @@ export const reportService = {
     return response.data.data;
   },
 
+  async getCasesByHour(agencyCode) {
+    const params = agencyCode ? { agency: agencyCode } : {};
+    const response = await api.get("/reports/cases-by-hour", { params });
+    return response.data.data;
+  },
+
+  async getPriorityByAgency(agencyCode) {
+    const params = agencyCode ? { agency: agencyCode } : {};
+    const response = await api.get("/reports/priority-by-agency", { params });
+    return response.data.data;
+  },
+
   async getCasesTable({ agencyCode, status, sort, order, page, limit } = {}) {
     const params = {};
     if (agencyCode) params.agency = agencyCode;
@@ -58,8 +70,10 @@ export const reportService = {
   // Uses the shared `api` axios instance (not a plain URL/<a href>) so the
   // Authorization header actually gets attached — a plain link navigation
   // can't send custom headers, and this endpoint requires auth.
-  async downloadCasesExcel(agencyCode) {
-    const params = agencyCode ? { agency: agencyCode } : {};
+  async downloadCasesExcel(agencyCode, status) {
+    const params = {};
+    if (agencyCode) params.agency = agencyCode;
+    if (status) params.status = status;
     const response = await api.get("/reports/cases/export", { params, responseType: "blob" });
     return response.data;
   },

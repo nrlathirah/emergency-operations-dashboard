@@ -3,10 +3,11 @@
     <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
       <h2 class="text-lg font-semibold">Live Operations Map</h2>
       <button
+        v-if="viewChanged"
         type="button"
         @click="clearFocus"
-        class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600 cursor-pointer"
-      >Reset View</button>
+        class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600 cursor-pointer transition"
+      >✕ Reset View</button>
     </div>
     <div class="relative">
       <div id="map" style="height: 500px; width: 100%;" class="rounded"></div>
@@ -20,7 +21,7 @@
     <div class="flex flex-wrap gap-4 mt-3 text-xs text-gray-600">
       <span v-if="showAgency('KKM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyStationTypeVisible('hospital') }">
         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white" style="box-shadow:0 1px 4px rgba(0,0,0,0.5);">
-          <svg width="12" height="12" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#dc2626"/><circle cx="21" cy="12" r="10" fill="white"/></svg>
+          <svg width="12" height="12" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#B3261E"/><circle cx="21" cy="12" r="10" fill="white"/></svg>
         </span>
         Hospital
       </span>
@@ -33,31 +34,31 @@
         Fire Station
       </span>
       <span v-if="showAgency('KKM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyVehicleTypeVisible('ambulance') }">
-        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#dc2626">🚑</span>
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#B3261E">🚑</span>
         Ambulance
       </span>
       <span v-if="showAgency('PDRM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyVehicleTypeVisible('police_car') }">
-        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#1e3a8a">🚓</span>
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#1E3A5F">🚓</span>
         Police Car
       </span>
       <span v-if="showAgency('JBPM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyVehicleTypeVisible('fire_truck') }">
-        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#f59e0b">🚒</span>
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#B75A00">🚒</span>
         Fire Truck
       </span>
       <span v-if="showAgency('KKM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyIncidentAgencyVisible('KKM') }">
-        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#dc2626">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#B3261E">
           <span class="block w-1.5 h-1.5 rounded-full bg-white"></span>
         </span>
         KKM Incident
       </span>
       <span v-if="showAgency('PDRM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyIncidentAgencyVisible('PDRM') }">
-        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#1e3a8a">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#1E3A5F">
           <span class="block w-1.5 h-1.5 rounded-full bg-white"></span>
         </span>
         PDRM Incident
       </span>
       <span v-if="showAgency('JBPM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyIncidentAgencyVisible('JBPM') }">
-        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#f59e0b">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#B75A00">
           <span class="block w-1.5 h-1.5 rounded-full bg-white"></span>
         </span>
         JBPM Incident
@@ -123,7 +124,26 @@ const activeVehiclesData = ref([]); // only vehicles currently linked to an acti
 // { type: 'incident' | 'station', id } | null
 const focus = ref(null);
 
-const AGENCY_COLORS = { KKM: "#dc2626", PDRM: "#1e3a8a", JBPM: "#f59e0b" };
+// True whenever the map's current view (center/zoom) differs from the
+// default — whether that's from clicking a marker/station (focusOnIncident/
+// focusOnStation below) or the user just manually dragging/scrolling the
+// map themselves. Checked after every move rather than only set alongside
+// `focus`, so a plain manual pan/zoom (no click involved) still reveals the
+// Reset View button, same as Reset Filters appearing once a filter is set.
+const viewChanged = ref(false);
+const isDefaultView = () => {
+  const center = map.getCenter();
+  return (
+    Math.abs(center.lat - DEFAULT_CENTER[0]) < 0.0001 &&
+    Math.abs(center.lng - DEFAULT_CENTER[1]) < 0.0001 &&
+    map.getZoom() === DEFAULT_ZOOM
+  );
+};
+const checkViewChanged = () => {
+  viewChanged.value = !isDefaultView();
+};
+
+const AGENCY_COLORS = { KKM: "#B3261E", PDRM: "#1E3A5F", JBPM: "#B75A00" };
 const VEHICLE_EMOJI = { ambulance: "🚑", police_car: "🚓", fire_truck: "🚒" };
 
 // Matches the labels used everywhere else (status filter, case table stepper)
@@ -136,7 +156,7 @@ const STATUS_LABELS = {
   closed: "Closed",
 };
 
-const CRESCENT_SVG = `<svg width="16" height="16" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#dc2626"/><circle cx="21" cy="12" r="10" fill="white"/></svg>`;
+const CRESCENT_SVG = `<svg width="16" height="16" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#B3261E"/><circle cx="21" cy="12" r="10" fill="white"/></svg>`;
 
 const STATION_ICONS = {
   hospital: CRESCENT_SVG,
@@ -542,7 +562,7 @@ const addCoverageMask = () => {
   }).addTo(map);
 
   L.polyline([...circlePoints, circlePoints[0]], {
-    color: "#0d9488",
+    color: "#0C6E72",
     weight: 2,
     dashArray: "6,6",
   }).addTo(map).bindTooltip("Demo coverage area: Klang Valley (KL & Selangor)");
@@ -550,6 +570,7 @@ const addCoverageMask = () => {
 
 onMounted(async () => {
   map = L.map("map").setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+  map.on("moveend", checkViewChanged);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap contributors",
@@ -590,7 +611,7 @@ onUnmounted(() => clearInterval(pollTimer));
    action popup as a compact teal pill instead of Leaflet's default boxy
    white popup (which was wide/padded enough to cover the pin underneath). */
 .incident-action-popup .leaflet-popup-content-wrapper {
-  background: #0d9488;
+  background: #0C6E72;
   border-radius: 6px;
   padding: 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
@@ -599,7 +620,7 @@ onUnmounted(() => clearInterval(pollTimer));
   margin: 0;
 }
 .incident-action-popup .leaflet-popup-tip {
-  background: #0d9488;
+  background: #0C6E72;
 }
 .incident-action-popup .show-on-table-btn {
   display: block;

@@ -1,0 +1,364 @@
+/* "Incident Briefing Board" design system — tokens + component classes
+   shared across the whole app (header/nav, Login, Live Dashboard, Users,
+   Reports). Global, unscoped: every class here is prefixed `rb-`/`app-`
+   so it only ever applies where a component actually opts in. */
+
+:root {
+  --ink: #101A1C;
+  --ink-soft: #3E4C4B;
+  --muted: #64716F;
+  --paper: #EFF4F3;
+  --surface: #FFFFFF;
+  --surface-2: #E7EFED;
+  --line: #D8E3E0;
+  --line-strong: #C2D1CD;
+  --accent: #0C6E72;
+  --accent-strong: #085154;
+  --accent-soft: #DBEFED;
+  --accent-contrast: #FBFFFE;
+
+  --kkm: #B3261E;
+  --kkm-soft: #F6DEDC;
+  --pdrm: #1E3A5F;
+  --pdrm-soft: #DEE6EE;
+  --jbpm: #B75A00;
+  --jbpm-soft: #F6E4D0;
+  --super: #5B3E92;
+  --super-soft: #EAE3F5;
+
+  --pri-low: #2F7A4F;
+  --pri-med: #93610A;
+  --pri-high: #B23A22;
+
+  --stat-open: #93610A;
+  --stat-dispatched: #0C6E72;
+  --stat-enroute: #2E5C9A;
+  --stat-onscene: #6B3FA0;
+  --stat-closed: #64716F;
+
+  --veh-available: #2F7A4F;
+  --veh-dispatched: #93610A;
+  --veh-enroute: #0C6E72;
+  --veh-busy: #B23A22;
+
+  --radius-lg: 10px;
+  --radius-md: 7px;
+  --radius-sm: 4px;
+  --radius-pill: 999px;
+  --shadow-card: 0 1px 2px rgba(16, 26, 28, 0.04), 0 1px 1px rgba(16, 26, 28, 0.03);
+  --shadow-pop: 0 12px 28px rgba(16, 26, 28, 0.16), 0 2px 8px rgba(16, 26, 28, 0.08);
+}
+
+.tabular { font-variant-numeric: tabular-nums; }
+.mono { font-family: "IBM Plex Mono", monospace; }
+
+/* ================= Shared app shell ================= */
+.app-header {
+  background: var(--ink); color: #EAF3F2;
+  padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+@media (min-width: 640px) { .app-header { padding: 14px 24px; } }
+.app-brand { display: flex; align-items: center; gap: 11px; }
+.app-brand-mark { width: 30px; height: 30px; border-radius: var(--radius-sm); background: var(--accent); display: grid; place-items: center; flex: none; font-size: 15px; line-height: 1; }
+.app-brand-text .eyebrow { display: block; font-size: 0.625rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #9FB6B3; line-height: 1.3; }
+.app-brand-text h1 { margin: 1px 0 0; font-size: 0.95rem; font-weight: 600; line-height: 1.3; }
+@media (min-width: 640px) { .app-brand-text h1 { font-size: 1.05rem; } }
+
+.app-account { display: flex; align-items: center; gap: 8px; }
+.app-account-info { text-align: right; line-height: 1.25; display: flex; flex-direction: column; gap: 5px; }
+.app-account-info .name { font-size: 0.8125rem; font-weight: 600; }
+.app-account-info .role {
+  display: inline-block; align-self: flex-end; font-size: 0.625rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: var(--radius-pill); color: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+.app-avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.14); color: #fff;
+  display: grid; place-items: center; font-size: 0.8rem; font-weight: 600; flex: none;
+}
+.app-chevron { color: #9FB6B3; font-size: 0.6rem; }
+
+.app-nav { background: #16211F; padding: 0 16px; display: flex; gap: 4px; overflow-x: auto; }
+@media (min-width: 640px) { .app-nav { padding: 0 24px; } }
+.app-nav a { padding: 10px 14px; font-size: 0.8125rem; font-weight: 500; color: #B7C7C4; border-bottom: 2px solid transparent; white-space: nowrap; }
+.app-nav a:hover { color: #fff; }
+.app-nav a.router-link-active { color: #fff; border-bottom-color: var(--accent); font-weight: 600; }
+
+/* ================= Login ================= */
+.login-shell {
+  min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 40px 16px;
+  background-color: var(--paper);
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 34px 34px; position: relative;
+}
+.login-shell::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(480px circle at 50% 38%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%);
+}
+.login-card {
+  position: relative; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 14px;
+  box-shadow: var(--shadow-pop); padding: 34px 30px; width: 100%; max-width: 360px;
+}
+.login-mark { width: 46px; height: 46px; border-radius: var(--radius-md); background: var(--accent); display: grid; place-items: center; margin: 0 auto 16px; }
+.login-mark svg { width: 22px; height: 22px; }
+.quicklogin-grid button { border-radius: var(--radius-md); }
+
+/* ================= Panels & chart chrome (Reports + reused elsewhere) ================= */
+.rb-topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.rb-brand { display: flex; align-items: center; gap: 12px; }
+.rb-brand-mark { width: 34px; height: 34px; border-radius: var(--radius-sm); background: var(--accent); flex: none; display: grid; place-items: center; }
+.rb-brand-mark svg { width: 17px; height: 17px; }
+.rb-eyebrow { display: block; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.11em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+.rb-brand h1 { margin: 0; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; }
+.rb-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+select.rb-scope-select {
+  background: var(--surface); border: 1px solid var(--line-strong); appearance: none;
+  border-radius: var(--radius-md); padding: 7px 30px 7px 12px; font-size: 0.8125rem;
+  font-weight: 600; color: var(--ink); cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2364716F' stroke-width='1.6'%3E%3Cpath d='M5 8l5 5 5-5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; background-size: 13px;
+}
+.rb-btn-export {
+  display: inline-flex; align-items: center; gap: 7px; background: var(--accent); color: var(--accent-contrast);
+  border: none; border-radius: var(--radius-md); padding: 8px 14px; font-size: 0.8125rem; font-weight: 600;
+  cursor: pointer; transition: background 150ms ease;
+}
+.rb-btn-export:hover { background: var(--accent-strong); }
+.rb-btn-export:disabled { opacity: 0.6; cursor: default; }
+.rb-btn-export svg { width: 14px; height: 14px; }
+
+.rb-scope-note { margin: 14px 0 0; font-size: 0.8125rem; color: var(--muted); display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.rb-legend { display: inline-flex; align-items: center; gap: 12px; }
+.rb-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.rb-legend-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.rb-live-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--pri-low); display: inline-block;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pri-low) 25%, transparent);
+}
+
+.rb-kpi-strip { margin-top: 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.rb-kpi-tile {
+  --led: var(--accent);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: 16px 18px 15px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; gap: 6px;
+}
+.rb-kpi-tile[data-priority="high"] { --led: var(--pri-high); }
+.rb-kpi-tile[data-priority="medium"] { --led: var(--pri-med); }
+.rb-kpi-tile[data-priority="low"] { --led: var(--pri-low); }
+.rb-kpi-led { display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--led); box-shadow: 0 0 0 3px color-mix(in srgb, var(--led) 20%, transparent); }
+.rb-kpi-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.rb-kpi-value { font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 1.9rem; color: var(--ink); line-height: 1; letter-spacing: -0.01em; }
+.rb-kpi-unit { font-size: 1.05rem; color: var(--muted); margin-left: 1px; }
+.rb-kpi-sub { font-size: 0.75rem; color: var(--muted); font-family: "IBM Plex Mono", monospace; }
+
+.rb-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 18px 20px 20px; height: 100%; }
+.rb-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.rb-panel-tag { display: inline-block; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: 2px 7px; border-radius: var(--radius-sm); margin-bottom: 6px; }
+.rb-panel h2 { margin: 0; font-size: 0.95rem; font-weight: 600; color: var(--ink); }
+.rb-panel-meta { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+.rb-section { margin-top: 18px; }
+
+.rb-trend-callout { text-align: right; flex: none; }
+.rb-trend-callout-value { display: block; font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 1.5rem; color: var(--accent-strong); line-height: 1; }
+.rb-trend-callout-label { display: block; font-size: 0.6875rem; color: var(--muted); margin-top: 3px; font-family: "IBM Plex Mono", monospace; }
+.rb-trend-chart svg { width: 100%; height: 168px; display: block; overflow: visible; }
+.rb-grid-line { stroke: var(--line); stroke-width: 1; }
+.rb-trend-area { fill: color-mix(in srgb, var(--accent) 12%, transparent); stroke: none; }
+.rb-trend-line { fill: none; stroke: var(--accent); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
+.rb-trend-point { fill: var(--accent-strong); stroke: var(--surface); stroke-width: 2; }
+.rb-trend-axis { display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.6875rem; color: var(--muted); font-family: "IBM Plex Mono", monospace; }
+
+.rb-chart-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; align-items: stretch; }
+.rb-chart-grid > .rb-panel.rb-span-2 { grid-column: 1 / -1; }
+
+.rb-bar-list { display: flex; flex-direction: column; gap: 10px; }
+.rb-bar-row { display: grid; grid-template-columns: 96px 1fr 44px; align-items: center; gap: 10px; }
+.rb-bar-row-label { font-size: 0.8125rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-bar-track { height: 18px; background: var(--surface-2); border-radius: var(--radius-sm); overflow: hidden; }
+.rb-bar-fill { display: block; height: 100%; border-radius: var(--radius-sm); background: var(--accent); }
+.rb-bar-row-value { font-family: "IBM Plex Mono", monospace; font-size: 0.8125rem; font-weight: 600; text-align: right; color: var(--ink); }
+.rb-bar-caption { margin-top: 12px; font-size: 0.75rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; }
+
+.rb-donut-wrap { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.rb-donut { width: 128px; height: 128px; border-radius: 50%; flex: none; position: relative; }
+.rb-donut::after { content: ""; position: absolute; inset: 20px; border-radius: 50%; background: var(--surface); }
+.rb-donut-center { position: absolute; inset: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.rb-donut-center strong { font-family: "IBM Plex Mono", monospace; font-size: 1.35rem; font-weight: 600; }
+.rb-donut-center span { font-size: 0.625rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.rb-donut-legend { display: flex; flex-direction: column; gap: 9px; }
+.rb-donut-legend-row { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; }
+.rb-donut-legend-row .rb-dot { display: block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.rb-donut-legend-row .rb-name { color: var(--ink-soft); flex: 1; }
+.rb-donut-legend-row .rb-val { font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--ink); }
+
+.rb-agency-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--ink-soft); }
+.rb-agency-tag .rb-dot { display: block; width: 8px; height: 8px; border-radius: 2px; flex: none; }
+
+/* ================= XY bar chart (real axes, e.g. Cases by Priority) =================
+   Plain CSS/flex, deliberately not SVG — an SVG viewBox stretched to fill a
+   CSS box via preserveAspectRatio="none" scales X and Y independently
+   whenever the box's aspect ratio doesn't match the viewBox's, which
+   visibly skews rectangles and text (fine for a smooth line chart, ugly
+   for bars). Percentage heights inside a fixed-height block avoid that
+   class of bug entirely. */
+.rb-xybar-plot { position: relative; height: 170px; margin: 6px 0 4px 34px; }
+.rb-xybar-gridline { position: absolute; left: 0; right: 0; border-top: 1px solid var(--line); }
+.rb-xybar-ytick {
+  position: absolute; left: 0; top: -7px; transform: translateX(-100%); padding-right: 8px;
+  font-size: 0.6875rem; color: var(--muted); font-family: "IBM Plex Mono", monospace; white-space: nowrap;
+}
+.rb-xybar-bars { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: space-evenly; }
+.rb-xybar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; width: 64px; }
+.rb-xybar-value { font-size: 0.75rem; font-weight: 600; color: var(--ink); margin-bottom: 5px; font-family: "IBM Plex Mono", monospace; }
+.rb-xybar-bar { width: 46px; border-radius: 4px 4px 0 0; transition: opacity 120ms ease; }
+.rb-xybar-bar:hover { opacity: 0.85; }
+.rb-xybar-xaxis { display: flex; justify-content: space-evenly; margin-left: 34px; border-top: 1px solid var(--line-strong); padding-top: 6px; }
+.rb-xybar-xtick { font-size: 0.8125rem; color: var(--ink-soft); width: 64px; text-align: center; }
+
+/* ================= Waffle / square grid (e.g. Cases by Agency) ================= */
+.rb-waffle { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.rb-waffle-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; width: 150px; flex: none; }
+.rb-waffle-cell { display: block; aspect-ratio: 1; border-radius: 2px; }
+.rb-waffle-legend { display: flex; flex-direction: column; gap: 9px; }
+.rb-waffle-legend span { display: flex; align-items: center; gap: 7px; font-size: 0.8125rem; color: var(--ink-soft); }
+.rb-waffle-legend .rb-dot { display: block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.rb-waffle-legend b { font-family: "IBM Plex Mono", monospace; color: var(--ink); font-weight: 600; }
+
+/* ================= Bubble chart (e.g. Cases by Category) ================= */
+.rb-bubbles { display: flex; align-items: flex-end; justify-content: space-evenly; flex-wrap: wrap; gap: 14px 8px; padding: 10px 0 4px; min-height: 100px; }
+.rb-bubble-col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.rb-bubble { display: flex; align-items: center; justify-content: center; border-radius: 50%; flex: none; }
+.rb-bubble-value { color: #fff; font-size: 0.75rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
+.rb-bubble-label { font-size: 0.75rem; color: var(--ink-soft); text-align: center; max-width: 76px; }
+
+/* ================= Heatmap (Cases by Hour of Day) ================= */
+.rb-heatmap-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; }
+.rb-heatmap-cell {
+  aspect-ratio: 1; border-radius: 4px; display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: 2px; transition: transform 100ms ease;
+}
+.rb-heatmap-cell:hover { transform: scale(1.08); }
+.rb-heatmap-hour { font-size: 0.5625rem; color: var(--ink-soft); font-family: "IBM Plex Mono", monospace; }
+.rb-heatmap-legend { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 0.6875rem; color: var(--muted); }
+.rb-heatmap-scale { display: flex; gap: 3px; }
+.rb-heatmap-swatch { display: block; width: 14px; height: 10px; border-radius: 2px; }
+
+/* ================= Stacked bar (Priority Mix by Agency) ================= */
+.rb-stacked-legend { display: flex; gap: 14px; margin-bottom: 14px; font-size: 0.75rem; color: var(--ink-soft); }
+.rb-stacked-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.rb-stacked-legend .rb-dot { width: 8px; height: 8px; border-radius: 50%; }
+.rb-stacked-rows { display: flex; flex-direction: column; gap: 12px; }
+.rb-stacked-row { display: grid; grid-template-columns: 64px 1fr 44px; align-items: center; gap: 10px; }
+.rb-stacked-row-label { font-size: 0.8125rem; font-weight: 600; }
+.rb-stacked-bar { display: flex; height: 18px; border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-2); }
+.rb-stacked-seg { display: block; height: 100%; }
+.rb-stacked-row-total { font-family: "IBM Plex Mono", monospace; font-size: 0.8125rem; font-weight: 600; text-align: right; color: var(--ink); }
+
+/* ================= Chart toolbar (data view / image / fullscreen / menu) ================= */
+.rb-chart-toolbar { display: flex; justify-content: flex-end; gap: 4px; margin-bottom: 8px; }
+.rb-icon-btn {
+  width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm); border: 1px solid var(--line-strong); background: var(--surface);
+  color: var(--muted); cursor: pointer; transition: background 120ms ease, color 120ms ease; padding: 0;
+}
+.rb-icon-btn svg { width: 14px; height: 14px; }
+.rb-icon-btn:hover { background: var(--surface-2); color: var(--ink-soft); }
+.rb-icon-btn--active { background: var(--accent-soft); color: var(--accent-strong); border-color: var(--accent-soft); }
+
+.rb-chart-menu {
+  position: absolute; right: 0; top: calc(100% + 4px); background: var(--surface); border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-pop); min-width: 150px; padding: 4px; z-index: 20;
+}
+.rb-chart-menu button {
+  display: block; width: 100%; text-align: left; padding: 7px 10px; font-size: 0.8125rem; color: var(--ink-soft);
+  background: none; border: none; border-radius: var(--radius-sm); cursor: pointer;
+}
+.rb-chart-menu button:hover { background: var(--surface-2); }
+
+.rb-data-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.rb-data-table th { text-align: left; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 0 10px 8px; border-bottom: 1px solid var(--line-strong); }
+.rb-data-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+.rb-data-table tr:last-child td { border-bottom: none; }
+.rb-data-table .rb-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 7px; }
+
+.rb-fullscreen-overlay { position: fixed; inset: 0; background: rgba(16, 26, 28, 0.55); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 9999; }
+.rb-fullscreen-panel { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); width: 100%; max-width: 720px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; }
+.rb-fullscreen-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.rb-fullscreen-head h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+.rb-fullscreen-body { padding: 24px; overflow-y: auto; }
+
+/* ================= Tables (Reports manifest + reused for Live Dashboard/Users) ================= */
+.rb-table-scroll { overflow-x: auto; margin-top: 4px; }
+
+/* Per-chart "data table" toolbar view (ChartFrame) — capped so a chart
+   with many rows (e.g. the 24-row Hour of Day breakdown) doesn't push the
+   card tall; scrolls internally past that instead. The fullscreen modal's
+   copy already scrolls via .rb-fullscreen-body, so this only applies to
+   the inline, in-card view. */
+.rb-data-table-scroll { max-height: 260px; overflow-y: auto; }
+
+table.rb-manifest { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 0.8125rem; }
+table.rb-manifest thead th {
+  text-align: left; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted); padding: 0 12px 9px; border-bottom: 1px solid var(--line-strong); white-space: nowrap;
+}
+table.rb-manifest thead th.sortable { cursor: pointer; user-select: none; }
+table.rb-manifest tbody td { padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--ink-soft); white-space: nowrap; }
+table.rb-manifest tbody tr:last-child td { border-bottom: none; }
+table.rb-manifest tbody tr:hover td { background: var(--surface-2); }
+.rb-case-id { font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--ink); }
+.rb-case-loc { color: var(--muted); white-space: normal; min-width: 160px; }
+
+.rb-chip-agency { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; padding: 3px 8px; border-radius: var(--radius-pill); }
+.rb-chip-agency[data-agency="KKM"] { color: var(--kkm); background: var(--kkm-soft); }
+.rb-chip-agency[data-agency="PDRM"] { color: var(--pdrm); background: var(--pdrm-soft); }
+.rb-chip-agency[data-agency="JBPM"] { color: var(--jbpm); background: var(--jbpm-soft); }
+
+.rb-priority-tag { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.rb-priority-tag .rb-dot { display: block; width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.rb-priority-tag[data-priority="low"] { color: var(--pri-low); }
+.rb-priority-tag[data-priority="medium"] { color: var(--pri-med); }
+.rb-priority-tag[data-priority="high"] { color: var(--pri-high); }
+.rb-priority-tag[data-priority="low"] .rb-dot { background: var(--pri-low); }
+.rb-priority-tag[data-priority="medium"] .rb-dot { background: var(--pri-med); }
+.rb-priority-tag[data-priority="high"] .rb-dot { background: var(--pri-high); }
+
+.rb-status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; padding: 3px 9px; border-radius: var(--radius-pill); background: var(--surface-2); color: var(--ink-soft); }
+.rb-status-pill .rb-dot { display: block; width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.rb-status-pill[data-status="open"] .rb-dot { background: var(--stat-open); }
+.rb-status-pill[data-status="dispatched"] .rb-dot { background: var(--stat-dispatched); }
+.rb-status-pill[data-status="en_route"] .rb-dot { background: var(--stat-enroute); }
+.rb-status-pill[data-status="on_scene"] .rb-dot { background: var(--stat-onscene); }
+.rb-status-pill[data-status="closed"] .rb-dot { background: var(--stat-closed); }
+
+.rb-resolved-time { font-family: "IBM Plex Mono", monospace; color: var(--ink-soft); }
+.rb-created-time { font-family: "IBM Plex Mono", monospace; color: var(--muted); }
+
+.rb-table-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; font-size: 0.75rem; color: var(--muted); flex-wrap: wrap; gap: 10px; }
+.rb-pager { display: flex; align-items: center; gap: 10px; }
+.rb-pager button { background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: 5px 10px; font-size: 0.75rem; color: var(--ink-soft); cursor: pointer; }
+.rb-pager button:disabled { opacity: 0.4; cursor: default; }
+.rb-pager select { border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: 4px 6px; font-size: 0.75rem; cursor: pointer; }
+.rb-reset-link { background: none; border: none; color: var(--accent-strong); font-size: 0.75rem; font-weight: 600; cursor: pointer; padding: 0; }
+.rb-empty { padding: 40px 0; text-align: center; color: var(--muted); font-size: 0.8125rem; }
+
+/* ================= Small shared bits (Live Dashboard / Users) ================= */
+.rb-filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+.rb-avatar-sm {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-strong);
+  display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; flex: none;
+}
+.rb-map-surface {
+  border-radius: var(--radius-md); position: relative; overflow: hidden; background-color: #E4EDEB;
+  background-image: linear-gradient(var(--line-strong) 1px, transparent 1px), linear-gradient(90deg, var(--line-strong) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.rb-map-legend { display: flex; gap: 14px; margin-top: 10px; font-size: 0.75rem; color: var(--ink-soft); flex-wrap: wrap; }
+.rb-map-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.rb-map-legend .rb-dot { display: block; width: 8px; height: 8px; border-radius: 50%; }
+
+@media (max-width: 760px) {
+  .rb-kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  .rb-chart-grid { grid-template-columns: 1fr; }
+  .rb-chart-grid > .rb-panel.rb-span-2 { grid-column: auto; }
+}

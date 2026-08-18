@@ -1,10 +1,50 @@
 @import "tailwindcss";
 
+/* "Incident Briefing Board" design tokens, applied at the Tailwind theme
+   level so every existing teal / gray utility class across the app
+   (buttons, borders, focus rings, chrome) picks up the new palette and
+   typeface automatically — no per-component class rewrites needed. */
+@theme {
+  --font-sans: "IBM Plex Sans", system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-teal-50: #eaf4f3;
+  --color-teal-100: #d3e9e7;
+  --color-teal-200: #aed8d4;
+  --color-teal-600: #0c6e72;
+  --color-teal-700: #085154;
+  --color-teal-950: #06181a;
+
+  --color-gray-50: #eff4f3;
+  --color-gray-100: #e7efed;
+  --color-gray-200: #d8e3e0;
+  --color-gray-300: #c2d1cd;
+  --color-gray-400: #93a6a2;
+  --color-gray-500: #64716f;
+  --color-gray-600: #3e4c4b;
+  --color-gray-700: #2a3534;
+  --color-gray-800: #1a2322;
+  --color-gray-900: #101a1c;
+}
+
 * {
   box-sizing: border-box;
 }
 
+/* Tailwind's bare `border` utility only sets border-width — the color comes
+   from `currentColor`, which after the darker text-gray-* retint above made
+   every plain-`border` button (most of the app's secondary buttons/filters)
+   look like it had a heavy, dark outline. This gives it a light, neutral
+   default instead; any element with an explicit border-color utility
+   (border-gray-300, border-teal-600, etc.) still overrides it as normal,
+   since utility classes sit in a later, higher-precedence layer. */
+@layer base {
+  *, ::before, ::after {
+    border-color: var(--color-gray-200);
+  }
+}
+
 body {
   margin: 0;
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-sans);
 }

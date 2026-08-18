@@ -7,6 +7,8 @@ import {
   getCasesSummaryByCategory,
   getCasesTrend,
   getAverageResponseTime,
+  getCasesByHour,
+  getPriorityByAgency,
 } from "#services/report.service.js";
 import { getCasesPage } from "#services/case.service.js";
 import { getScopedAgency } from "#utils/scope.util.js";
@@ -69,6 +71,24 @@ export const getCasesTrendReport = async (req, res, next) => {
 export const getResponseTimeReport = async (req, res, next) => {
   try {
     const data = await getAverageResponseTime({ agencyCode: getScopedAgency(req) });
+    res.status(200).json({ data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCasesByHourReport = async (req, res, next) => {
+  try {
+    const data = await getCasesByHour({ agencyCode: getScopedAgency(req) });
+    res.status(200).json({ data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPriorityByAgencyReport = async (req, res, next) => {
+  try {
+    const data = await getPriorityByAgency({ agencyCode: getScopedAgency(req) });
     res.status(200).json({ data });
   } catch (error) {
     next(error);

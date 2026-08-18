@@ -1,67 +1,56 @@
 <template>
-  <div>
-    <div class="flex justify-end gap-2 mb-2">
-      <button @click="handleDownloadImage" class="px-2 py-1 text-xs border rounded hover:bg-gray-50 text-gray-600 cursor-pointer">📷 PNG</button>
-      <button @click="handleDownloadCsv" class="px-2 py-1 text-xs border rounded hover:bg-gray-50 text-gray-600 cursor-pointer">📄 CSV</button>
-    </div>
-    <ErrorBanner v-if="error" :message="error" @retry="loadChart" />
-    <LoadingSpinner v-else-if="!chartData" />
-    <div v-else class="h-64">
-      <Doughnut ref="chartRef" :data="chartData" :options="chartOptions" />
-    </div>
-  </div>
+  <ChartFrame
+    tag="Fleet"
+    title="Vehicle Utilization"
+    :rows="segments"
+    :loading="!segments && !error"
+    :error="error"
+    filename="vehicle-utilization"
+    label-header="Status"
+    @retry="loadChart"
+  >
+    <DonutChart :segments="segments" center-label="Units" />
+  </ChartFrame>
 </template>
 
 <script setup>
 import { ref, watch, onMounted } from "vue";
-import { Doughnut } from "vue-chartjs";
-import { Chart as ChartJS, Title, Tooltip, Legend, ArcElement } from "chart.js";
 import { reportService } from "../services/reportService";
-import LoadingSpinner from "./LoadingSpinner.vue";
-import ErrorBanner from "./ErrorBanner.vue";
-import { downloadChartImage, downloadChartCsv } from "../utils/chartExport";
-
-ChartJS.register(Title, Tooltip, Legend, ArcElement);
+import DonutChart from "./DonutChart.vue";
+import ChartFrame from "./ChartFrame.vue";
 
 const props = defineProps({
   agencyCode: { type: String, default: "" },
 });
 
-const chartData = ref(null);
-const chartOptions = { responsive: true, maintainAspectRatio: false };
-const chartRef = ref(null);
-const error = ref(null);
+const STATUS_ORDER = [
+  { key: "available", label: "Available", color: "var(--pri-low)" },
+  { key: "dispatched", label: "Dispatched", color: "var(--pri-med)" },
+  { key: "en_route", label: "En Route", color: "var(--accent)" },
+  { key: "busy", label: "Busy", color: "var(--pri-high)" },
+];
 
-const STATUS_COLORS = {
-  available: "#16a34a",
-  dispatched: "#eab308",
-  en_route: "#ea580c",
-  busy: "#2563eb",
-  offline: "#6b7280",
-};
+const segments = ref(null);
+const error = ref("");
 
 const loadChart = async () => {
   try {
-    error.value = null;
+    error.value = "";
     const summary = await reportService.getVehicleUtilization(props.agencyCode || undefined);
-    const labels = Object.keys(summary);
-    chartData.value = {
-      labels,
-      datasets: [
-        {
-          label: "Vehicle Utilization",
-          backgroundColor: labels.map((l) => STATUS_COLORS[l] || "#9ca3af"),
-          data: Object.values(summary),
-        },
-      ],
-    };
+    const known = STATUS_ORDER.filter((s) => summary[s.key] !== undefined).map((s) => ({
+      label: s.label,
+      value: summary[s.key] || 0,
+      color: s.color,
+    }));
+    const knownKeys = new Set(STATUS_ORDER.map((s) => s.key));
+    const extra = Object.keys(summary)
+      .filter((k) => !knownKeys.has(k))
+      .map((k) => ({ label: k, value: summary[k], color: "var(--muted)" }));
+    segments.value = [...known, ...extra];
   } catch (err) {
     error.value = "Failed to load chart data.";
   }
 };
-
-const handleDownloadImage = () => downloadChartImage(chartRef.value?.chart, "vehicle-utilization");
-const handleDownloadCsv = () => downloadChartCsv(chartData.value, "vehicle-utilization");
 
 watch(() => props.agencyCode, loadChart);
 onMounted(loadChart);

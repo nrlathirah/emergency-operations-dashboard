@@ -1,60 +1,49 @@
 <template>
-  <div>
-    <div class="flex justify-end gap-2 mb-2">
-      <button @click="handleDownloadImage" class="px-2 py-1 text-xs border rounded hover:bg-gray-50 text-gray-600 cursor-pointer">📷 PNG</button>
-      <button @click="handleDownloadCsv" class="px-2 py-1 text-xs border rounded hover:bg-gray-50 text-gray-600 cursor-pointer">📄 CSV</button>
-    </div>
-    <ErrorBanner v-if="error" :message="error" @retry="loadChart" />
-    <LoadingSpinner v-else-if="!chartData" />
-    <div v-else class="h-64">
-      <Line ref="chartRef" :data="chartData" :options="chartOptions" />
-    </div>
-  </div>
+  <ChartFrame
+    tag="Trend"
+    title="Cases Reported — Last 30 Days"
+    :rows="rows"
+    :loading="!points && !error"
+    :error="error"
+    filename="cases-trend"
+    label-header="Date"
+    @retry="loadChart"
+  >
+    <p v-if="peakInfo" class="text-xs text-gray-500 mb-2">Peak: <span class="font-semibold text-gray-700">{{ peakInfo.count }}</span> on {{ peakInfo.dateLabel }}</p>
+    <TrendLine :points="points" />
+  </ChartFrame>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from "vue";
-import { Line } from "vue-chartjs";
-import { Chart as ChartJS, Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale } from "chart.js";
+import { ref, computed, watch, onMounted } from "vue";
 import { reportService } from "../services/reportService";
-import LoadingSpinner from "./LoadingSpinner.vue";
-import ErrorBanner from "./ErrorBanner.vue";
-import { downloadChartImage, downloadChartCsv } from "../utils/chartExport";
-
-ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale);
+import TrendLine from "./TrendLine.vue";
+import ChartFrame from "./ChartFrame.vue";
 
 const props = defineProps({
   agencyCode: { type: String, default: "" },
 });
 
-const chartData = ref(null);
-const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } };
-const chartRef = ref(null);
-const error = ref(null);
+const points = ref(null);
+const error = ref("");
+
+const rows = computed(() => (points.value || []).map((p) => ({ label: p.date, value: p.count })));
 
 const loadChart = async () => {
   try {
-    error.value = null;
-    const trend = await reportService.getCasesTrend(props.agencyCode || undefined, 30);
-    chartData.value = {
-      labels: trend.map((t) => t.date.slice(5)), // MM-DD
-      datasets: [
-        {
-          label: "Cases per Day",
-          borderColor: "#0d9488",
-          backgroundColor: "#0d9488",
-          data: trend.map((t) => t.count),
-          tension: 0.3,
-        },
-      ],
-    };
+    error.value = "";
+    points.value = await reportService.getCasesTrend(props.agencyCode || undefined, 30);
   } catch (err) {
     error.value = "Failed to load chart data.";
   }
 };
 
-const handleDownloadImage = () => downloadChartImage(chartRef.value?.chart, "cases-trend");
-const handleDownloadCsv = () => downloadChartCsv(chartData.value, "cases-trend");
+const peakInfo = computed(() => {
+  if (!points.value || points.value.length === 0) return null;
+  const peak = points.value.reduce((max, p) => (p.count > max.count ? p : max), points.value[0]);
+  const dateLabel = new Date(`${peak.date}T00:00:00`).toLocaleDateString("en-MY", { day: "numeric", month: "short" });
+  return { count: peak.count, dateLabel };
+});
 
 watch(() => props.agencyCode, loadChart);
 onMounted(loadChart);

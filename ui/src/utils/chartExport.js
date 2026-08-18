@@ -1,17 +1,10 @@
-export const downloadChartImage = (chartInstance, filename) => {
-  if (!chartInstance) return;
-  const link = document.createElement("a");
-  link.href = chartInstance.toBase64Image();
-  link.download = `${filename}.png`;
-  link.click();
-};
-
-export const downloadChartCsv = (chartData, filename) => {
-  if (!chartData) return;
-  const labels = chartData.labels;
-  const data = chartData.datasets[0].data;
-  const rows = [["Label", "Count"], ...labels.map((label, i) => [label, data[i]])];
-  const csvContent = rows.map((row) => row.join(",")).join("\n");
+// Downloads a simple label/value breakdown as CSV — used by the Reports
+// page's bar-list, donut and trend components (all hand-drawn SVG/CSS, no
+// canvas to export as an image from).
+export const downloadRowsCsv = (rows, filename) => {
+  if (!rows || rows.length === 0) return;
+  const csvRows = [["Label", "Count"], ...rows.map((r) => [r.label, r.value])];
+  const csvContent = csvRows.map((row) => row.join(",")).join("\n");
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");

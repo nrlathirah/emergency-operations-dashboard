@@ -33,7 +33,7 @@ const props = defineProps({
 
 // One fixed color for every agency — a neutral teal, distinct from every
 // agency color (KKM red, PDRM navy, JBPM amber) and the super-admin indigo.
-const colors = { main: "#0d9488", light: "#99f6e4" };
+const colors = { main: "#0C6E72", light: "#AED8D4" };
 
 const steps = [
   { key: "open", label: "Open" },
@@ -66,7 +66,7 @@ const lineStyle = (index) => ({
    naturally no such segment once closed. */
 .progress-line--active {
   position: relative;
-  background-color: #99f6e4;
+  background-color: #AED8D4;
   overflow: hidden;
 }
 
@@ -75,7 +75,7 @@ const lineStyle = (index) => ({
   position: absolute;
   inset: 0;
   width: 50%;
-  background: linear-gradient(to right, transparent, #0d9488, transparent);
+  background: linear-gradient(to right, transparent, #0C6E72, transparent);
   animation: progress-sweep 1.4s ease-in-out infinite;
 }
 

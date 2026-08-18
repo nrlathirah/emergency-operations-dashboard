@@ -1,9 +1,11 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-teal-950 to-slate-900 px-4">
-    <form v-if="!showForgotPassword" @submit.prevent="handleLogin" class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm space-y-5">
+  <div class="login-shell">
+    <form v-if="!showForgotPassword" @submit.prevent="handleLogin" class="login-card space-y-5">
+      <div class="login-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l1.5-4L11 17l2.5-9L15 12h7" /></svg>
+      </div>
       <div class="text-center">
-        <div class="text-4xl mb-2">🚨</div>
-        <h1 class="text-lg font-semibold text-slate-900">Emergency Operations Dashboard</h1>
+        <h1 class="text-lg font-semibold text-gray-900">Emergency Operations Dashboard</h1>
         <p class="text-xs text-gray-500 mt-1">Multi-Agency Coordination Platform</p>
       </div>
 
@@ -23,7 +25,7 @@
           <button
             type="button"
             @click="openForgotPassword"
-            class="text-xs text-teal-600 hover:underline cursor-pointer"
+            class="text-xs text-teal-700 font-medium hover:underline cursor-pointer"
           >Forgot password?</button>
         </div>
         <PasswordInput v-model="password" size="lg" required />
@@ -46,14 +48,14 @@
 
       <div class="pt-1">
         <p class="text-center text-[11px] text-gray-400 mb-2">Quick login for demo purposes</p>
-        <div class="grid grid-cols-2 gap-2">
+        <div class="quicklogin-grid grid grid-cols-2 gap-2">
           <button
             v-for="role in quickLoginRoles"
             :key="role.label"
             type="button"
             :disabled="loading"
             @click="quickFill(role)"
-            class="px-2 py-1.5 rounded-lg text-xs font-medium text-white cursor-pointer transition hover:opacity-90 disabled:opacity-50 disabled:cursor-default"
+            class="px-2 py-1.5 text-xs font-medium text-white cursor-pointer transition hover:opacity-90 disabled:opacity-50 disabled:cursor-default"
             :style="{ backgroundColor: role.color }"
           >{{ role.label }}</button>
         </div>
@@ -67,11 +69,11 @@
     <!-- Forgot password — always shows the same generic confirmation
          regardless of whether the email matched anything, so this can't be
          used to probe for which emails are registered. -->
-    <div v-else class="bg-white rounded-xl shadow-2xl p-8 w-full max-w-sm">
+    <div v-else class="login-card">
       <template v-if="!resetRequestSent">
         <div class="text-center mb-5">
           <div class="text-3xl mb-2">🔑</div>
-          <h1 class="text-lg font-semibold text-slate-900">Forgot Password</h1>
+          <h1 class="text-lg font-semibold text-gray-900">Forgot Password</h1>
           <p class="text-xs text-gray-500 mt-1">Enter your email and an admin will be notified to reset it for you.</p>
         </div>
         <form @submit.prevent="handleForgotPassword" class="space-y-4">
@@ -104,12 +106,12 @@
                never be picked up. -->
           <template v-if="resetWasDemoAccount">
             <div class="text-3xl mb-2">ℹ️</div>
-            <h1 class="text-lg font-semibold text-slate-900">This Is a Shared Demo Account</h1>
+            <h1 class="text-lg font-semibold text-gray-900">This Is a Shared Demo Account</h1>
             <p class="text-sm text-gray-500 mt-2">Forgot Password isn't available for it, since its credentials are already public on this page. Use the Quick Login button below, or log in directly with <code class="text-xs bg-gray-100 px-1 py-0.5 rounded">password123</code>.</p>
           </template>
           <template v-else>
             <div class="text-3xl mb-2">✅</div>
-            <h1 class="text-lg font-semibold text-slate-900">Request Submitted</h1>
+            <h1 class="text-lg font-semibold text-gray-900">Request Submitted</h1>
             <p class="text-sm text-gray-500 mt-2">If that email is registered, your request has been noted (or you already have one pending) — an admin will review it soon. No need to submit again.</p>
           </template>
           <button
@@ -138,12 +140,12 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 // Seeded demo accounts (see api/src/seed.js) — colors match each agency's
-// header/badge color elsewhere in the app.
+// badge color elsewhere in the app (see App.vue badgeColor).
 const quickLoginRoles = [
-  { label: "Super Admin", email: "admin@ops.gov.my", color: "#581c87" },
-  { label: "KKM Staff", email: "ahmad.razak@kkm.gov.my", color: "#7f1d1d" },
-  { label: "PDRM Staff", email: "zul.hassan@pdrm.gov.my", color: "#1e3a8a" },
-  { label: "JBPM Staff", email: "faizal.anuar@jbpm.gov.my", color: "#92400e" },
+  { label: "Super Admin", email: "admin@ops.gov.my", color: "#5B3E92" },
+  { label: "KKM Staff", email: "ahmad.razak@kkm.gov.my", color: "#B3261E" },
+  { label: "PDRM Staff", email: "zul.hassan@pdrm.gov.my", color: "#1E3A5F" },
+  { label: "JBPM Staff", email: "faizal.anuar@jbpm.gov.my", color: "#B75A00" },
 ];
 
 const quickFill = (role) => {
