@@ -5,6 +5,7 @@
     :rows="segments"
     :loading="!segments && !error"
     :error="error"
+    :agency-code="agencyCode"
     filename="vehicle-utilization"
     label-header="Status"
     @retry="loadChart"

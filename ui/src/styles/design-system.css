@@ -128,7 +128,7 @@ select.rb-scope-select {
 .rb-btn-export svg { width: 14px; height: 14px; }
 
 .rb-scope-note { margin: 14px 0 0; font-size: 0.8125rem; color: var(--muted); display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-.rb-legend { display: inline-flex; align-items: center; gap: 12px; }
+.rb-legend { display: inline-flex; align-items: center; gap: 12px; line-height: 1; }
 .rb-legend span { display: inline-flex; align-items: center; gap: 5px; }
 .rb-legend-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 .rb-live-dot {
@@ -163,7 +163,7 @@ select.rb-scope-select {
 .rb-trend-callout-label { display: block; font-size: 0.6875rem; color: var(--muted); margin-top: 3px; font-family: "IBM Plex Mono", monospace; }
 .rb-trend-chart svg { width: 100%; height: 168px; display: block; overflow: visible; }
 .rb-grid-line { stroke: var(--line); stroke-width: 1; }
-.rb-trend-area { fill: color-mix(in srgb, var(--accent) 12%, transparent); stroke: none; }
+.rb-trend-area { fill: rgba(12, 110, 114, 0.12); stroke: none; } /* --accent at 12% — color-mix() breaks html2canvas capture */
 .rb-trend-line { fill: none; stroke: var(--accent); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
 .rb-trend-point { fill: var(--accent-strong); stroke: var(--surface); stroke-width: 2; }
 .rb-trend-axis { display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.6875rem; color: var(--muted); font-family: "IBM Plex Mono", monospace; }
@@ -177,21 +177,28 @@ select.rb-scope-select {
 .rb-bar-track { height: 18px; background: var(--surface-2); border-radius: var(--radius-sm); overflow: hidden; }
 .rb-bar-fill { display: block; height: 100%; border-radius: var(--radius-sm); background: var(--accent); }
 .rb-bar-row-value { font-family: "IBM Plex Mono", monospace; font-size: 0.8125rem; font-weight: 600; text-align: right; color: var(--ink); }
+
+/* The 96px label column is sized for the narrow in-card view, where
+   ellipsis-truncation is an acceptable tradeoff. The export layout has
+   plenty of spare width, so widen the column and let labels wrap instead
+   of silently clipping to "…" in the downloaded/printed image. */
+.rb-chart-export .rb-bar-row { grid-template-columns: 160px 1fr 56px; }
+.rb-chart-export .rb-bar-row-label { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; }
 .rb-bar-caption { margin-top: 12px; font-size: 0.75rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; }
 
-.rb-donut-wrap { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
-.rb-donut { width: 128px; height: 128px; border-radius: 50%; flex: none; position: relative; }
-.rb-donut::after { content: ""; position: absolute; inset: 20px; border-radius: 50%; background: var(--surface); }
+.rb-donut-wrap { display: flex; align-items: center; justify-content: center; gap: 22px; flex-wrap: wrap; }
+.rb-donut { width: 128px; height: 128px; flex: none; position: relative; }
+.rb-donut svg { width: 100%; height: 100%; display: block; }
 .rb-donut-center { position: absolute; inset: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .rb-donut-center strong { font-family: "IBM Plex Mono", monospace; font-size: 1.35rem; font-weight: 600; }
 .rb-donut-center span { font-size: 0.625rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .rb-donut-legend { display: flex; flex-direction: column; gap: 9px; }
-.rb-donut-legend-row { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; }
+.rb-donut-legend-row { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; line-height: 1; }
 .rb-donut-legend-row .rb-dot { display: block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .rb-donut-legend-row .rb-name { color: var(--ink-soft); flex: 1; }
 .rb-donut-legend-row .rb-val { font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--ink); }
 
-.rb-agency-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--ink-soft); }
+.rb-agency-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--ink-soft); line-height: 1; }
 .rb-agency-tag .rb-dot { display: block; width: 8px; height: 8px; border-radius: 2px; flex: none; }
 
 /* ================= XY bar chart (real axes, e.g. Cases by Priority) =================
@@ -216,7 +223,7 @@ select.rb-scope-select {
 .rb-xybar-xtick { font-size: 0.8125rem; color: var(--ink-soft); width: 64px; text-align: center; }
 
 /* ================= Waffle / square grid (e.g. Cases by Agency) ================= */
-.rb-waffle { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+.rb-waffle { display: flex; align-items: center; justify-content: center; gap: 22px; flex-wrap: wrap; }
 .rb-waffle-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; width: 150px; flex: none; }
 .rb-waffle-cell { display: block; aspect-ratio: 1; border-radius: 2px; }
 .rb-waffle-legend { display: flex; flex-direction: column; gap: 9px; }
@@ -238,21 +245,134 @@ select.rb-scope-select {
   padding-bottom: 2px; transition: transform 100ms ease;
 }
 .rb-heatmap-cell:hover { transform: scale(1.08); }
-.rb-heatmap-hour { font-size: 0.5625rem; color: var(--ink-soft); font-family: "IBM Plex Mono", monospace; }
-.rb-heatmap-legend { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 0.6875rem; color: var(--muted); }
+/* A background pill (an earlier design) guaranteed contrast against any
+   cell color, but its box made even a few px of html2canvas vertical
+   drift look like it was spilling into the row below. White text with a
+   dark shadow reads fine on every cell color too, without a hard box
+   edge to visibly cross a boundary if the export renders it a touch off. */
+.rb-heatmap-hour {
+  font-size: 0.5625rem; color: #fff; font-weight: 700; font-family: "IBM Plex Mono", monospace;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75), 0 0 3px rgba(0, 0, 0, 0.55); line-height: 1;
+}
+.rb-heatmap-legend { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 0.6875rem; color: var(--muted); line-height: 1; }
 .rb-heatmap-scale { display: flex; gap: 3px; }
 .rb-heatmap-swatch { display: block; width: 14px; height: 10px; border-radius: 2px; }
 
 /* ================= Stacked bar (Priority Mix by Agency) ================= */
 .rb-stacked-legend { display: flex; gap: 14px; margin-bottom: 14px; font-size: 0.75rem; color: var(--ink-soft); }
-.rb-stacked-legend span { display: inline-flex; align-items: center; gap: 6px; }
-.rb-stacked-legend .rb-dot { width: 8px; height: 8px; border-radius: 50%; }
+/* Direct-child combinator matters: a plain descendant selector here also
+   matched the nested .rb-dot span (it's a <span> too), silently turning it
+   into an empty inline-flex box instead of the plain block circle its own
+   rule intended. */
+.rb-stacked-legend > span { display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
+.rb-stacked-legend .rb-dot { display: block; width: 8px; height: 8px; border-radius: 50%; }
 .rb-stacked-rows { display: flex; flex-direction: column; gap: 12px; }
 .rb-stacked-row { display: grid; grid-template-columns: 64px 1fr 44px; align-items: center; gap: 10px; }
 .rb-stacked-row-label { font-size: 0.8125rem; font-weight: 600; }
 .rb-stacked-bar { display: flex; height: 18px; border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-2); }
 .rb-stacked-seg { display: block; height: 100%; }
 .rb-stacked-row-total { font-family: "IBM Plex Mono", monospace; font-size: 0.8125rem; font-weight: 600; text-align: right; color: var(--ink); }
+
+/* ================= Chart export layout (download image / print) =================
+   Off-screen (position: fixed, not display:none — html2canvas needs the
+   element genuinely laid out to capture it) and a fixed landscape width so
+   the exported PNG is a properly composed figure: title included, chart
+   centered, wide rather than the narrow ~380px the card renders at inside
+   the 2-column grid. */
+.rb-chart-export {
+  position: fixed; top: 0; left: -10000px; width: 860px; min-height: 300px;
+  background: var(--surface); padding: 30px 40px 22px; box-sizing: border-box;
+  display: flex; flex-direction: column;
+}
+.rb-chart-export-brand { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex: none; line-height: 1; }
+.rb-chart-export-brand-mark {
+  width: 22px; height: 22px; border-radius: 5px; background: var(--accent);
+  display: flex; align-items: center; justify-content: center; flex: none;
+  position: relative; top: 1px;
+}
+.rb-chart-export-brand-mark svg { width: 12px; height: 12px; }
+.rb-chart-export-brand-name { font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+/* Two classes so this beats ".rb-panel h2 { margin: 0; }" (a class + element
+   combinator, which otherwise silently wins on specificity over a single
+   class and collapsed this title's bottom margin to 0 — the title and
+   divider below it were rendering with no gap between them at all). */
+.rb-chart-export .rb-chart-export-title { margin: 0 0 16px; font-size: 1.375rem; font-weight: 700; color: var(--ink); letter-spacing: -0.01em; flex: none; }
+.rb-chart-export-divider { height: 1px; background: var(--line-strong); flex: none; }
+/* flex-direction: column matters here — some charts (e.g. BarList with a
+   caption) render two sibling root nodes. In a row (the flex default),
+   those siblings land side by side and vertically centered against each
+   other instead of stacked, which is what put the caption text floating
+   in the middle of the bars instead of below them. */
+.rb-chart-export-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 20px 0; }
+.rb-chart-export-body > * { width: 100%; }
+.rb-chart-export-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex: none;
+  margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line);
+  font-size: 0.75rem; color: var(--muted);
+}
+.rb-chart-export-footer strong { color: var(--ink-soft); font-weight: 600; }
+
+/* html2canvas draws text through its own canvas fillText() pipeline, not
+   the browser's native text layout engine — it uses different vertical
+   metrics, so a dot+label row that lines up correctly in the live card can
+   still look slightly off specifically in the captured export. Scoped
+   under .rb-chart-export only, so the (already-correct) live view is
+   untouched by this. */
+.rb-chart-export .rb-donut-legend-row .rb-dot,
+.rb-chart-export .rb-waffle-legend .rb-dot,
+.rb-chart-export .rb-stacked-legend .rb-dot {
+  position: relative;
+  top: 8px;
+}
+/* Same html2canvas quirk, but these are numbers centered inside a shape
+   (donut hole, bubble circle) rather than a dot sitting beside a label —
+   there's no separate marker to nudge down to meet it, so the text itself
+   moves up instead. */
+/* .rb-donut-center's own base rule is position:absolute (that's what puts
+   it inside the ring's hollow center at all) — overriding it to
+   position:relative here (an earlier mistake) knocked it clean out of that
+   absolute placement into normal flow below the donut. transform doesn't
+   touch the positioning scheme, only offsets it visually, so it can't
+   break that the same way. */
+.rb-chart-export .rb-donut-center { transform: translateY(-4px); }
+.rb-chart-export .rb-bubble-value { position: relative; top: -3px; }
+/* The generic width:100% rule blows the heatmap's cells up to ~65px+ square
+   at the export's 860px width, way past the compact, well-proportioned
+   size it has in the live card — capping its width keeps it looking like
+   the same chart instead of a stretched-out version of it. */
+.rb-chart-export .rb-heatmap { max-width: 480px; margin: 0 auto; }
+/* The hour label sits at the cell's flex-end edge — html2canvas renders it
+   a few px lower than the browser does, enough to straddle the border
+   into the row below. transform (not position/top) lifts it without
+   touching the flex placement that's keeping it in the cell at all. */
+.rb-chart-export .rb-heatmap-hour { transform: translateY(-4px); }
+/* Same html2canvas flex cross-axis quirk as the legend dots above, but for
+   a row mixing plain text with a box — vertical-align on inline-block
+   siblings doesn't depend on flex cross-axis math at all, so it sidesteps
+   the quirk instead of trying to counter-nudge it. */
+.rb-chart-export .rb-heatmap-legend {
+  display: block;
+  white-space: nowrap;
+  line-height: 10px;
+}
+.rb-chart-export .rb-heatmap-legend > * {
+  display: inline-block;
+  vertical-align: middle;
+}
+.rb-chart-export .rb-heatmap-legend > span:not(:last-child) { margin-right: 8px; }
+/* .rb-heatmap-scale is also a direct child, and the generic rule above
+   would flatten its own internal flex row (the swatches would stack
+   instead of sitting side by side) — restore it, just as inline so it
+   still sits on the same line as the text either side of it. */
+.rb-chart-export .rb-heatmap-legend > .rb-heatmap-scale {
+  display: inline-flex;
+  vertical-align: middle;
+  /* vertical-align: middle still lands the swatches a couple px below the
+     text's own middle (html2canvas's text metrics again) — transform
+     corrects the visual offset without touching the alignment rule
+     that's placing it on the line at all. */
+  transform: translateY(7px);
+}
 
 /* ================= Chart toolbar (data view / image / fullscreen / menu) ================= */
 .rb-chart-toolbar { display: flex; justify-content: flex-end; gap: 4px; margin-bottom: 8px; }
@@ -309,12 +429,12 @@ table.rb-manifest tbody tr:hover td { background: var(--surface-2); }
 .rb-case-id { font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--ink); }
 .rb-case-loc { color: var(--muted); white-space: normal; min-width: 160px; }
 
-.rb-chip-agency { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; padding: 3px 8px; border-radius: var(--radius-pill); }
+.rb-chip-agency { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; padding: 3px 8px; border-radius: var(--radius-pill); line-height: 1; }
 .rb-chip-agency[data-agency="KKM"] { color: var(--kkm); background: var(--kkm-soft); }
 .rb-chip-agency[data-agency="PDRM"] { color: var(--pdrm); background: var(--pdrm-soft); }
 .rb-chip-agency[data-agency="JBPM"] { color: var(--jbpm); background: var(--jbpm-soft); }
 
-.rb-priority-tag { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
+.rb-priority-tag { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; line-height: 1; }
 .rb-priority-tag .rb-dot { display: block; width: 7px; height: 7px; border-radius: 50%; flex: none; }
 .rb-priority-tag[data-priority="low"] { color: var(--pri-low); }
 .rb-priority-tag[data-priority="medium"] { color: var(--pri-med); }
@@ -323,7 +443,7 @@ table.rb-manifest tbody tr:hover td { background: var(--surface-2); }
 .rb-priority-tag[data-priority="medium"] .rb-dot { background: var(--pri-med); }
 .rb-priority-tag[data-priority="high"] .rb-dot { background: var(--pri-high); }
 
-.rb-status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; padding: 3px 9px; border-radius: var(--radius-pill); background: var(--surface-2); color: var(--ink-soft); }
+.rb-status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; padding: 3px 9px; border-radius: var(--radius-pill); background: var(--surface-2); color: var(--ink-soft); line-height: 1; }
 .rb-status-pill .rb-dot { display: block; width: 6px; height: 6px; border-radius: 50%; flex: none; }
 .rb-status-pill[data-status="open"] .rb-dot { background: var(--stat-open); }
 .rb-status-pill[data-status="dispatched"] .rb-dot { background: var(--stat-dispatched); }

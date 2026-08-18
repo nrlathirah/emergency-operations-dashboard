@@ -5,6 +5,7 @@
     :rows="rows"
     :loading="!rows && !error"
     :error="error"
+    :agency-code="agencyCode"
     filename="cases-by-agency"
     label-header="Agency"
     @retry="loadChart"

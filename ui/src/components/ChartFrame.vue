@@ -42,7 +42,7 @@
 
     <ErrorBanner v-if="error" :message="error" @retry="$emit('retry')" />
     <LoadingSpinner v-else-if="loading" />
-    <div v-else ref="captureRef">
+    <div v-else>
       <div v-if="dataView" class="rb-data-table-scroll">
         <table class="rb-data-table">
           <thead><tr><th>{{ labelHeader }}</th><th>Count</th></tr></thead>
@@ -55,6 +55,30 @@
         </table>
       </div>
       <slot v-else />
+    </div>
+
+    <!-- Dedicated, always-rendered export layout — kept off-screen, never
+         shown to the user. downloadImage/printImage capture this instead of
+         the visible in-card chart, so the exported image always has the
+         title, sits in a proper landscape frame, and is available
+         regardless of whether data-table view happens to be toggled on
+         (the visible chart isn't even mounted then). -->
+    <div v-if="!loading && !error" ref="exportRef" class="rb-chart-export" aria-hidden="true">
+      <div class="rb-chart-export-brand">
+        <span class="rb-chart-export-brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l1.5-4L11 17l2.5-9L15 12h7" /></svg>
+        </span>
+        <span class="rb-chart-export-brand-name">Emergency Operations Dashboard</span>
+      </div>
+      <h2 class="rb-chart-export-title">{{ title }}</h2>
+      <div class="rb-chart-export-divider"></div>
+      <div class="rb-chart-export-body">
+        <slot />
+      </div>
+      <div class="rb-chart-export-footer">
+        <span><strong>{{ agencyLabel }}</strong> · Emergency Operations Dashboard</span>
+        <span>Generated {{ exportedAt }}</span>
+      </div>
     </div>
 
     <Teleport to="body">
@@ -85,7 +109,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, onUnmounted } from "vue";
+import { ref, computed, nextTick, onMounted, onUnmounted } from "vue";
 import html2canvas from "html2canvas";
 import { downloadRowsCsv } from "../utils/chartExport";
 import LoadingSpinner from "./LoadingSpinner.vue";
@@ -99,6 +123,7 @@ const props = defineProps({
   labelHeader: { type: String, default: "Label" },
   loading: { type: Boolean, default: false },
   error: { type: String, default: "" },
+  agencyCode: { type: String, default: "" }, // for the export footer's scope line
 });
 
 defineEmits(["retry"]);
@@ -106,14 +131,49 @@ defineEmits(["retry"]);
 const dataView = ref(false);
 const fullscreen = ref(false);
 const menuOpen = ref(false);
-const captureRef = ref(null);
+const exportRef = ref(null);
+
+const agencyLabel = computed(() => props.agencyCode || "All Agencies");
+const exportedAt = ref("");
+const formatExportedAt = () =>
+  new Date().toLocaleString("en-MY", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
+// html2canvas can fire before the Google Font (IBM Plex Sans) has actually
+// finished loading, silently substituting a fallback with different letter
+// widths — waiting for document.fonts.ready avoids capturing that transient
+// state.
+const captureExport = async () => {
+  if (!exportRef.value) return null;
+  exportedAt.value = formatExportedAt();
+  await nextTick();
+  await document.fonts.ready;
+  try {
+    return await html2canvas(exportRef.value, { backgroundColor: "#ffffff", scale: 2 });
+  } catch (err) {
+    // A silent failure here previously looked like nothing happened at all
+    // when clicked — surface it instead of failing invisibly.
+    window.alert("Couldn't generate the chart image. Please try again.");
+    return null;
+  }
+};
+
+// e.g. "emergency-ops-cases-by-status-2026-08-18-1432.png" — branded and
+// timestamped (not just dated) so repeated downloads on the same day get
+// distinct filenames instead of the browser silently reusing/renaming an
+// older file with the same name.
+const buildFilename = (extension) => {
+  const now = new Date();
+  const date = now.toISOString().slice(0, 10);
+  const time = `${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
+  return `emergency-ops-${props.filename}-${date}-${time}.${extension}`;
+};
 
 const downloadImage = async () => {
-  if (!captureRef.value) return;
-  const canvas = await html2canvas(captureRef.value, { backgroundColor: "#ffffff", scale: 2 });
+  const canvas = await captureExport();
+  if (!canvas) return;
   const link = document.createElement("a");
   link.href = canvas.toDataURL("image/png");
-  link.download = `${props.filename}.png`;
+  link.download = buildFilename("png");
   link.click();
 };
 
@@ -122,38 +182,26 @@ const exportExcel = () => {
   downloadRowsCsv(props.rows, props.filename);
 };
 
-// Always prints the chart's own visual, never the data-table dump — even
-// if data-table view happens to be toggled on right now, in which case the
-// chart isn't even mounted (v-if/v-else swaps them, not v-show). Flips to
-// chart view just long enough to capture it, then restores whatever view
-// the user actually had open.
+// Always prints the chart's own visual, never the data-table dump — captures
+// the dedicated (always-mounted) export layout, so this works regardless of
+// whether data-table view happens to be toggled on right now.
 const printChart = async () => {
   menuOpen.value = false;
-  const wasDataView = dataView.value;
-  if (wasDataView) {
-    dataView.value = false;
-    await nextTick();
-  }
   await printImage();
-  if (wasDataView) {
-    dataView.value = true;
-  }
 };
 
 const printImage = async () => {
-  if (!captureRef.value) return;
-  const canvas = await html2canvas(captureRef.value, { backgroundColor: "#ffffff", scale: 2 });
+  const canvas = await captureExport();
+  if (!canvas) return;
   const dataUrl = canvas.toDataURL("image/png");
   const win = window.open("", "_blank", "width=700,height=600");
   if (!win) return;
   win.document.write(`<!doctype html><html><head><title>${props.title}</title>
     <style>
-      body { font-family: system-ui, sans-serif; padding: 24px; color: #101A1C; }
-      h1 { font-size: 17px; margin: 0 0 16px; }
-      img { max-width: 100%; }
+      body { margin: 0; padding: 16px; }
+      img { max-width: 100%; display: block; }
     </style>
   </head><body>
-    <h1>${props.title}</h1>
     <img src="${dataUrl}" />
   </body></html>`);
   win.document.close();

@@ -5,6 +5,7 @@
     :rows="rows"
     :loading="!cells && !error"
     :error="error"
+    :agency-code="agencyCode"
     filename="cases-by-hour"
     label-header="Hour"
     @retry="loadChart"

@@ -5,6 +5,7 @@
     :rows="rows"
     :loading="!points && !error"
     :error="error"
+    :agency-code="agencyCode"
     filename="cases-trend"
     label-header="Date"
     @retry="loadChart"
