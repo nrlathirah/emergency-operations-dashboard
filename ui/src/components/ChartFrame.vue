@@ -76,7 +76,7 @@
         <slot />
       </div>
       <div class="rb-chart-export-footer">
-        <span><strong>{{ agencyLabel }}</strong> · Emergency Operations Dashboard</span>
+        <span><strong>{{ agencyLabel }}</strong> · {{ props.dateRangeLabel || "All Time" }}</span>
         <span>Generated {{ exportedAt }}</span>
       </div>
     </div>
@@ -111,7 +111,7 @@
 <script setup>
 import { ref, computed, nextTick, onMounted, onUnmounted } from "vue";
 import html2canvas from "html2canvas";
-import { downloadRowsExcel, buildTimestampedFilename } from "../utils/chartExport";
+import { downloadRowsExcel, buildTimestampedFilename, splitDateRangeLabel } from "../utils/chartExport";
 import LoadingSpinner from "./LoadingSpinner.vue";
 import ErrorBanner from "./ErrorBanner.vue";
 
@@ -124,6 +124,11 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   error: { type: String, default: "" },
   agencyCode: { type: String, default: "" }, // for the export footer's scope line
+  // A ready-to-display string ("2026-07-21 to 2026-08-19 (30 days)") —
+  // resolved once at the Reports page level (it needs the actual earliest
+  // case on record to say something real instead of a vague "All Time"
+  // when no explicit range is picked), not recomputed per chart.
+  dateRangeLabel: { type: String, default: null },
 });
 
 defineEmits(["retry"]);
@@ -168,9 +173,12 @@ const downloadImage = async () => {
 
 const exportExcel = () => {
   menuOpen.value = false;
+  const { dateRangeLabel, durationLabel } = splitDateRangeLabel(props.dateRangeLabel);
   downloadRowsExcel(props.rows, buildTimestampedFilename(props.filename, "xlsx"), {
     title: props.title,
     agencyLabel: agencyLabel.value,
+    dateRangeLabel: dateRangeLabel || "All Time",
+    durationLabel,
     generatedAt: formatExportedAt(),
     labelHeader: props.labelHeader,
   });

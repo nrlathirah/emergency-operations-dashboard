@@ -6,11 +6,12 @@
     :loading="!rows && !error"
     :error="error"
     :agency-code="agencyCode"
+    :date-range-label="dateRangeLabel"
     filename="cases-by-priority"
     label-header="Priority"
     @retry="loadChart"
   >
-    <BarChartXY :rows="rows" />
+    <BarChartXY :rows="rows" clickable @row-click="(row) => $emit('segment-click', { type: 'priority', value: row.label.toLowerCase() })" />
   </ChartFrame>
 </template>
 
@@ -22,7 +23,11 @@ import ChartFrame from "./ChartFrame.vue";
 
 const props = defineProps({
   agencyCode: { type: String, default: "" },
+  startDate: { type: String, default: null },
+  endDate: { type: String, default: null },
+  dateRangeLabel: { type: String, default: null },
 });
+defineEmits(["segment-click"]);
 
 const PRIORITY_ORDER = [
   { key: "low", label: "Low", color: "var(--pri-low)" },
@@ -36,7 +41,10 @@ const error = ref("");
 const loadChart = async () => {
   try {
     error.value = "";
-    const summary = await reportService.getCasesByPriority(props.agencyCode || undefined);
+    const summary = await reportService.getCasesByPriority(props.agencyCode || undefined, {
+      startDate: props.startDate,
+      endDate: props.endDate,
+    });
     rows.value = PRIORITY_ORDER.filter((p) => summary[p.key] !== undefined).map((p) => ({
       label: p.label,
       value: summary[p.key] || 0,
@@ -47,6 +55,6 @@ const loadChart = async () => {
   }
 };
 
-watch(() => props.agencyCode, loadChart);
+watch([() => props.agencyCode, () => props.startDate, () => props.endDate], loadChart);
 onMounted(loadChart);
 </script>

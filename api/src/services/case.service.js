@@ -4,7 +4,17 @@ import { Case, Agency, Vehicle, Station } from "#models/index.js";
 const ALLOWED_SORT_FIELDS = ["caseNumber", "category", "priority", "status", "createdAt"];
 const CLOSED_RETENTION_MS = 24 * 60 * 60 * 1000;
 
-export const getAllCases = async ({ agencyCode, status, sort, order, includeAll } = {}) => {
+// Both bounds must be given together — a lopsided range (only a start, or
+// only an end) is more likely a half-filled picker than an intentional
+// open-ended query, so it's treated as "no range" rather than guessed at.
+const dateRangeWhere = (startDate, endDate) => {
+  if (!startDate || !endDate) return null;
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999); // inclusive of the whole end day, not just midnight
+  return { [Op.between]: [new Date(startDate), end] };
+};
+
+export const getAllCases = async ({ agencyCode, status, sort, order, includeAll, startDate, endDate, search, category, priority } = {}) => {
   const where = {};
   if (status) {
     // An explicit status filter (e.g. picked from the dropdown) is a
@@ -20,6 +30,16 @@ export const getAllCases = async ({ agencyCode, status, sort, order, includeAll 
       { status: "closed", updatedAt: { [Op.gte]: new Date(Date.now() - CLOSED_RETENTION_MS) } },
     ];
   }
+  if (category) where.category = category;
+  if (priority) where.priority = priority;
+  const createdAtRange = dateRangeWhere(startDate, endDate);
+  if (createdAtRange) where.createdAt = createdAtRange;
+  // Only safe to add a second Op.or (search) when the status-less branch
+  // above didn't already claim the Op.or key — Reports exports always pass
+  // either an explicit status or includeAll, so this never collides there.
+  if (search) {
+    where[Op.and] = [{ [Op.or]: [{ caseNumber: { [Op.like]: `%${search}%` } }, { location: { [Op.like]: `%${search}%` } }] }];
+  }
 
   const include = [{ model: Agency, attributes: ["code", "name"] }];
   if (agencyCode) include[0].where = { code: agencyCode };
@@ -34,9 +54,31 @@ export const getAllCases = async ({ agencyCode, status, sort, order, includeAll 
 // getAllCases (used by the Live Dashboard's polling table, which always
 // wants the full active/recent set client-side), this can page through the
 // entire retained history without shipping hundreds of rows in one response.
-export const getCasesPage = async ({ agencyCode, status, sort, order, page = 1, limit = 10 } = {}) => {
+export const getCasesPage = async ({
+  agencyCode,
+  status,
+  sort,
+  order,
+  page = 1,
+  limit = 10,
+  startDate,
+  endDate,
+  search,
+  category,
+  priority,
+} = {}) => {
   const where = {};
   if (status) where.status = status;
+  if (category) where.category = category;
+  if (priority) where.priority = priority;
+  const createdAtRange = dateRangeWhere(startDate, endDate);
+  if (createdAtRange) where.createdAt = createdAtRange;
+  if (search) {
+    where[Op.or] = [
+      { caseNumber: { [Op.like]: `%${search}%` } },
+      { location: { [Op.like]: `%${search}%` } },
+    ];
+  }
 
   const include = [{ model: Agency, attributes: ["code", "name"] }];
   if (agencyCode) include[0].where = { code: agencyCode };
@@ -53,6 +95,16 @@ export const getCasesPage = async ({ agencyCode, status, sort, order, page = 1, 
   });
 
   return { cases: rows, total: count, page, limit };
+};
+
+// The real start of a trend chart's "All time" — lets a trend window mean
+// "since the first case on record" instead of an arbitrary fallback that
+// silently caps at N days while still being labeled "All time."
+export const getEarliestCaseDate = async ({ agencyCode } = {}) => {
+  const include = [{ model: Agency, attributes: [] }];
+  if (agencyCode) include[0].where = { code: agencyCode };
+  const earliest = await Case.findOne({ include, order: [["createdAt", "ASC"]], attributes: ["createdAt"] });
+  return earliest ? earliest.createdAt : null;
 };
 
 export const dispatchCase = async ({ caseId, vehicleId, requesterRole, requesterAgencyCode }) => {

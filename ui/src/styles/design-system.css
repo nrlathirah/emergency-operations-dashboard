@@ -127,6 +127,65 @@ select.rb-scope-select {
 .rb-btn-export:disabled { opacity: 0.6; cursor: default; }
 .rb-btn-export svg { width: 14px; height: 14px; }
 
+/* ================= Date range picker (Reports topbar) — single calendar
+   popover with click-to-select range, rather than two separate date inputs ================= */
+.rb-cal-range { position: relative; }
+.rb-cal-trigger {
+  display: inline-flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md); padding: 7px 12px; font-size: 0.8125rem; font-weight: 600; color: var(--ink); cursor: pointer;
+}
+.rb-cal-trigger svg:first-child { width: 15px; height: 15px; color: var(--muted); flex: none; }
+.rb-cal-trigger svg:last-child { width: 12px; height: 12px; color: var(--muted); flex: none; }
+.rb-cal-popover {
+  position: absolute; top: calc(100% + 6px); left: 0; z-index: 30; background: var(--surface); border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); padding: 14px; width: 268px;
+}
+.rb-daterange-presets { display: flex; gap: 4px; margin-bottom: 12px; }
+.rb-daterange-preset {
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-pill);
+  padding: 5px 11px; font-size: 0.75rem; font-weight: 600; color: var(--muted); cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.rb-daterange-preset:hover { background: var(--surface-2); color: var(--ink-soft); }
+.rb-daterange-preset--active { background: var(--accent-soft); color: var(--accent-strong); border-color: var(--accent-soft); }
+
+.rb-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.rb-cal-month-label { font-size: 0.8125rem; font-weight: 700; color: var(--ink); }
+.rb-cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 2px; }
+.rb-cal-weekdays span { text-align: center; font-size: 0.6875rem; font-weight: 600; color: var(--muted); padding: 4px 0; }
+.rb-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.rb-cal-day {
+  display: flex; align-items: center; justify-content: center; aspect-ratio: 1; font-size: 0.75rem; color: var(--ink-soft);
+  cursor: pointer; border-radius: var(--radius-sm); transition: background 100ms ease, color 100ms ease;
+}
+.rb-cal-day--blank { cursor: default; }
+.rb-cal-day--future { color: var(--line-strong); cursor: not-allowed; }
+.rb-cal-day--today { font-weight: 700; color: var(--accent-strong); }
+.rb-cal-day--in-range { background: var(--accent-soft); border-radius: 0; }
+.rb-cal-day--start, .rb-cal-day--end {
+  background: var(--accent); color: var(--accent-contrast); font-weight: 700; border-radius: var(--radius-pill);
+}
+.rb-cal-hint { margin: 10px 0 0; font-size: 0.6875rem; color: var(--muted); text-align: center; }
+
+/* ================= Search input + filter chip (Case History table) ================= */
+.rb-search-input {
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-md);
+  padding: 7px 12px 7px 32px; font-size: 0.8125rem; color: var(--ink); min-width: 180px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2364716F' stroke-width='1.6'%3E%3Ccircle cx='9' cy='9' r='6'/%3E%3Cpath d='M17 17l-4-4' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: 10px center; background-size: 14px;
+}
+.rb-search-input::placeholder { color: var(--muted); }
+
+.rb-filter-chip {
+  display: inline-flex; align-items: center; gap: 6px; background: var(--accent-soft); color: var(--accent-strong);
+  border-radius: var(--radius-pill); padding: 5px 6px 5px 12px; font-size: 0.75rem; font-weight: 600;
+}
+.rb-filter-chip button {
+  display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px;
+  border-radius: 50%; border: none; background: rgba(255, 255, 255, 0.5); color: inherit; cursor: pointer; font-size: 0.75rem; line-height: 1; padding: 0;
+}
+.rb-filter-chip button:hover { background: rgba(255, 255, 255, 0.85); }
+
 .rb-scope-note { margin: 14px 0 0; font-size: 0.8125rem; color: var(--muted); display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .rb-legend { display: inline-flex; align-items: center; gap: 12px; line-height: 1; }
 .rb-legend span { display: inline-flex; align-items: center; gap: 5px; }
@@ -150,6 +209,14 @@ select.rb-scope-select {
 .rb-kpi-value { font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 1.9rem; color: var(--ink); line-height: 1; letter-spacing: -0.01em; }
 .rb-kpi-unit { font-size: 1.05rem; color: var(--muted); margin-left: 1px; }
 .rb-kpi-sub { font-size: 0.75rem; color: var(--muted); font-family: "IBM Plex Mono", monospace; }
+.rb-kpi-delta-row { display: flex; align-items: center; gap: 6px; }
+.rb-delta-badge {
+  display: inline-flex; align-items: center; gap: 3px; font-size: 0.6875rem; font-weight: 700;
+  padding: 1px 6px; border-radius: var(--radius-pill); font-family: "IBM Plex Mono", monospace;
+}
+.rb-delta-badge--up { background: var(--accent-soft); color: var(--accent-strong); }
+.rb-delta-badge--down { background: color-mix(in srgb, var(--pri-high) 15%, transparent); color: var(--pri-high); }
+.rb-delta-badge--neutral { background: var(--surface-2); color: var(--muted); }
 
 .rb-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 18px 20px 20px; height: 100%; }
 .rb-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
@@ -166,6 +233,7 @@ select.rb-scope-select {
 .rb-trend-area { fill: rgba(12, 110, 114, 0.12); stroke: none; } /* --accent at 12% — color-mix() breaks html2canvas capture */
 .rb-trend-line { fill: none; stroke: var(--accent); stroke-width: 2.25; stroke-linejoin: round; stroke-linecap: round; }
 .rb-trend-point { fill: var(--accent-strong); stroke: var(--surface); stroke-width: 2; }
+.rb-trend-reference { stroke: var(--pri-high); stroke-width: 1.5; stroke-dasharray: 5 4; }
 .rb-trend-axis { display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.6875rem; color: var(--muted); font-family: "IBM Plex Mono", monospace; }
 
 .rb-chart-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; align-items: stretch; }
@@ -216,6 +284,8 @@ select.rb-scope-select {
 }
 .rb-xybar-bars { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: space-evenly; }
 .rb-xybar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; width: 64px; }
+.rb-xybar-col--clickable { cursor: pointer; }
+.rb-xybar-col--clickable:hover .rb-xybar-bar { opacity: 0.75; }
 .rb-xybar-value { font-size: 0.75rem; font-weight: 600; color: var(--ink); margin-bottom: 5px; font-family: "IBM Plex Mono", monospace; }
 .rb-xybar-bar { width: 46px; border-radius: 4px 4px 0 0; transition: opacity 120ms ease; }
 .rb-xybar-bar:hover { opacity: 0.85; }
@@ -230,10 +300,14 @@ select.rb-scope-select {
 .rb-waffle-legend span { display: flex; align-items: center; gap: 7px; font-size: 0.8125rem; color: var(--ink-soft); }
 .rb-waffle-legend .rb-dot { display: block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .rb-waffle-legend b { font-family: "IBM Plex Mono", monospace; color: var(--ink); font-weight: 600; }
+.rb-waffle-legend-item--clickable { cursor: pointer; transition: opacity 120ms ease; }
+.rb-waffle-legend-item--clickable:hover { opacity: 0.7; }
 
 /* ================= Bubble chart (e.g. Cases by Category) ================= */
 .rb-bubbles { display: flex; align-items: flex-end; justify-content: space-evenly; flex-wrap: wrap; gap: 14px 8px; padding: 10px 0 4px; min-height: 100px; }
 .rb-bubble-col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.rb-bubble-col--clickable { cursor: pointer; transition: opacity 120ms ease; }
+.rb-bubble-col--clickable:hover { opacity: 0.75; }
 .rb-bubble { display: flex; align-items: center; justify-content: center; border-radius: 50%; flex: none; }
 .rb-bubble-value { color: #fff; font-size: 0.75rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
 .rb-bubble-label { font-size: 0.75rem; color: var(--ink-soft); text-align: center; max-width: 76px; }

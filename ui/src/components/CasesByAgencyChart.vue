@@ -6,11 +6,12 @@
     :loading="!rows && !error"
     :error="error"
     :agency-code="agencyCode"
+    :date-range-label="dateRangeLabel"
     filename="cases-by-agency"
     label-header="Agency"
     @retry="loadChart"
   >
-    <WaffleChart :segments="rows" />
+    <WaffleChart :segments="rows" clickable @row-click="(row) => $emit('segment-click', { type: 'agency', value: row.label })" />
   </ChartFrame>
 </template>
 
@@ -22,7 +23,11 @@ import ChartFrame from "./ChartFrame.vue";
 
 const props = defineProps({
   agencyCode: { type: String, default: "" },
+  startDate: { type: String, default: null },
+  endDate: { type: String, default: null },
+  dateRangeLabel: { type: String, default: null },
 });
+defineEmits(["segment-click"]);
 
 const AGENCY_COLORS = { KKM: "var(--kkm)", PDRM: "var(--pdrm)", JBPM: "var(--jbpm)" };
 
@@ -32,7 +37,10 @@ const error = ref("");
 const loadChart = async () => {
   try {
     error.value = "";
-    const summary = await reportService.getCasesByAgency(props.agencyCode || undefined);
+    const summary = await reportService.getCasesByAgency(props.agencyCode || undefined, {
+      startDate: props.startDate,
+      endDate: props.endDate,
+    });
     rows.value = Object.keys(summary)
       .sort((a, b) => summary[b] - summary[a])
       .map((label) => ({ label, value: summary[label], color: AGENCY_COLORS[label] || "var(--accent)" }));
@@ -41,6 +49,6 @@ const loadChart = async () => {
   }
 };
 
-watch(() => props.agencyCode, loadChart);
+watch([() => props.agencyCode, () => props.startDate, () => props.endDate], loadChart);
 onMounted(loadChart);
 </script>

@@ -1,7 +1,13 @@
 <template>
   <div>
     <div class="rb-bubbles">
-      <div v-for="row in rows" :key="row.label" class="rb-bubble-col">
+      <div
+        v-for="row in rows"
+        :key="row.label"
+        class="rb-bubble-col"
+        :class="{ 'rb-bubble-col--clickable': clickable }"
+        @click="clickable && $emit('row-click', row)"
+      >
         <div class="rb-bubble" :style="{ width: size(row.value) + 'px', height: size(row.value) + 'px', background: row.color }">
           <span class="rb-bubble-value">{{ row.value }}</span>
         </div>
@@ -18,7 +24,9 @@ import { computed } from "vue";
 const props = defineProps({
   rows: { type: Array, required: true }, // [{ label, value, color }]
   caption: { type: String, default: "" },
+  clickable: { type: Boolean, default: false },
 });
+defineEmits(["row-click"]);
 
 const MIN_SIZE = 30;
 const MAX_SIZE = 76;

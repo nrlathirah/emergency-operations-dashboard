@@ -18,6 +18,24 @@
     </div>
     <p v-if="exportError" class="text-red-600 text-xs mb-3">{{ exportError }}</p>
 
+    <div class="rb-filter-row">
+      <input class="rb-search-input" type="search" placeholder="Search case ID or location…" @input="onSearchInput" />
+      <select v-model="categoryFilter" class="rb-scope-select">
+        <option value="">All Categories</option>
+        <option v-for="c in CATEGORY_OPTIONS" :key="c" :value="c">{{ capitalize(c) }}</option>
+      </select>
+      <select v-model="priorityFilter" class="rb-scope-select">
+        <option value="">All Priorities</option>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+      <span v-if="drillFilter" class="rb-filter-chip">
+        Filtered by: {{ drillFilterLabel }}
+        <button type="button" @click="clearDrill" aria-label="Clear filter">×</button>
+      </span>
+    </div>
+
     <ErrorBanner v-if="error" :message="error" @retry="fetchPage" />
     <LoadingSpinner v-else-if="loading" />
     <div v-else class="rb-table-scroll">
@@ -81,12 +99,33 @@ import ErrorBanner from "./ErrorBanner.vue";
 const props = defineProps({
   agencyCode: { type: String, default: "" },
   isSuperAdmin: { type: Boolean, default: false },
+  startDate: { type: String, default: null },
+  endDate: { type: String, default: null },
+  // Pre-resolved ("2026-07-21 to 2026-08-19 (30 days)") — see ReportsPage,
+  // which fetches the earliest case on record so this never has to fall
+  // back to a vague "All Time" placeholder.
+  dateRangeLabel: { type: String, default: null },
+  // Set by ReportsPage when a priority/category chart segment is clicked —
+  // { type: 'priority'|'category', value }. Pre-fills the matching select
+  // below and shows a dismissible chip; clearing it emits back up so the
+  // parent can reset its own drill state too.
+  drillFilter: { type: Object, default: null },
 });
+const emit = defineEmits(["clear-drill-filter"]);
 
 // "Case History" — closed/resolved cases only. Cases still in progress
 // belong on the Live Dashboard, not here, so there's no status filter to
 // pick from: this table's whole point is the closed subset.
 const STATUS = "closed";
+
+// Mirrors the category pools in api/src/utils/caseGenerator.js — there's no
+// endpoint that returns "every category in use," so this list is hand-kept
+// in sync with the generator rather than fetched.
+const CATEGORY_OPTIONS = [
+  "medical", "accident", "cardiac", "respiratory", "trauma", "poisoning",
+  "theft", "traffic", "assault", "burglary", "fraud", "public_disturbance",
+  "fire", "rescue", "flood", "hazmat", "gas_leak", "tree_fall",
+].sort();
 
 const cases = ref([]);
 const total = ref(0);
@@ -100,11 +139,47 @@ const page = ref(1);
 const pageSize = ref(10);
 const sortField = ref(null);
 const sortOrder = ref("ASC");
+const search = ref("");
+const categoryFilter = ref("");
+const priorityFilter = ref("");
 
 const DEFAULT_SORT_FIELD = "createdAt";
 const DEFAULT_SORT_ORDER = "DESC";
 
-const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
+
+let searchDebounceTimer = null;
+const onSearchInput = (e) => {
+  clearTimeout(searchDebounceTimer);
+  const value = e.target.value;
+  searchDebounceTimer = setTimeout(() => {
+    search.value = value;
+  }, 300);
+};
+
+const drillFilterLabel = computed(() => {
+  if (!props.drillFilter) return "";
+  const dimLabel = props.drillFilter.type === "priority" ? "Priority" : "Category";
+  return `${dimLabel}: ${capitalize(props.drillFilter.value)}`;
+});
+
+const clearDrill = () => {
+  categoryFilter.value = "";
+  priorityFilter.value = "";
+  emit("clear-drill-filter");
+};
+
+// A drill-down click from a chart pre-fills the matching select — it's a
+// starting point the user can still adjust or clear, not a locked filter.
+watch(
+  () => props.drillFilter,
+  (filter) => {
+    if (!filter) return;
+    if (filter.type === "priority") priorityFilter.value = filter.value;
+    if (filter.type === "category") categoryFilter.value = filter.value;
+  },
+  { immediate: true }
+);
 
 const toggleSort = (field) => {
   if (sortField.value !== field) {
@@ -150,6 +225,11 @@ const fetchPage = async () => {
       status: STATUS,
       sort: sortField.value || undefined,
       order: sortField.value ? sortOrder.value : undefined,
+      search: search.value || undefined,
+      category: categoryFilter.value || undefined,
+      priority: priorityFilter.value || undefined,
+      startDate: props.startDate,
+      endDate: props.endDate,
       page: page.value,
       limit: pageSize.value,
     });
@@ -162,8 +242,8 @@ const fetchPage = async () => {
   }
 };
 
-// Exports every closed case matching the table's current agency filter —
-// not just the current page — so the button's scope is exactly "what this
+// Exports every closed case matching the table's current filters — not
+// just the current page — so the button's scope is exactly "what this
 // table is showing you", not a separate, unexplained bulk-export action.
 const handleExport = async () => {
   if (exporting.value) return;
@@ -171,7 +251,13 @@ const handleExport = async () => {
   exporting.value = true;
   exportError.value = "";
   try {
-    const blob = await reportService.downloadCasesExcel(props.agencyCode, STATUS);
+    const blob = await reportService.downloadCasesExcel(props.agencyCode, STATUS, {
+      startDate: props.startDate,
+      endDate: props.endDate,
+      search: search.value,
+      category: categoryFilter.value,
+      priority: priorityFilter.value,
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -204,18 +290,33 @@ const handlePrint = () => {
     )
     .join("");
   const agencyHeader = props.isSuperAdmin ? "<th>Agency</th>" : "";
+  // Every active filter shows here too — a printout with no context about
+  // what's been narrowed down is easy to misread as "all cases."
+  const scopeParts = [
+    `Agency: ${props.agencyCode || "All Agencies"}`,
+    `Date Range: ${props.dateRangeLabel || "All Time"}`,
+  ];
+  if (search.value) scopeParts.push(`Search: "${search.value}"`);
+  if (categoryFilter.value) scopeParts.push(`Category: ${capitalize(categoryFilter.value)}`);
+  if (priorityFilter.value) scopeParts.push(`Priority: ${capitalize(priorityFilter.value)}`);
+  scopeParts.push(
+    `Generated: ${new Date().toLocaleString("en-MY", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}`
+  );
+
   const win = window.open("", "_blank", "width=800,height=700");
   if (!win) return;
   win.document.write(`<!doctype html><html><head><title>Case History</title>
     <style>
       body { font-family: system-ui, sans-serif; padding: 28px; color: #101A1C; }
-      h1 { font-size: 17px; margin: 0 0 16px; }
+      h1 { font-size: 17px; margin: 0 0 6px; }
+      p.scope { font-size: 11px; color: #64716F; margin: 0 0 16px; }
       table { width: 100%; border-collapse: collapse; }
       th, td { border: 1px solid #D8E3E0; padding: 7px 12px; text-align: left; font-size: 12px; }
       th { background: #E7EFED; }
     </style>
   </head><body>
     <h1>Case History — Closed Cases</h1>
+    <p class="scope">${scopeParts.join(" · ")}</p>
     <table><thead><tr><th>Case ID</th>${agencyHeader}<th>Category</th><th>Priority</th><th>Location</th><th>Created</th><th>Resolved In</th></tr></thead>
     <tbody>${rowsHtml}</tbody></table>
   </body></html>`);
@@ -233,10 +334,13 @@ const handleOutsideClick = (e) => {
 onMounted(() => window.addEventListener("click", handleOutsideClick));
 onUnmounted(() => window.removeEventListener("click", handleOutsideClick));
 
-watch([() => props.agencyCode, sortField, sortOrder, pageSize], () => {
-  page.value = 1;
-  fetchPage();
-});
+watch(
+  [() => props.agencyCode, () => props.startDate, () => props.endDate, sortField, sortOrder, pageSize, search, categoryFilter, priorityFilter],
+  () => {
+    page.value = 1;
+    fetchPage();
+  }
+);
 watch(page, fetchPage);
 
 onMounted(fetchPage);

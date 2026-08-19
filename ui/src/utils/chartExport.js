@@ -12,6 +12,30 @@ export const buildTimestampedFilename = (base, extension) => {
   return `emergency-ops-${base}-${date}-${time}.${extension}`;
 };
 
+// e.g. "2026-07-21 to 2026-08-19 (30 days)", or "2026-08-19 (1 day)" for a
+// single day — a plain "to"-range never says how long it actually spans,
+// so every export/print states both ends AND the duration explicitly.
+export const formatDateRangeLabel = (startDate, endDate) => {
+  if (!startDate || !endDate) return null;
+  const [sy, sm, sd] = startDate.split("-").map(Number);
+  const [ey, em, ed] = endDate.split("-").map(Number);
+  const dayCount = Math.round((Date.UTC(ey, em - 1, ed) - Date.UTC(sy, sm - 1, sd)) / 86400000) + 1;
+  const dayWord = dayCount === 1 ? "day" : "days";
+  return startDate === endDate ? `${startDate} (${dayCount} ${dayWord})` : `${startDate} to ${endDate} (${dayCount} ${dayWord})`;
+};
+
+// Splits a formatDateRangeLabel() string back into its two parts for Excel,
+// where date and duration get their own rows instead of one run-on line.
+// Regex, not fragile screen-scraping — this only ever parses a string this
+// same module produced, in a format only it controls. A label with no
+// "(N days)" suffix (e.g. Vehicle Utilization's "Current (live snapshot)")
+// has no separate duration, so it's returned as-is with none.
+export const splitDateRangeLabel = (label) => {
+  if (!label) return { dateRangeLabel: null, durationLabel: null };
+  const match = label.match(/^(.*) \((\d+ days?)\)$/);
+  return match ? { dateRangeLabel: match[1], durationLabel: match[2] } : { dateRangeLabel: label, durationLabel: null };
+};
+
 // Same border/fill colors as the app's own --line/--surface-2 tokens, so
 // the sheet reads as "this app's report" rather than a generic spreadsheet.
 const BORDER_COLOR = "FFD8E3E0";
@@ -30,7 +54,7 @@ const THIN_BORDER = {
 // bold/shaded header row as the backend's Case History export, so every
 // "Export to Excel" button in the app behaves the same way instead of this
 // one quietly producing a bare, unstyled CSV.
-export const downloadRowsExcel = async (rows, fullFilename, { title, agencyLabel, generatedAt, labelHeader = "Label" } = {}) => {
+export const downloadRowsExcel = async (rows, fullFilename, { title, agencyLabel, dateRangeLabel, durationLabel, generatedAt, labelHeader = "Label" } = {}) => {
   if (!rows || rows.length === 0) return;
 
   const workbook = new ExcelJS.Workbook();
@@ -62,6 +86,14 @@ export const downloadRowsExcel = async (rows, fullFilename, { title, agencyLabel
   if (agencyLabel) {
     const agencyRow = sheet.addRow(["Agency:", agencyLabel]);
     agencyRow.getCell(1).font = { bold: true };
+  }
+  if (dateRangeLabel) {
+    const dateRow = sheet.addRow(["Date Range:", dateRangeLabel]);
+    dateRow.getCell(1).font = { bold: true };
+  }
+  if (durationLabel) {
+    const durationRow = sheet.addRow(["Duration:", durationLabel]);
+    durationRow.getCell(1).font = { bold: true };
   }
 
   sheet.addRow([]); // spacer before the table
@@ -100,12 +132,16 @@ export const downloadRowsExcel = async (rows, fullFilename, { title, agencyLabel
   // Keep the title/agency info and header row visible while scrolling.
   sheet.views = [{ state: "frozen", ySplit: headerRow.number }];
 
-  // A page footer (Excel's own, via headerFooter) only ever shows up in
-  // Print Preview / on the printed page itself — never while just scrolling
-  // the sheet — and &C repeats it bottom-center on every printed page,
-  // unlike a plain row which would only ever land once, wherever the data
-  // happened to end.
   if (generatedAt) {
+    // A plain grey timestamp below the table, not bundled into the
+    // Agency/Date Range scope block up top — it's metadata about the
+    // export itself, not one of the filters that shaped what's in it.
+    sheet.addRow([]);
+    const generatedRow = sheet.addRow([`Generated: ${generatedAt}`]);
+    generatedRow.font = { italic: true, size: 10, color: { argb: "FF666666" } };
+    // Also as a page footer (Excel's own, via headerFooter) — that only
+    // ever shows up in Print Preview / on the printed page, repeating
+    // bottom-center on every page, which the row above can't do.
     sheet.headerFooter.oddFooter = `&C&9&IGenerated: ${generatedAt}`;
   }
 

@@ -5,7 +5,13 @@
         <span class="rb-xybar-ytick">{{ tick.value }}</span>
       </div>
       <div class="rb-xybar-bars">
-        <div v-for="row in rows" :key="row.label" class="rb-xybar-col">
+        <div
+          v-for="row in rows"
+          :key="row.label"
+          class="rb-xybar-col"
+          :class="{ 'rb-xybar-col--clickable': clickable }"
+          @click="clickable && $emit('row-click', row)"
+        >
           <span class="rb-xybar-value">{{ row.value }}</span>
           <div class="rb-xybar-bar" :style="{ height: pct(row.value) + '%', background: row.color || 'var(--accent)' }"></div>
         </div>
@@ -22,7 +28,9 @@ import { computed } from "vue";
 
 const props = defineProps({
   rows: { type: Array, required: true }, // [{ label, value, color? }]
+  clickable: { type: Boolean, default: false },
 });
+defineEmits(["row-click"]);
 
 // Rounds the axis top up to a "nice" number (nearest half-magnitude) so
 // gridlines read like a real scale instead of stopping at an arbitrary max.

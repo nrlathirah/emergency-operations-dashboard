@@ -6,6 +6,7 @@
     :loading="!segments && !error"
     :error="error"
     :agency-code="agencyCode"
+    date-range-label="Current (live snapshot)"
     filename="vehicle-utilization"
     label-header="Status"
     @retry="loadChart"
@@ -22,6 +23,16 @@ import ChartFrame from "./ChartFrame.vue";
 
 const props = defineProps({
   agencyCode: { type: String, default: "" },
+  // Accepted but intentionally unused: vehicle status is a live fleet
+  // snapshot with no date dimension, so this chart always overrides
+  // ChartFrame's date-range-label with its own literal "Current (live
+  // snapshot)" below. Declaring these three still matters, though — without
+  // them Vue's attribute fallthrough would pass the Reports page's actual
+  // startDate/endDate/dateRangeLabel straight onto ChartFrame's root and
+  // silently override that literal.
+  startDate: { type: String, default: null },
+  endDate: { type: String, default: null },
+  dateRangeLabel: { type: String, default: null },
 });
 
 const STATUS_ORDER = [

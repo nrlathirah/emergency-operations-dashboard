@@ -6,6 +6,7 @@
     :loading="!cells && !error"
     :error="error"
     :agency-code="agencyCode"
+    :date-range-label="dateRangeLabel"
     filename="cases-by-hour"
     label-header="Hour"
     @retry="loadChart"
@@ -22,6 +23,9 @@ import ChartFrame from "./ChartFrame.vue";
 
 const props = defineProps({
   agencyCode: { type: String, default: "" },
+  startDate: { type: String, default: null },
+  endDate: { type: String, default: null },
+  dateRangeLabel: { type: String, default: null },
 });
 
 const cells = ref(null);
@@ -38,12 +42,15 @@ const rows = computed(() => (cells.value || []).map((c) => ({ label: formatHour(
 const loadChart = async () => {
   try {
     error.value = "";
-    cells.value = await reportService.getCasesByHour(props.agencyCode || undefined);
+    cells.value = await reportService.getCasesByHour(props.agencyCode || undefined, {
+      startDate: props.startDate,
+      endDate: props.endDate,
+    });
   } catch (err) {
     error.value = "Failed to load chart data.";
   }
 };
 
-watch(() => props.agencyCode, loadChart);
+watch([() => props.agencyCode, () => props.startDate, () => props.endDate], loadChart);
 onMounted(loadChart);
 </script>
