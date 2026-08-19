@@ -74,6 +74,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { reportService } from "../services/reportService";
+import { buildTimestampedFilename } from "../utils/chartExport";
 import LoadingSpinner from "./LoadingSpinner.vue";
 import ErrorBanner from "./ErrorBanner.vue";
 
@@ -174,7 +175,7 @@ const handleExport = async () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "cases-report.xlsx";
+    link.download = buildTimestampedFilename("case-history", "xlsx");
     link.click();
     URL.revokeObjectURL(url);
   } catch (err) {

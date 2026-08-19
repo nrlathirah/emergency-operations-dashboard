@@ -111,7 +111,7 @@
 <script setup>
 import { ref, computed, nextTick, onMounted, onUnmounted } from "vue";
 import html2canvas from "html2canvas";
-import { downloadRowsCsv } from "../utils/chartExport";
+import { downloadRowsExcel, buildTimestampedFilename } from "../utils/chartExport";
 import LoadingSpinner from "./LoadingSpinner.vue";
 import ErrorBanner from "./ErrorBanner.vue";
 
@@ -157,29 +157,23 @@ const captureExport = async () => {
   }
 };
 
-// e.g. "emergency-ops-cases-by-status-2026-08-18-1432.png" — branded and
-// timestamped (not just dated) so repeated downloads on the same day get
-// distinct filenames instead of the browser silently reusing/renaming an
-// older file with the same name.
-const buildFilename = (extension) => {
-  const now = new Date();
-  const date = now.toISOString().slice(0, 10);
-  const time = `${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
-  return `emergency-ops-${props.filename}-${date}-${time}.${extension}`;
-};
-
 const downloadImage = async () => {
   const canvas = await captureExport();
   if (!canvas) return;
   const link = document.createElement("a");
   link.href = canvas.toDataURL("image/png");
-  link.download = buildFilename("png");
+  link.download = buildTimestampedFilename(props.filename, "png");
   link.click();
 };
 
 const exportExcel = () => {
   menuOpen.value = false;
-  downloadRowsCsv(props.rows, props.filename);
+  downloadRowsExcel(props.rows, buildTimestampedFilename(props.filename, "xlsx"), {
+    title: props.title,
+    agencyLabel: agencyLabel.value,
+    generatedAt: formatExportedAt(),
+    labelHeader: props.labelHeader,
+  });
 };
 
 // Always prints the chart's own visual, never the data-table dump — captures

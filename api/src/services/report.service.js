@@ -120,31 +120,135 @@ export const getAverageResponseTime = async ({ agencyCode } = {}) => {
   };
 };
 
+const formatMinutes = (totalMinutes) => {
+  if (totalMinutes < 60) return `${totalMinutes}m`;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes ? `${hours}h ${minutes}m` : `${hours}h`;
+};
+
+// --color, --line, etc — same palette the app itself uses, so the sheet's
+// borders/fills read as "this app's report", not a generic spreadsheet.
+const BORDER_COLOR = "FFD8E3E0";
+const HEADER_FILL = "FFE7EFED";
+const THIN_BORDER = {
+  top: { style: "thin", color: { argb: BORDER_COLOR } },
+  left: { style: "thin", color: { argb: BORDER_COLOR } },
+  bottom: { style: "thin", color: { argb: BORDER_COLOR } },
+  right: { style: "thin", color: { argb: BORDER_COLOR } },
+};
+
+const styleHeaderRow = (row) => {
+  row.font = { bold: true };
+  row.alignment = { horizontal: "center", vertical: "middle" };
+  row.eachCell((cell) => {
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: HEADER_FILL } };
+    cell.border = THIN_BORDER;
+  });
+};
+
 export const generateCasesExcel = async ({ agencyCode, status } = {}) => {
   const cases = await getAllCases({ agencyCode, status, includeAll: true });
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Cases");
 
+  // Column keys/widths only here — no `header`, since headers are written
+  // manually below (after the title/scope info rows, not in row 1).
+  const dateColumn = { width: 20, style: { numFmt: "dd mmm yyyy hh:mm AM/PM" } };
   sheet.columns = [
-    { header: "Case ID", key: "caseNumber", width: 15 },
-    { header: "Agency", key: "agency", width: 10 },
-    { header: "Category", key: "category", width: 15 },
-    { header: "Priority", key: "priority", width: 10 },
-    { header: "Status", key: "status", width: 15 },
-    { header: "Location", key: "location", width: 30 },
+    { key: "caseNumber", width: 15 },
+    { key: "agency", width: 10 },
+    { key: "category", width: 16 },
+    { key: "priority", width: 10 },
+    { key: "status", width: 12 },
+    { key: "location", width: 30 },
+    { key: "createdAt", ...dateColumn },
+    { key: "resolvedIn", width: 14 },
   ];
+  const columnCount = sheet.columns.length;
+
+  const titleRow = sheet.addRow(["Case History Report"]);
+  titleRow.font = { bold: true, size: 16 };
+  titleRow.alignment = { horizontal: "center" };
+  sheet.mergeCells(titleRow.number, 1, titleRow.number, columnCount);
+
+  sheet.addRow([]); // spacer — keeps the scope rows from crowding the title
+
+  // Scope shown as separate label/value cells (not one run-on sentence) so
+  // it reads as a short, scannable fact sheet rather than a caption.
+  const agencyRow = sheet.addRow(["Agency:", agencyCode || "All Agencies"]);
+  agencyRow.getCell(1).font = { bold: true };
+  const statusRow = sheet.addRow(["Status:", status ? status.charAt(0).toUpperCase() + status.slice(1) : "All"]);
+  statusRow.getCell(1).font = { bold: true };
+
+  sheet.addRow([]); // spacer before the table
+
+  const HEADER_ROW = 6;
+  const headerRow = sheet.addRow(["Case ID", "Agency", "Category", "Priority", "Status", "Location", "Created", "Resolved In"]);
+  styleHeaderRow(headerRow);
+
+  const priorityCounts = { low: 0, medium: 0, high: 0 };
+  const resolvedDurations = [];
 
   cases.forEach((c) => {
-    sheet.addRow({
+    const resolvedInMinutes = c.status === "closed" ? Math.round((new Date(c.updatedAt) - new Date(c.createdAt)) / 60000) : null;
+    if (resolvedInMinutes !== null) resolvedDurations.push(resolvedInMinutes);
+    if (priorityCounts[c.priority] !== undefined) priorityCounts[c.priority] += 1;
+    const row = sheet.addRow({
       caseNumber: c.caseNumber,
       agency: c.Agency?.code,
       category: c.category,
       priority: c.priority,
       status: c.status,
       location: c.location,
+      createdAt: c.createdAt,
+      resolvedIn: resolvedInMinutes === null ? "—" : formatMinutes(resolvedInMinutes),
+    });
+    row.eachCell((cell) => {
+      cell.border = THIN_BORDER;
     });
   });
+
+  // Filter dropdown arrows already active on open — no manual "Data > Filter" step.
+  sheet.autoFilter = {
+    from: { row: HEADER_ROW, column: 1 },
+    to: { row: HEADER_ROW + cases.length, column: columnCount },
+  };
+  // Keep the title/scope info and header row visible while scrolling.
+  sheet.views = [{ state: "frozen", ySplit: HEADER_ROW }];
+
+  sheet.addRow([]); // spacer
+
+  const summaryHeaderRow = sheet.addRow(["Metric", "Value"]);
+  styleHeaderRow(summaryHeaderRow);
+
+  const addSummaryRow = (label, value) => {
+    const row = sheet.addRow([label, value]);
+    row.getCell(1).font = { bold: true };
+    row.getCell(2).alignment = { horizontal: "right" };
+    row.eachCell((cell) => {
+      cell.border = THIN_BORDER;
+    });
+    return row;
+  };
+
+  addSummaryRow("Total Records", cases.length);
+  addSummaryRow("Low Priority", priorityCounts.low);
+  addSummaryRow("Medium Priority", priorityCounts.medium);
+  addSummaryRow("High Priority", priorityCounts.high);
+  if (resolvedDurations.length > 0) {
+    const avgMinutes = Math.round(resolvedDurations.reduce((sum, m) => sum + m, 0) / resolvedDurations.length);
+    addSummaryRow("Average Resolution Time", formatMinutes(avgMinutes));
+  }
+
+  // A page footer (Excel's own, via headerFooter) only ever shows up in
+  // Print Preview / on the printed page itself — never while just scrolling
+  // the sheet — and &C repeats it bottom-center on every printed page,
+  // unlike a plain row which would only ever land once, wherever the data
+  // happened to end.
+  const generatedAt = new Date().toLocaleString("en-MY", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  sheet.headerFooter.oddFooter = `&C&9&IGenerated: ${generatedAt}`;
 
   return workbook.xlsx.writeBuffer();
 };
