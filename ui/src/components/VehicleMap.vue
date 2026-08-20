@@ -91,7 +91,12 @@ const authStore = useAuthStore();
 const showAgency = (code) =>
   authStore.user?.role === "super_admin" || authStore.user?.agency === code;
 
-const emit = defineEmits(["focus-case"]);
+// "panel-height" lets CaseList's panel match this one's real rendered
+// height exactly (see DashboardPage.vue) — the map's own height isn't a
+// fixed number (its legend row can wrap depending on how many agencies are
+// visible), so this reports whatever it actually ends up being rather than
+// the sibling guessing at a constant.
+const emit = defineEmits(["focus-case", "panel-height"]);
 
 const mapCardRef = ref(null);
 let map;
@@ -129,11 +134,17 @@ const focus = ref(null);
 // `focus`, so a plain manual pan/zoom (no click involved) still reveals the
 // Reset View button, same as Reset Filters appearing once a filter is set.
 const viewChanged = ref(false);
+// A resize (invalidateSize recentering, or even float rounding in Leaflet's
+// own pixel<->latlng math) can leave the center a hair off DEFAULT_CENTER —
+// visually identical, but the old 0.0001 epsilon (~11m) was tight enough to
+// flag that as "changed" anyway. 0.001 (~110m) still reliably catches any
+// real click-to-focus or manual pan (which move by kilometers) while
+// absorbing that rendering noise instead of reacting to it.
 const isDefaultView = () => {
   const center = map.getCenter();
   return (
-    Math.abs(center.lat - DEFAULT_CENTER[0]) < 0.0001 &&
-    Math.abs(center.lng - DEFAULT_CENTER[1]) < 0.0001 &&
+    Math.abs(center.lat - DEFAULT_CENTER[0]) < 0.001 &&
+    Math.abs(center.lng - DEFAULT_CENTER[1]) < 0.001 &&
     map.getZoom() === DEFAULT_ZOOM
   );
 };
@@ -297,7 +308,23 @@ const applyOpacity = () => {
 
 const clearFocus = () => {
   focus.value = null;
-  map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+  // Re-measure the container right before recentering — if the browser was
+  // just resized, Leaflet's own cached size may still be stale at the exact
+  // moment this runs, and centering against a stale size is part of what
+  // left this button clickable-but-inert. animate: false also means this
+  // either finishes synchronously or not at all, instead of leaving an
+  // in-flight pan animation for a resize to interrupt.
+  map.invalidateSize();
+  map.setView(DEFAULT_CENTER, DEFAULT_ZOOM, { animate: false });
+  // Not just relying on the moveend listener to update this: if the map
+  // was already within isDefaultView's tolerance of the target (e.g. after
+  // a resize left it a sub-pixel amount off), Leaflet treats setView as a
+  // no-op and never fires moveend at all — so checkViewChanged never runs
+  // again and the button stays stuck showing even though we just did
+  // exactly what it asked. Setting it directly makes "click Reset View"
+  // itself the source of truth for its own visibility, not a side effect
+  // of whether Leaflet happened to consider the move worth animating.
+  viewChanged.value = false;
   syncVehicleMarkers();
   applyOpacity();
 };
@@ -566,6 +593,45 @@ const addCoverageMask = () => {
   }).addTo(map).bindTooltip("Demo coverage area: Klang Valley (KL & Selangor)");
 };
 
+// Leaflet caches its container's pixel size at init time and never notices
+// if that element is later resized by the browser/CSS (a window resize, the
+// responsive grid collapsing, etc.) — it has no resize listener of its own.
+// Left alone, every subsequent pixel<->latlng calculation (including what
+// map.setView() below the resize thinks "center" means) drifts against the
+// stale size, which is exactly why Reset View could look like a no-op after
+// resizing: the view genuinely did reset, just against outdated math, so it
+// didn't visually match the button's own "default view" state either.
+// map.invalidateSize() is Leaflet's own fix for this — it re-measures the
+// container and recalculates, but only when told to, hence the observer.
+// A real window drag fires the observer many times a second, not once —
+// calling invalidateSize() (which itself measures and can pan/fire moveend)
+// on every single one of those lets successive calls race and compound
+// tiny rounding drift into a real, visible offset, which read as "Reset
+// View showed up on its own, and clicking it didn't visibly do anything"
+// (it moved the map, just to a slightly-off center thanks to that drift —
+// see the isDefaultView epsilon check above). Debouncing to run only once
+// resize events stop for a moment avoids the pile-up entirely.
+let resizeObserver;
+let resizeDebounce;
+const handleMapResize = () => {
+  clearTimeout(resizeDebounce);
+  resizeDebounce = setTimeout(() => map.invalidateSize(), 150);
+};
+
+// Separate from the observer above (that one watches the #map div itself,
+// for Leaflet's own sizing; this one watches the whole card, since the
+// card's total height is header + map + legend together, not just the map).
+let panelResizeObserver;
+// ResizeObserver reports the content box by default (padding/border
+// excluded) — .rb-panel's own padding+border is ~40px that this app's
+// global box-sizing: border-box elsewhere always counts as part of an
+// element's height, so CaseList setting height: <this value>px landed
+// 40px short of the map's real outer size instead of matching it. Asking
+// for the border box explicitly keeps this consistent with what
+// getBoundingClientRect() (and CSS height, under border-box sizing)
+// actually mean by "height".
+const emitPanelHeight = (entries) => emit("panel-height", entries[0].borderBoxSize[0].blockSize);
+
 onMounted(async () => {
   map = L.map("map").setView(DEFAULT_CENTER, DEFAULT_ZOOM);
   map.on("moveend", checkViewChanged);
@@ -578,6 +644,13 @@ onMounted(async () => {
   await loadInitialData();
 
   pollTimer = setInterval(refresh, 3000);
+
+  const mapEl = document.getElementById("map");
+  resizeObserver = new ResizeObserver(handleMapResize);
+  resizeObserver.observe(mapEl);
+
+  panelResizeObserver = new ResizeObserver(emitPanelHeight);
+  panelResizeObserver.observe(mapCardRef.value, { box: "border-box" });
 });
 
 // When the table's agency/status filter changes, drop any active click-focus
@@ -600,7 +673,12 @@ watch(() => props.focusCaseId, (value) => {
   mapCardRef.value?.scrollIntoView({ behavior: "smooth", block: "center" });
 });
 
-onUnmounted(() => clearInterval(pollTimer));
+onUnmounted(() => {
+  clearInterval(pollTimer);
+  clearTimeout(resizeDebounce);
+  resizeObserver?.disconnect();
+  panelResizeObserver?.disconnect();
+});
 </script>
 
 <style>

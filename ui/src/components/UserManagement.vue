@@ -65,7 +65,7 @@
     <ErrorBanner v-else-if="error && users.length === 0" :message="error" @retry="fetchUsers" />
     <template v-else>
       <div class="rb-table-scroll">
-      <table class="rb-manifest" style="min-width: 850px;">
+      <table class="rb-manifest rb-users-table">
         <thead>
           <tr>
             <th class="sortable" @click="toggleSort('name')">Name {{ sortIndicator('name') }}</th>

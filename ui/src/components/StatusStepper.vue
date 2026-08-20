@@ -1,22 +1,28 @@
 <template>
-  <div class="flex items-center w-full px-4 py-2">
+  <div class="flex items-center w-full px-2 sm:px-4 py-2">
     <template v-for="(step, index) in steps" :key="step.key">
-      <div class="flex flex-col items-center gap-1 flex-shrink-0">
+      <div class="flex flex-col items-center gap-1">
         <div
-          class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold flex-shrink-0"
+          class="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[9px] sm:text-[10px] font-semibold flex-shrink-0"
           :style="dotStyle(index)"
         >
           <span v-if="index < currentIndex">✓</span>
           <span v-else>{{ index + 1 }}</span>
         </div>
+        <!-- No whitespace-nowrap and a capped width — a single-word label
+             ("Open", "Dispatched") has nowhere to break so it still renders
+             on one line regardless, but a two-word one ("En Route", "On
+             Scene") can fold onto a second line at a narrow width instead
+             of forcing its column (and so the whole stepper) wider just to
+             stay on one line. -->
         <span
-          class="text-[11px] whitespace-nowrap"
+          class="text-[9px] sm:text-[11px] text-center leading-tight max-w-[46px] sm:max-w-none"
           :class="index <= currentIndex ? 'text-gray-700 font-medium' : 'text-gray-400'"
         >{{ step.label }}</span>
       </div>
       <div
         v-if="index < steps.length - 1"
-        class="h-0.5 flex-1 mx-2 -mt-4"
+        class="h-0.5 flex-1 mx-1 sm:mx-2 -mt-4"
         :class="{ 'progress-line--active': index === currentIndex }"
         :style="index === currentIndex ? {} : lineStyle(index)"
       ></div>

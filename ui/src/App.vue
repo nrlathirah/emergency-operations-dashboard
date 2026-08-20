@@ -14,7 +14,7 @@
           @click="toggleUserMenu"
           class="app-account cursor-pointer px-2 py-1 rounded hover:bg-white/10 transition"
         >
-          <div class="hidden sm:block app-account-info">
+          <div class="app-account-info">
             <span class="name">{{ authStore.user.name }}</span>
             <span
               class="role"

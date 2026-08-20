@@ -35,9 +35,17 @@
 
     <p class="rb-scope-note">
       <span class="rb-legend">
-        <span><span class="rb-legend-dot" style="background: var(--kkm)"></span>KKM</span>
-        <span><span class="rb-legend-dot" style="background: var(--pdrm)"></span>PDRM</span>
-        <span><span class="rb-legend-dot" style="background: var(--jbpm)"></span>JBPM</span>
+        <!-- A staff account's own data is already scoped server-side to
+             just their agency — listing every agency here regardless
+             misrepresented that scope, showing PDRM/JBPM in the legend of
+             a KKM staff account's own reports even though none of that
+             data is actually present anywhere on the page. -->
+        <template v-if="isSuperAdmin">
+          <span><span class="rb-legend-dot" style="background: var(--kkm)"></span>KKM</span>
+          <span><span class="rb-legend-dot" style="background: var(--pdrm)"></span>PDRM</span>
+          <span><span class="rb-legend-dot" style="background: var(--jbpm)"></span>JBPM</span>
+        </template>
+        <span v-else><span class="rb-legend-dot" :style="{ background: `var(--${authStore.user?.agency?.toLowerCase()})` }"></span>{{ authStore.user?.agency }}</span>
       </span>
       · <span class="rb-live-dot"></span> live data
     </p>

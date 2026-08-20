@@ -19,12 +19,14 @@
         :status-filter="statusFilter"
         :focus-case-id="mapFocusCaseId"
         @focus-case="handleFocusCase"
+        @panel-height="(h) => (mapPanelHeight = h)"
       />
       <CaseList
         class="min-w-0"
         v-model:agency-filter="agencyFilter"
         v-model:status-filter="statusFilter"
         :focused-case-id="focusedCaseId"
+        :match-height="mapPanelHeight"
         @show-on-map="handleShowOnMap"
       />
     </div>
@@ -40,6 +42,10 @@ const agencyFilter = ref("");
 const statusFilter = ref("");
 const focusedCaseId = ref(null);
 const mapFocusCaseId = ref(null);
+// The map's real rendered height (it varies — the legend row can wrap
+// depending on how many agencies are visible), fed to CaseList so its
+// panel can match exactly instead of guessing at a fixed number.
+const mapPanelHeight = ref(null);
 
 // Append a timestamp so clicking the same marker/row twice in a row still
 // produces a new value — Vue's watch only fires on an actual change.

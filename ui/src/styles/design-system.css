@@ -82,9 +82,33 @@
 .app-brand-text .eyebrow { display: block; font-size: 0.625rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #9FB6B3; line-height: 1.3; }
 .app-brand-text h1 { margin: 1px 0 0; font-size: 0.95rem; font-weight: 600; line-height: 1.3; }
 @media (min-width: 640px) { .app-brand-text h1 { font-size: 1.05rem; } }
+/* Below 640px, .app-header's own flex-wrap was letting the avatar (on the
+   far right, in .app-account) wrap down onto its own second row whenever
+   the brand text's natural width plus the avatar together didn't fit one
+   line — min-width: 0 here is what actually lets a flex child shrink
+   below its content's natural size at all (the flex default is effectively
+   "never shrink below your own content"), which text-overflow: ellipsis
+   then needs to have anything to bite into; .app-account gets flex: none
+   so it holds its own natural size and is never what gives way. */
+@media (max-width: 640px) {
+  .app-brand { min-width: 0; flex: 1 1 auto; }
+  .app-brand-text { min-width: 0; }
+  .app-brand-text .eyebrow, .app-brand-text h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .app-brand-text .eyebrow { font-size: 0.5rem; }
+  .app-brand-text h1 { font-size: 0.8125rem; }
+  .app-account { flex: none; }
+}
 
 .app-account { display: flex; align-items: center; gap: 8px; }
 .app-account-info { text-align: right; line-height: 1.25; display: flex; flex-direction: column; gap: 5px; }
+/* Hidden below 640px so the header keeps just the avatar on a phone width —
+   note this has to live here (after the base rule above, so normal cascade
+   order lets it win), not as a Tailwind `hidden sm:block` utility on the
+   element itself (that was tried first): design-system.css loads after
+   Tailwind and isn't inside any of Tailwind's own cascade layers, so its
+   unlayered `display: flex` above always wins over a layered Tailwind
+   utility regardless of viewport, at any screen size. */
+@media (max-width: 640px) { .app-account-info { display: none; } }
 .app-account-info .name { font-size: 0.8125rem; font-weight: 600; }
 .app-account-info .role {
   display: inline-block; align-self: flex-end; font-size: 0.625rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
@@ -225,19 +249,51 @@ select.rb-scope-select {
 .rb-kpi-tile[data-priority="low"] { --led: var(--pri-low); }
 .rb-kpi-led { display: block; width: 8px; height: 8px; border-radius: 50%; background: var(--led); box-shadow: 0 0 0 3px color-mix(in srgb, var(--led) 20%, transparent); }
 .rb-kpi-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-.rb-kpi-value { font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 1.9rem; color: var(--ink); line-height: 1; letter-spacing: -0.01em; }
+.rb-kpi-value { font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 1.9rem; color: var(--ink); line-height: 1; letter-spacing: -0.01em; white-space: nowrap; }
 .rb-kpi-unit { font-size: 1.05rem; color: var(--muted); margin-left: 1px; }
 .rb-kpi-sub { font-size: 0.75rem; color: var(--muted); font-family: "IBM Plex Mono", monospace; }
-.rb-kpi-delta-row { display: flex; align-items: center; gap: 6px; }
+/* flex-wrap: wrap matters here — on a narrow 2-column mobile KPI tile there
+   isn't room for the value and the delta badge side by side, and without
+   wrap both flex-shrink and each one's own text wraps internally instead
+   (e.g. "1h 33m" splitting into "1h" / "33m"), which visually collides with
+   the badge instead of cleanly dropping it to its own line below. */
+.rb-kpi-delta-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .rb-delta-badge {
   display: inline-flex; align-items: center; gap: 3px; font-size: 0.6875rem; font-weight: 700;
   padding: 1px 6px; border-radius: var(--radius-pill); font-family: "IBM Plex Mono", monospace;
+  white-space: nowrap;
 }
 .rb-delta-badge--up { background: var(--accent-soft); color: var(--accent-strong); }
 .rb-delta-badge--down { background: color-mix(in srgb, var(--pri-high) 15%, transparent); color: var(--pri-high); }
 .rb-delta-badge--neutral { background: var(--surface-2); color: var(--muted); }
 
 .rb-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 18px 20px 20px; height: 100%; }
+/* CaseList's panel wants to match the map beside it exactly, with its own
+   internal scroll for the row list instead of growing to fit every case.
+   The grid itself stays items-start (DashboardPage) — neither panel
+   stretches to fill the row, so this panel's own size can never feed back
+   into the map's. Getting the *number* right still needs real JS
+   measurement (VehicleMap reports its rendered height via a ResizeObserver,
+   see its panel-height emit; DashboardPage stores it and passes it down as
+   this custom property) rather than a fixed guess, since the map's real
+   height isn't constant — its legend row can wrap depending on how many
+   agencies are visible.
+   The fallback matters as much as the real value: before that first JS
+   measurement arrives (briefly, on mount, and whenever a prop update
+   hasn't landed yet), var()'s fallback is what applies. auto was tried
+   first and re-broke everything — with an "auto" height this panel's own
+   unbounded table content (all 12 rows, no constraint yet) becomes its
+   natural size, and *that* is what an auto grid row sizes itself against,
+   regardless of items-start — alignment only decides whether extra row
+   space gets filled, it doesn't stop a tall item's own natural size from
+   making the row (and everything measuring against it) taller in the
+   first place. 650px is a plain, non-circular number: a reasonable
+   placeholder that can't feed back into anything, replaced by the real
+   measurement within one resize-observer tick. min-height: 0 is still
+   required alongside it — without it, the internal overflow-y-auto table
+   area can't actually shrink to fit whatever height lands here, and just
+   forces the panel taller instead. */
+@media (min-width: 1024px) { .rb-cases-panel { height: var(--match-height, 650px); min-height: 0; } }
 .rb-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .rb-panel-tag { display: inline-block; font-size: 0.625rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: 2px 7px; border-radius: var(--radius-sm); margin-bottom: 6px; }
 .rb-panel h2 { margin: 0; font-size: 0.95rem; font-weight: 600; color: var(--ink); }
@@ -627,6 +683,13 @@ select.rb-scope-select {
 .rb-data-table-scroll { max-height: 260px; overflow-y: auto; }
 
 table.rb-manifest { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 0.8125rem; }
+/* Per-table overrides of the base min-width above — narrower for a table
+   with fewer columns (Cases), wider for one with more (Users) — kept as
+   real classes rather than inline styles specifically so the mobile
+   media query further down can override them; an inline style would beat
+   a stylesheet media query regardless of specificity tricks. */
+.rb-cases-table { min-width: 500px; }
+.rb-users-table { min-width: 850px; }
 table.rb-manifest thead th {
   text-align: left; font-size: 0.6875rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
   color: var(--muted); padding: 0 12px 9px; border-bottom: 1px solid var(--line-strong); white-space: nowrap;
@@ -637,6 +700,20 @@ table.rb-manifest tbody tr:last-child td { border-bottom: none; }
 table.rb-manifest tbody tr:hover td { background: var(--surface-2); }
 .rb-case-id { font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--ink); }
 .rb-case-loc { color: var(--muted); white-space: normal; min-width: 160px; }
+
+/* All columns stay — nothing is hidden here — but a long value (an email,
+   a station name, an address) no longer forces the whole table wider just
+   to keep itself on one line; letting it wrap up to a couple of lines
+   inside a capped width shrinks its own column's contribution to the
+   table's total width, which is what actually shortens the horizontal
+   scroll — short values (a status pill, "KKM", a date) never reach the cap
+   and stay single-line exactly as before, so nothing here looks different
+   at desktop width. */
+@media (max-width: 640px) {
+  table.rb-manifest, .rb-cases-table, .rb-users-table { min-width: 0; }
+  table.rb-manifest tbody td { padding: 8px 8px; white-space: normal; overflow-wrap: break-word; max-width: 150px; }
+  .rb-case-loc { min-width: 0; }
+}
 
 .rb-chip-agency { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 600; padding: 3px 8px; border-radius: var(--radius-pill); line-height: 1; }
 .rb-chip-agency[data-agency="KKM"] { color: var(--kkm); background: var(--kkm-soft); }
@@ -691,3 +768,4 @@ table.rb-manifest tbody tr:hover td { background: var(--surface-2); }
   .rb-chart-grid { grid-template-columns: 1fr; }
   .rb-chart-grid > .rb-panel.rb-span-2 { grid-column: auto; }
 }
+

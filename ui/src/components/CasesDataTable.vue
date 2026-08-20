@@ -70,7 +70,7 @@
             <td class="capitalize">{{ c.category }}</td>
             <td><span class="rb-priority-tag" :data-priority="c.priority"><span class="rb-dot"></span>{{ capitalize(c.priority) }}</span></td>
             <td class="rb-case-loc">{{ c.location }}</td>
-            <td class="rb-created-time tabular">{{ formatDate(c.createdAt) }}</td>
+            <td class="tabular">{{ formatDate(c.createdAt) }}</td>
             <td class="rb-resolved-time tabular">{{ formatDuration(c.createdAt, c.updatedAt) }}</td>
           </tr>
         </tbody>

@@ -1,5 +1,5 @@
 <template>
-  <div class="rb-panel flex flex-col lg:h-[650px]">
+  <div class="rb-panel rb-cases-panel flex flex-col" :style="props.matchHeight ? { '--match-height': `${props.matchHeight}px` } : {}">
     <div class="rb-panel-head">
       <div>
         <span class="rb-panel-tag">Distribution</span>
@@ -86,8 +86,8 @@
 
     <LoadingSpinner v-if="loading" />
     <ErrorBanner v-else-if="error && cases.length === 0" :message="error" @retry="fetchCases" />
-    <div v-else class="flex-1 rb-table-scroll">
-    <table class="rb-manifest" style="min-width: 500px;">
+    <div v-else class="flex-1 overflow-y-auto rb-table-scroll">
+    <table class="rb-manifest rb-cases-table">
       <thead>
         <tr>
           <th class="sortable" @click="toggleSort('caseNumber')">Case ID {{ sortIndicator('caseNumber') }}</th>
@@ -129,7 +129,7 @@
               class="text-teal-600 hover:underline text-xs font-normal cursor-pointer"
             >Show on map</button>
           </td>
-          <td class="rb-created-time tabular">
+          <td class="tabular">
             <div>{{ formatCreatedAt(c.createdAt) }}</div>
             <div v-if="c.status !== 'closed'" class="text-xs text-gray-400">{{ formatDuration(c.createdAt) }}</div>
           </td>
@@ -143,7 +143,7 @@
             highlightedCaseId === c.id ? 'bg-yellow-100' : 'bg-gray-50',
           ]"
         >
-          <td colspan="4" class="pb-3 pt-1 px-3">
+          <td colspan="4" class="pb-3 pt-1 px-3" style="max-width: none;">
             <StatusStepper :status="c.status" />
           </td>
         </tr>
@@ -182,6 +182,11 @@ const props = defineProps({
   // Composite "id:timestamp" string — the timestamp guarantees a fresh value
   // even when the same case is clicked twice in a row, so the watcher fires.
   focusedCaseId: { type: String, default: null },
+  // The map panel's real measured height in px (DashboardPage, fed from
+  // VehicleMap's own ResizeObserver) — only actually applied at >=1024px
+  // by the CSS itself (see .rb-cases-panel), so it's harmless to keep
+  // passing this at any width.
+  matchHeight: { type: Number, default: null },
 });
 
 // Matches the agency colors used on the map/legend elsewhere in the app.
