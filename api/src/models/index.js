@@ -81,6 +81,9 @@ const migrateUserColumns = async () => {
   await sequelize.query(`
     ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "isDemoAccount" BOOLEAN NOT NULL DEFAULT false;
   `);
+  await sequelize.query(`
+    ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "tokenVersion" INTEGER NOT NULL DEFAULT 0;
+  `);
 
   // The column above defaults every pre-existing row to true (an admin-set
   // password requiring change) — but every pre-existing row here is really

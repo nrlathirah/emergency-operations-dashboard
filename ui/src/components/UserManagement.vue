@@ -1,13 +1,18 @@
 <template>
-  <div class="bg-white rounded-lg shadow p-4">
-    <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
-      <h2 class="text-lg font-semibold">User Management</h2>
+  <div class="rb-panel">
+    <div class="rb-panel-head">
+      <div>
+        <span class="rb-panel-tag">Directory</span>
+        <h2>All Users</h2>
+      </div>
       <div class="flex items-center gap-2 flex-wrap">
         <button
           type="button"
           data-reset-requests-menu
           @click="toggleResetRequestsPopover($event)"
-          class="relative px-3 py-1.5 border rounded text-sm hover:bg-gray-50 cursor-pointer transition"
+          class="relative rb-icon-btn"
+          style="width: auto; padding: 0 12px; gap: 6px; font-size: 0.8125rem; font-weight: 600;"
+          title="Reset Requests"
         >
           🔔 Reset Requests
           <span
@@ -18,52 +23,40 @@
         <button
           type="button"
           @click="openActivityDrawer()"
-          class="px-3 py-1.5 border rounded text-sm hover:bg-gray-50 cursor-pointer transition"
+          class="rb-icon-btn"
+          style="width: auto; padding: 0 12px; gap: 6px; font-size: 0.8125rem; font-weight: 600;"
         >🕒 Activity</button>
         <button
           type="button"
           :disabled="exporting || total === 0"
           :title="total === 0 ? 'No users to export' : ''"
           @click="handleExport"
-          class="px-3 py-1.5 border rounded text-sm hover:bg-gray-50 cursor-pointer transition disabled:opacity-60 disabled:cursor-default"
+          class="rb-icon-btn"
+          style="width: auto; padding: 0 12px; gap: 6px; font-size: 0.8125rem; font-weight: 600;"
         >{{ exporting ? "Generating…" : "Export to Excel" }}</button>
-        <button
-          type="button"
-          @click="openAddUser"
-          class="px-3 py-1.5 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer transition"
-        >+ Add User</button>
+        <button type="button" @click="openAddUser" class="rb-btn-export">+ Add User</button>
       </div>
     </div>
 
-    <div class="flex flex-wrap gap-3 mb-4">
-      <input
-        v-model="search"
-        type="text"
-        placeholder="Search by name or email..."
-        class="border rounded px-3 py-1.5 text-sm flex-1 min-w-[180px] max-w-xs"
-      />
-      <select v-if="isSuperAdmin" v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
+    <div class="rb-filter-row">
+      <input v-model="search" type="text" placeholder="Search by name or email…" class="rb-search-input" style="flex: 1; min-width: 180px; max-width: 20rem;" />
+      <select v-if="isSuperAdmin" v-model="agencyFilter" class="rb-scope-select">
         <option value="">All Agencies</option>
         <option value="KKM">KKM</option>
         <option value="PDRM">PDRM</option>
         <option value="JBPM">JBPM</option>
       </select>
-      <select v-model="statusFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
+      <select v-model="statusFilter" class="rb-scope-select">
         <option value="">All Statuses</option>
         <option value="active">Active</option>
         <option value="inactive">Inactive</option>
       </select>
-      <select v-model="roleFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
+      <select v-model="roleFilter" class="rb-scope-select">
         <option value="">All Roles</option>
         <option value="staff">Staff</option>
         <option value="super_admin">Super Admin</option>
       </select>
-      <button
-        v-if="hasActiveFilters"
-        type="button"
-        @click="clearFilters"
-        class="px-3 py-1.5 border rounded text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-700 cursor-pointer transition"
-      >✕ Reset Filters</button>
+      <button v-if="hasActiveFilters" type="button" @click="clearFilters" class="rb-reset-link">✕ Reset Filters</button>
     </div>
 
     <p v-if="error && users.length > 0" class="text-xs text-red-500 mb-2">⚠️ {{ error }} Showing last loaded data.</p>
@@ -71,18 +64,18 @@
     <LoadingSpinner v-if="loading" />
     <ErrorBanner v-else-if="error && users.length === 0" :message="error" @retry="fetchUsers" />
     <template v-else>
-      <div class="overflow-x-auto">
-      <table class="w-full min-w-[850px] text-sm border-collapse">
+      <div class="rb-table-scroll">
+      <table class="rb-manifest" style="min-width: 850px;">
         <thead>
-          <tr class="border-b border-gray-200 text-left text-gray-500">
-            <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('name')">Name {{ sortIndicator('name') }}</th>
-            <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('email')">Email {{ sortIndicator('email') }}</th>
-            <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('role')">Role {{ sortIndicator('role') }}</th>
-            <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('agency')">Agency {{ sortIndicator('agency') }}</th>
-            <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('status')">Status {{ sortIndicator('status') }}</th>
-            <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('createdAt')">Created {{ sortIndicator('createdAt') }}</th>
-            <th class="py-2 pr-4 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('lastLoginAt')">Last Login {{ sortIndicator('lastLoginAt') }}</th>
-            <th class="py-2 pr-4 whitespace-nowrap"></th>
+          <tr>
+            <th class="sortable" @click="toggleSort('name')">Name {{ sortIndicator('name') }}</th>
+            <th class="sortable" @click="toggleSort('email')">Email {{ sortIndicator('email') }}</th>
+            <th class="sortable" @click="toggleSort('role')">Role {{ sortIndicator('role') }}</th>
+            <th class="sortable" @click="toggleSort('agency')">Agency {{ sortIndicator('agency') }}</th>
+            <th class="sortable" @click="toggleSort('status')">Status {{ sortIndicator('status') }}</th>
+            <th class="sortable" @click="toggleSort('createdAt')">Created {{ sortIndicator('createdAt') }}</th>
+            <th class="sortable" @click="toggleSort('lastLoginAt')">Last Login {{ sortIndicator('lastLoginAt') }}</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -90,29 +83,26 @@
             v-for="u in users"
             :key="u.id"
             :ref="(el) => setRowRef(u.id, el)"
-            class="border-b border-gray-100 transition-colors duration-700"
-            :class="highlightedUserId === u.id ? 'bg-amber-100' : 'hover:bg-gray-50'"
+            class="transition-colors duration-700"
+            :class="highlightedUserId === u.id ? 'bg-amber-100' : ''"
           >
-            <td class="py-2 pr-4 font-medium whitespace-nowrap">
+            <td class="rb-case-id">
               <div class="flex items-center gap-2">
-                <span class="flex-shrink-0 w-7 h-7 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-semibold">
-                  {{ u.name.charAt(0).toUpperCase() }}
-                </span>
+                <span class="rb-avatar-sm">{{ u.name.charAt(0).toUpperCase() }}</span>
                 {{ u.name }}
               </div>
             </td>
-            <td class="py-2 pr-4 text-gray-600 whitespace-nowrap">{{ u.email }}</td>
-            <td class="py-2 pr-4 capitalize whitespace-nowrap">{{ u.role }}</td>
-            <td class="py-2 pr-4 whitespace-nowrap">{{ u.Agency?.code || "—" }}</td>
-            <td class="py-2 pr-4 whitespace-nowrap">
-              <span
-                class="px-2 py-0.5 rounded-full text-xs"
-                :class="u.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
-              >{{ u.status }}</span>
+            <td>{{ u.email }}</td>
+            <td class="capitalize">{{ u.role.replace('_', ' ') }}</td>
+            <td>{{ u.Agency?.code || "—" }}</td>
+            <td>
+              <span class="rb-status-pill">
+                <span class="rb-dot" :style="{ background: u.status === 'active' ? 'var(--pri-low)' : 'var(--muted)' }"></span>{{ capitalize(u.status) }}
+              </span>
             </td>
-            <td class="py-2 pr-4 text-gray-500 whitespace-nowrap">{{ formatDate(u.createdAt) }}</td>
-            <td class="py-2 pr-4 text-gray-500 whitespace-nowrap">{{ formatDate(u.lastLoginAt) || "Never" }}</td>
-            <td class="py-2 pr-4 whitespace-nowrap">
+            <td class="tabular">{{ formatDate(u.createdAt) }}</td>
+            <td class="tabular">{{ formatDate(u.lastLoginAt) || "Never" }}</td>
+            <td>
               <button
                 type="button"
                 data-action-menu
@@ -123,14 +113,9 @@
             </td>
           </tr>
           <tr v-if="users.length === 0">
-            <td colspan="8" class="py-8 text-center text-gray-400 text-sm">
+            <td colspan="8" class="rb-empty">
               <p>No users found{{ hasActiveFilters ? " matching your filters" : "" }}.</p>
-              <button
-                v-if="hasActiveFilters"
-                type="button"
-                @click="clearFilters"
-                class="mt-2 text-teal-600 hover:underline cursor-pointer text-xs"
-              >Clear filters</button>
+              <button v-if="hasActiveFilters" type="button" @click="clearFilters" class="rb-reset-link mt-2">Clear filters</button>
             </td>
           </tr>
         </tbody>
@@ -208,28 +193,19 @@
         >{{ actionError }}</div>
       </Teleport>
 
-      <div class="flex items-center gap-3 mt-4 text-sm flex-wrap">
-        <span class="text-gray-500 text-xs">Showing {{ rangeStart }}–{{ rangeEnd }} of {{ total }} users</span>
-        <label class="flex items-center gap-1.5 text-xs text-gray-500">
-          Per page
-          <select v-model.number="limit" class="border rounded px-2 py-1 text-xs cursor-pointer hover:bg-gray-50 transition">
-            <option :value="10">10</option>
-            <option :value="25">25</option>
-            <option :value="50">50</option>
-          </select>
-        </label>
-        <div class="flex items-center gap-3 sm:ml-auto">
-          <button
-            :disabled="page === 1"
-            @click="page--"
-            class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
-          >Previous</button>
-          <span class="text-gray-600">Page {{ page }} of {{ totalPages }}</span>
-          <button
-            :disabled="page === totalPages"
-            @click="page++"
-            class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
-          >Next</button>
+      <div class="rb-table-foot">
+        <span>Showing {{ rangeStart }}–{{ rangeEnd }} of {{ total }} users</span>
+        <div class="rb-pager">
+          <label>Per page
+            <select v-model.number="limit">
+              <option :value="10">10</option>
+              <option :value="25">25</option>
+              <option :value="50">50</option>
+            </select>
+          </label>
+          <button :disabled="page === 1" @click="page--">Previous</button>
+          <span>Page {{ page }} of {{ totalPages }}</span>
+          <button :disabled="page === totalPages" @click="page++">Next</button>
         </div>
       </div>
     </template>
@@ -437,199 +413,193 @@
     </Teleport>
 
     <!-- Edit Name modal -->
-    <div v-if="editNameTarget" class="fixed inset-0 flex items-center justify-center bg-black/40 px-4" style="z-index: 9999;">
-      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
-        <h3 class="text-base font-semibold mb-4">Edit Name</h3>
-        <form @submit.prevent="handleEditName" class="space-y-3">
+    <Modal v-if="editNameTarget">
+      <h3 class="text-base font-semibold mb-4">Edit Name</h3>
+      <form @submit.prevent="handleEditName" class="space-y-3">
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Name</label>
+          <input
+            v-model="editNameValue"
+            type="text"
+            required
+            class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+          />
+          <p class="text-[11px] text-gray-400 mt-1">Email can't be changed here — it's the account's login identifier.</p>
+        </div>
+
+        <p v-if="editNameError" class="text-red-600 text-xs">{{ editNameError }}</p>
+
+        <div class="flex gap-2 pt-2">
+          <button
+            type="button"
+            @click="closeEditName"
+            class="flex-1 px-3 py-2 border rounded text-sm hover:bg-gray-50 cursor-pointer"
+          >Cancel</button>
+          <button
+            type="submit"
+            :disabled="savingName"
+            class="flex-1 px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer disabled:opacity-60 disabled:cursor-default"
+          >{{ savingName ? "Saving…" : "Save" }}</button>
+        </div>
+      </form>
+    </Modal>
+
+    <!-- Add User modal -->
+    <Modal v-if="showAddUser">
+      <template v-if="!createdCredentials">
+        <h3 class="text-base font-semibold mb-4">Add User</h3>
+        <form @submit.prevent="handleAddUser" class="space-y-3">
           <div>
             <label class="block text-xs text-gray-600 mb-1">Name</label>
             <input
-              v-model="editNameValue"
+              v-model="form.name"
               type="text"
               required
               class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
             />
-            <p class="text-[11px] text-gray-400 mt-1">Email can't be changed here — it's the account's login identifier.</p>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Email</label>
+            <input
+              v-model="form.email"
+              type="email"
+              required
+              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Temporary Password</label>
+            <div class="flex gap-2">
+              <PasswordInput v-model="form.password" required minlength="6" class="flex-1" />
+              <button
+                type="button"
+                @click="form.password = generateTempPassword()"
+                title="Generate a new one"
+                class="px-2.5 border rounded text-sm hover:bg-gray-50 cursor-pointer flex-shrink-0"
+              >🔄</button>
+            </div>
+            <p class="text-[11px] text-gray-400 mt-1">Auto-generated — you'll share this with the user after creating. They'll be required to set their own on first login.</p>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">Role</label>
+            <select
+              v-model="form.role"
+              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm cursor-pointer"
+            >
+              <option value="staff">Staff</option>
+              <option value="super_admin">Super Admin</option>
+            </select>
+          </div>
+          <div v-if="form.role !== 'super_admin'">
+            <label class="block text-xs text-gray-600 mb-1">Agency</label>
+            <select
+              v-model="form.agencyCode"
+              required
+              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm cursor-pointer"
+            >
+              <option value="" disabled>Select agency</option>
+              <option value="KKM">KKM</option>
+              <option value="PDRM">PDRM</option>
+              <option value="JBPM">JBPM</option>
+            </select>
           </div>
 
-          <p v-if="editNameError" class="text-red-600 text-xs">{{ editNameError }}</p>
+          <p v-if="formError" class="text-red-600 text-xs">{{ formError }}</p>
 
           <div class="flex gap-2 pt-2">
             <button
               type="button"
-              @click="closeEditName"
+              @click="closeAddUser"
               class="flex-1 px-3 py-2 border rounded text-sm hover:bg-gray-50 cursor-pointer"
             >Cancel</button>
             <button
               type="submit"
-              :disabled="savingName"
+              :disabled="submitting"
               class="flex-1 px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer disabled:opacity-60 disabled:cursor-default"
-            >{{ savingName ? "Saving…" : "Save" }}</button>
+            >{{ submitting ? "Adding…" : "Add User" }}</button>
           </div>
         </form>
-      </div>
-    </div>
+      </template>
 
-    <!-- Add User modal -->
-    <div v-if="showAddUser" class="fixed inset-0 flex items-center justify-center bg-black/40 px-4" style="z-index: 9999;">
-      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
-        <template v-if="!createdCredentials">
-          <h3 class="text-base font-semibold mb-4">Add User</h3>
-          <form @submit.prevent="handleAddUser" class="space-y-3">
-            <div>
-              <label class="block text-xs text-gray-600 mb-1">Name</label>
-              <input
-                v-model="form.name"
-                type="text"
-                required
-                class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label class="block text-xs text-gray-600 mb-1">Email</label>
-              <input
-                v-model="form.email"
-                type="email"
-                required
-                class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-              />
-            </div>
-            <div>
-              <label class="block text-xs text-gray-600 mb-1">Temporary Password</label>
-              <div class="flex gap-2">
-                <PasswordInput v-model="form.password" required minlength="6" class="flex-1" />
-                <button
-                  type="button"
-                  @click="form.password = generateTempPassword()"
-                  title="Generate a new one"
-                  class="px-2.5 border rounded text-sm hover:bg-gray-50 cursor-pointer flex-shrink-0"
-                >🔄</button>
-              </div>
-              <p class="text-[11px] text-gray-400 mt-1">Auto-generated — you'll share this with the user after creating. They'll be required to set their own on first login.</p>
-            </div>
-            <div>
-              <label class="block text-xs text-gray-600 mb-1">Role</label>
-              <select
-                v-model="form.role"
-                class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm cursor-pointer"
-              >
-                <option value="staff">Staff</option>
-                <option value="super_admin">Super Admin</option>
-              </select>
-            </div>
-            <div v-if="form.role !== 'super_admin'">
-              <label class="block text-xs text-gray-600 mb-1">Agency</label>
-              <select
-                v-model="form.agencyCode"
-                required
-                class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm cursor-pointer"
-              >
-                <option value="" disabled>Select agency</option>
-                <option value="KKM">KKM</option>
-                <option value="PDRM">PDRM</option>
-                <option value="JBPM">JBPM</option>
-              </select>
-            </div>
-
-            <p v-if="formError" class="text-red-600 text-xs">{{ formError }}</p>
-
-            <div class="flex gap-2 pt-2">
-              <button
-                type="button"
-                @click="closeAddUser"
-                class="flex-1 px-3 py-2 border rounded text-sm hover:bg-gray-50 cursor-pointer"
-              >Cancel</button>
-              <button
-                type="submit"
-                :disabled="submitting"
-                class="flex-1 px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer disabled:opacity-60 disabled:cursor-default"
-              >{{ submitting ? "Adding…" : "Add User" }}</button>
-            </div>
-          </form>
-        </template>
-
-        <!-- Shown once, right after creation — this password is never
-             retrievable again since it's only ever stored as a hash. -->
-        <template v-else>
-          <h3 class="text-base font-semibold mb-1">✅ User Created</h3>
-          <p class="text-xs text-gray-500 mb-3">Share this temporary password with {{ createdCredentials.name }} now — it won't be shown again.</p>
-          <div class="flex items-center gap-2 bg-gray-50 border rounded px-3 py-2 mb-2">
-            <code class="flex-1 text-sm font-mono">{{ createdCredentials.password }}</code>
-            <button
-              type="button"
-              @click="copyPassword(createdCredentials.password)"
-              class="px-2.5 py-1 rounded text-xs font-medium cursor-pointer flex-shrink-0 transition"
-              :class="copied ? 'bg-teal-600 text-white' : 'border border-teal-600 text-teal-600 hover:bg-teal-50'"
-            >{{ copied ? "Copied!" : "📋 Copy" }}</button>
-          </div>
-          <p class="text-[11px] text-amber-600 mb-4">⚠️ Copy it now — if lost, you'll need to reset this user's password again to get a new one.</p>
+      <!-- Shown once, right after creation — this password is never
+           retrievable again since it's only ever stored as a hash. -->
+      <template v-else>
+        <h3 class="text-base font-semibold mb-1">✅ User Created</h3>
+        <p class="text-xs text-gray-500 mb-3">Share this temporary password with {{ createdCredentials.name }} now — it won't be shown again.</p>
+        <div class="flex items-center gap-2 bg-gray-50 border rounded px-3 py-2 mb-2">
+          <code class="flex-1 text-sm font-mono">{{ createdCredentials.password }}</code>
           <button
             type="button"
-            @click="closeAddUser"
-            class="w-full px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer"
-          >Done</button>
-        </template>
-      </div>
-    </div>
+            @click="copyPassword(createdCredentials.password)"
+            class="px-2.5 py-1 rounded text-xs font-medium cursor-pointer flex-shrink-0 transition"
+            :class="copied ? 'bg-teal-600 text-white' : 'border border-teal-600 text-teal-600 hover:bg-teal-50'"
+          >{{ copied ? "Copied!" : "📋 Copy" }}</button>
+        </div>
+        <p class="text-[11px] text-amber-600 mb-4">⚠️ Copy it now — if lost, you'll need to reset this user's password again to get a new one.</p>
+        <button
+          type="button"
+          @click="closeAddUser"
+          class="w-full px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer"
+        >Done</button>
+      </template>
+    </Modal>
 
     <!-- Reset Password modal -->
-    <div v-if="resetTarget" class="fixed inset-0 flex items-center justify-center bg-black/40 px-4" style="z-index: 9999;">
-      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
-        <template v-if="!resetCredentials">
-          <h3 class="text-base font-semibold mb-1">Reset Password</h3>
-          <p class="text-xs text-gray-500 mb-4">Set a new temporary password for {{ resetTarget.name }}. They'll be required to set their own on next login.</p>
-          <form @submit.prevent="handleResetPassword" class="space-y-3">
-            <div>
-              <label class="block text-xs text-gray-600 mb-1">New Temporary Password</label>
-              <div class="flex gap-2">
-                <PasswordInput v-model="resetPasswordValue" required minlength="6" class="flex-1" />
-                <button
-                  type="button"
-                  @click="resetPasswordValue = generateTempPassword()"
-                  title="Generate a new one"
-                  class="px-2.5 border rounded text-sm hover:bg-gray-50 cursor-pointer flex-shrink-0"
-                >🔄</button>
-              </div>
-            </div>
-
-            <p v-if="resetError" class="text-red-600 text-xs">{{ resetError }}</p>
-
-            <div class="flex gap-2 pt-2">
+    <Modal v-if="resetTarget">
+      <template v-if="!resetCredentials">
+        <h3 class="text-base font-semibold mb-1">Reset Password</h3>
+        <p class="text-xs text-gray-500 mb-4">Set a new temporary password for {{ resetTarget.name }}. They'll be required to set their own on next login.</p>
+        <form @submit.prevent="handleResetPassword" class="space-y-3">
+          <div>
+            <label class="block text-xs text-gray-600 mb-1">New Temporary Password</label>
+            <div class="flex gap-2">
+              <PasswordInput v-model="resetPasswordValue" required minlength="6" class="flex-1" />
               <button
                 type="button"
-                @click="closeResetPassword"
-                class="flex-1 px-3 py-2 border rounded text-sm hover:bg-gray-50 cursor-pointer"
-              >Cancel</button>
-              <button
-                type="submit"
-                :disabled="resetting"
-                class="flex-1 px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer disabled:opacity-60 disabled:cursor-default"
-              >{{ resetting ? "Resetting…" : "Reset Password" }}</button>
+                @click="resetPasswordValue = generateTempPassword()"
+                title="Generate a new one"
+                class="px-2.5 border rounded text-sm hover:bg-gray-50 cursor-pointer flex-shrink-0"
+              >🔄</button>
             </div>
-          </form>
-        </template>
+          </div>
 
-        <template v-else>
-          <h3 class="text-base font-semibold mb-1">✅ Password Reset</h3>
-          <p class="text-xs text-gray-500 mb-3">Share this temporary password with {{ resetTarget.name }} now — it won't be shown again.</p>
-          <div class="flex items-center gap-2 bg-gray-50 border rounded px-3 py-2 mb-2">
-            <code class="flex-1 text-sm font-mono">{{ resetCredentials }}</code>
+          <p v-if="resetError" class="text-red-600 text-xs">{{ resetError }}</p>
+
+          <div class="flex gap-2 pt-2">
             <button
               type="button"
-              @click="copyPassword(resetCredentials)"
-              class="px-2.5 py-1 rounded text-xs font-medium cursor-pointer flex-shrink-0 transition"
-              :class="copied ? 'bg-teal-600 text-white' : 'border border-teal-600 text-teal-600 hover:bg-teal-50'"
-            >{{ copied ? "Copied!" : "📋 Copy" }}</button>
+              @click="closeResetPassword"
+              class="flex-1 px-3 py-2 border rounded text-sm hover:bg-gray-50 cursor-pointer"
+            >Cancel</button>
+            <button
+              type="submit"
+              :disabled="resetting"
+              class="flex-1 px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer disabled:opacity-60 disabled:cursor-default"
+            >{{ resetting ? "Resetting…" : "Reset Password" }}</button>
           </div>
-          <p class="text-[11px] text-amber-600 mb-4">⚠️ Copy it now — if lost, you'll need to reset this user's password again to get a new one.</p>
+        </form>
+      </template>
+
+      <template v-else>
+        <h3 class="text-base font-semibold mb-1">✅ Password Reset</h3>
+        <p class="text-xs text-gray-500 mb-3">Share this temporary password with {{ resetTarget.name }} now — it won't be shown again.</p>
+        <div class="flex items-center gap-2 bg-gray-50 border rounded px-3 py-2 mb-2">
+          <code class="flex-1 text-sm font-mono">{{ resetCredentials }}</code>
           <button
             type="button"
-            @click="closeResetPassword"
-            class="w-full px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer"
-          >Done</button>
-        </template>
-      </div>
-    </div>
+            @click="copyPassword(resetCredentials)"
+            class="px-2.5 py-1 rounded text-xs font-medium cursor-pointer flex-shrink-0 transition"
+            :class="copied ? 'bg-teal-600 text-white' : 'border border-teal-600 text-teal-600 hover:bg-teal-50'"
+          >{{ copied ? "Copied!" : "📋 Copy" }}</button>
+        </div>
+        <p class="text-[11px] text-amber-600 mb-4">⚠️ Copy it now — if lost, you'll need to reset this user's password again to get a new one.</p>
+        <button
+          type="button"
+          @click="closeResetPassword"
+          class="w-full px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer"
+        >Done</button>
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -640,11 +610,14 @@ import { useAuthStore } from "../stores/auth";
 import LoadingSpinner from "./LoadingSpinner.vue";
 import ErrorBanner from "./ErrorBanner.vue";
 import PasswordInput from "./PasswordInput.vue";
+import Modal from "./Modal.vue";
 
 // Readable temp password (e.g. "Welcome4821") — easy for an admin to relay
 // verbally or by message. Never persisted in plaintext; only shown once
 // right after creation/reset, since the DB only ever stores the bcrypt hash.
 const generateTempPassword = () => `Welcome${Math.floor(1000 + Math.random() * 9000)}`;
+
+const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const formatDate = (value) =>
   value

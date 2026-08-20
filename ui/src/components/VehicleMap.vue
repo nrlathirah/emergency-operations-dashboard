@@ -1,16 +1,14 @@
 <template>
-  <div ref="mapCardRef" class="bg-white rounded-lg shadow p-4">
-    <div class="flex items-center justify-between flex-wrap gap-2 mb-3">
-      <h2 class="text-lg font-semibold">Live Operations Map</h2>
-      <button
-        v-if="viewChanged"
-        type="button"
-        @click="clearFocus"
-        class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600 cursor-pointer transition"
-      >✕ Reset View</button>
+  <div ref="mapCardRef" class="rb-panel">
+    <div class="rb-panel-head">
+      <div>
+        <span class="rb-panel-tag">Fleet</span>
+        <h2>Live Operations Map</h2>
+      </div>
+      <button v-if="viewChanged" type="button" @click="clearFocus" class="rb-reset-link">✕ Reset View</button>
     </div>
     <div class="relative">
-      <div id="map" style="height: 500px; width: 100%;" class="rounded"></div>
+      <div id="map" style="height: 500px; width: 100%;" class="rb-map-surface"></div>
       <div v-if="mapLoading" class="absolute inset-0 flex items-center justify-center bg-white/70 rounded">
         <ErrorBanner v-if="error" :message="error" @retry="loadInitialData" />
         <LoadingSpinner v-else />
@@ -18,7 +16,7 @@
     </div>
     <p v-if="error && !mapLoading" class="text-xs text-red-500 mt-2">⚠️ {{ error }} Showing last loaded data.</p>
 
-    <div class="flex flex-wrap gap-4 mt-3 text-xs text-gray-600">
+    <div class="rb-map-legend">
       <span v-if="showAgency('KKM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyStationTypeVisible('hospital') }">
         <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white" style="box-shadow:0 1px 4px rgba(0,0,0,0.5);">
           <svg width="12" height="12" viewBox="0 0 32 32"><circle cx="16" cy="16" r="12" fill="#B3261E"/><circle cx="21" cy="12" r="10" fill="white"/></svg>

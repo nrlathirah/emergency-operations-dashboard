@@ -90,76 +90,72 @@
       Emergency Operations Dashboard · Multi-Agency Coordination Platform
     </footer>
 
+
     <!-- Edit Name modal -->
-    <div v-if="showEditName" class="fixed inset-0 flex items-center justify-center bg-black/40 px-4" style="z-index: 9999;">
-      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-800">
-        <h3 class="text-base font-semibold mb-4">Edit Name</h3>
-        <form @submit.prevent="handleEditName" class="space-y-3">
-          <div>
-            <label class="block text-xs text-gray-600 mb-1">Name</label>
-            <input
-              v-model="editNameValue"
-              type="text"
-              required
-              class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
-            />
-          </div>
+    <Modal v-if="showEditName">
+      <h3 class="text-base font-semibold mb-4">Edit Name</h3>
+      <form @submit.prevent="handleEditName" class="space-y-3">
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Name</label>
+          <input
+            v-model="editNameValue"
+            type="text"
+            required
+            class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-transparent"
+          />
+        </div>
 
-          <p v-if="editNameError" class="text-red-600 text-xs">{{ editNameError }}</p>
+        <p v-if="editNameError" class="text-red-600 text-xs">{{ editNameError }}</p>
 
-          <div class="flex gap-2 pt-2">
-            <button
-              type="button"
-              @click="closeEditName"
-              class="flex-1 px-3 py-2 border rounded text-sm hover:bg-gray-50 cursor-pointer"
-            >Cancel</button>
-            <button
-              type="submit"
-              :disabled="savingName"
-              class="flex-1 px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer disabled:opacity-60 disabled:cursor-default"
-            >{{ savingName ? "Saving…" : "Save" }}</button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div class="flex gap-2 pt-2">
+          <button
+            type="button"
+            @click="closeEditName"
+            class="flex-1 px-3 py-2 border rounded text-sm hover:bg-gray-50 cursor-pointer"
+          >Cancel</button>
+          <button
+            type="submit"
+            :disabled="savingName"
+            class="flex-1 px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer disabled:opacity-60 disabled:cursor-default"
+          >{{ savingName ? "Saving…" : "Save" }}</button>
+        </div>
+      </form>
+    </Modal>
 
-    <!-- Change Password modal. z-index far above Leaflet's own panes/controls
-         (which reach ~1000) — otherwise the map renders on top of this. -->
-    <div v-if="showChangePassword" class="fixed inset-0 flex items-center justify-center bg-black/40 px-4" style="z-index: 9999;">
-      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm text-gray-800">
-        <h3 class="text-base font-semibold mb-4">Change Password</h3>
-        <form @submit.prevent="handleChangePassword" class="space-y-3">
-          <div>
-            <label class="block text-xs text-gray-600 mb-1">Current Password</label>
-            <PasswordInput v-model="passwordForm.current" required />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-600 mb-1">New Password</label>
-            <PasswordInput v-model="passwordForm.new" required minlength="6" />
-          </div>
-          <div>
-            <label class="block text-xs text-gray-600 mb-1">Confirm New Password</label>
-            <PasswordInput v-model="passwordForm.confirm" required minlength="6" />
-          </div>
+    <!-- Change Password modal -->
+    <Modal v-if="showChangePassword">
+      <h3 class="text-base font-semibold mb-4">Change Password</h3>
+      <form @submit.prevent="handleChangePassword" class="space-y-3">
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Current Password</label>
+          <PasswordInput v-model="passwordForm.current" required />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">New Password</label>
+          <PasswordInput v-model="passwordForm.new" required minlength="6" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Confirm New Password</label>
+          <PasswordInput v-model="passwordForm.confirm" required minlength="6" />
+        </div>
 
-          <p v-if="passwordError" class="text-red-600 text-xs">{{ passwordError }}</p>
-          <p v-if="passwordSuccess" class="text-teal-600 text-xs">{{ passwordSuccess }}</p>
+        <p v-if="passwordError" class="text-red-600 text-xs">{{ passwordError }}</p>
+        <p v-if="passwordSuccess" class="text-teal-600 text-xs">{{ passwordSuccess }}</p>
 
-          <div class="flex gap-2 pt-2">
-            <button
-              type="button"
-              @click="closeChangePassword"
-              class="flex-1 px-3 py-2 border rounded text-sm hover:bg-gray-50 cursor-pointer"
-            >Cancel</button>
-            <button
-              type="submit"
-              :disabled="changingPassword"
-              class="flex-1 px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer disabled:opacity-60 disabled:cursor-default"
-            >{{ changingPassword ? "Saving…" : "Save" }}</button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div class="flex gap-2 pt-2">
+          <button
+            type="button"
+            @click="closeChangePassword"
+            class="flex-1 px-3 py-2 border rounded text-sm hover:bg-gray-50 cursor-pointer"
+          >Cancel</button>
+          <button
+            type="submit"
+            :disabled="changingPassword"
+            class="flex-1 px-3 py-2 bg-teal-600 text-white rounded text-sm hover:bg-teal-700 cursor-pointer disabled:opacity-60 disabled:cursor-default"
+          >{{ changingPassword ? "Saving…" : "Save" }}</button>
+        </div>
+      </form>
+    </Modal>
   </div>
 </template>
 
@@ -169,6 +165,7 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "./stores/auth";
 import { userService } from "./services/userService";
 import PasswordInput from "./components/PasswordInput.vue";
+import Modal from "./components/Modal.vue";
 
 const authStore = useAuthStore();
 const router = useRouter();
@@ -231,6 +228,25 @@ const handleOutsideUserMenuClick = (e) => {
 };
 onMounted(() => window.addEventListener("click", handleOutsideUserMenuClick));
 onUnmounted(() => window.removeEventListener("click", handleOutsideUserMenuClick));
+
+// A mobile browser often resumes a backgrounded tab from memory rather than
+// reloading it, so no API request fires to let the response interceptor
+// catch an expired token — checking the token's own exp claim on mount and
+// whenever the tab regains focus catches that case too. Full reload (not a
+// router push) matches how the interceptor itself already logs out, so both
+// paths leave the app in the same clean, freshly-initialized state.
+const checkTokenExpiry = () => {
+  if (authStore.isLoggedIn && authStore.isTokenExpired) {
+    authStore.logout();
+    window.location.href = "/login";
+  }
+};
+const handleVisibilityChange = () => { if (document.visibilityState === "visible") checkTokenExpiry(); };
+onMounted(() => {
+  checkTokenExpiry();
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+});
+onUnmounted(() => document.removeEventListener("visibilitychange", handleVisibilityChange));
 
 const showEditName = ref(false);
 const editNameValue = ref("");

@@ -8,6 +8,21 @@ export const useAuthStore = defineStore("auth", {
   }),
   getters: {
     isLoggedIn: (state) => !!state.token,
+    // The token itself is only checked reactively, by the API's response
+    // interceptor after a request actually fails with 401 — a token sitting
+    // unused in localStorage (e.g. the tab was resumed from memory instead
+    // of reloaded, so no request ever fired) can look "logged in" long past
+    // its real 8h expiry. Decoding the JWT's own exp claim lets the app
+    // catch that proactively instead of waiting for a request to fail.
+    isTokenExpired: (state) => {
+      if (!state.token) return false;
+      try {
+        const payload = JSON.parse(atob(state.token.split(".")[1]));
+        return typeof payload.exp === "number" && Date.now() >= payload.exp * 1000;
+      } catch {
+        return true; // unreadable token can't be trusted either
+      }
+    },
   },
   actions: {
     async login(email, password) {

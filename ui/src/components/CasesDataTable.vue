@@ -3,7 +3,14 @@
     <div class="rb-panel-head">
       <div>
         <span class="rb-panel-tag">Manifest</span>
-        <h2>Case History</h2>
+        <h2>
+          Case History
+          <span
+            class="rb-tooltip-target"
+            style="display: inline-flex; color: var(--muted); font-size: 0.75rem; vertical-align: 2px;"
+            data-tooltip="Tip: click a bar or segment on the Priority, Category, or Agency charts above to filter this table"
+          >ⓘ</span>
+        </h2>
         <p class="rb-panel-meta">Closed cases only — see the Live Dashboard for cases still in progress.</p>
       </div>
       <div class="relative" data-table-menu>

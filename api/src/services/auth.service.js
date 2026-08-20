@@ -20,7 +20,7 @@ export const login = async ({ email, password }) => {
   await user.update({ lastLoginAt: new Date() });
 
   const token = jwt.sign(
-    { id: user.id, role: user.role, agencyId: user.agencyId, agencyCode: user.Agency?.code || null },
+    { id: user.id, role: user.role, agencyId: user.agencyId, agencyCode: user.Agency?.code || null, tokenVersion: user.tokenVersion },
     process.env.JWT_SECRET,
     { expiresIn: "8h" }
   );

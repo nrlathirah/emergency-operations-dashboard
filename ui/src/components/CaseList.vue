@@ -1,26 +1,27 @@
 <template>
-  <div class="bg-white rounded-lg shadow p-4 flex flex-col lg:h-[650px]">
-    <div class="flex items-center justify-between flex-wrap gap-2 mb-1">
-      <div class="flex items-center gap-2">
-        <h2 class="text-lg font-semibold">Cases</h2>
-        <span class="flex items-center gap-1 text-[11px] text-green-600 font-medium">
-          <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-          Live
-        </span>
+  <div class="rb-panel flex flex-col lg:h-[650px]">
+    <div class="rb-panel-head">
+      <div>
+        <span class="rb-panel-tag">Distribution</span>
+        <h2>
+          Cases
+          <span class="rb-live-dot" style="margin-left: 8px; margin-right: 5px;"></span>
+          <span style="font-size: 0.6875rem; font-weight: 700; color: var(--pri-low); text-transform: uppercase; letter-spacing: 0.04em; vertical-align: 2px;">Live</span>
+        </h2>
+        <p class="rb-panel-meta">Showing active cases and cases closed in the last 24h — see Reports for full history.</p>
       </div>
-      <span class="text-xs text-gray-500">{{ activeCount }} Active · {{ closedCount }} Closed</span>
+      <span class="rb-panel-meta">{{ activeCount }} Active · {{ closedCount }} Closed</span>
     </div>
-    <p class="text-xs text-gray-400 mb-3">Showing active cases and cases closed in the last 24h — see Reports for full history.</p>
 
-    <div class="flex flex-wrap gap-3 mb-4">
-      <select v-if="isSuperAdmin" v-model="agencyFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
+    <div class="rb-filter-row">
+      <select v-if="isSuperAdmin" v-model="agencyFilter" class="rb-scope-select">
         <option value="">All Agencies</option>
         <option value="KKM">KKM</option>
         <option value="PDRM">PDRM</option>
         <option value="JBPM">JBPM</option>
       </select>
 
-      <select v-model="statusFilter" class="border rounded px-3 py-1.5 text-sm cursor-pointer hover:bg-gray-50 transition">
+      <select v-model="statusFilter" class="rb-scope-select">
         <option value="">All Statuses</option>
         <option value="open">Open</option>
         <option value="dispatched">Dispatched</option>
@@ -32,22 +33,24 @@
       <button
         type="button"
         @click="toggleActiveOnly"
-        class="px-3 py-1.5 text-sm border rounded cursor-pointer transition"
-        :class="activeOnly ? 'bg-teal-600 text-white border-teal-600 hover:bg-teal-700' : 'hover:bg-gray-50 text-gray-600'"
+        class="rb-daterange-preset"
+        :class="{ 'rb-daterange-preset--active': activeOnly }"
       >Active Cases</button>
 
       <button
         v-if="hasActiveFilters"
         type="button"
         @click="resetFilters"
-        class="px-3 py-1.5 text-sm border rounded hover:bg-gray-50 text-gray-600 cursor-pointer transition"
+        class="rb-reset-link"
       >✕ Reset Filters</button>
 
       <button
         type="button"
         :disabled="simulating"
         @click="handleSimulate"
-        class="ml-auto px-3 py-1.5 text-sm border rounded bg-teal-600 text-white border-teal-600 hover:bg-teal-700 cursor-pointer transition disabled:opacity-60 disabled:cursor-default"
+        class="rb-btn-export rb-tooltip-target rb-tooltip-target--align-right"
+        style="margin-left: auto;"
+        data-tooltip="Creates a fake demo case for testing — not a real incident report"
       >{{ simulating ? "Simulating…" : "Simulate New Case" }}</button>
     </div>
 
@@ -83,26 +86,21 @@
 
     <LoadingSpinner v-if="loading" />
     <ErrorBanner v-else-if="error && cases.length === 0" :message="error" @retry="fetchCases" />
-    <div v-else class="flex-1 overflow-y-auto overflow-x-auto">
-    <table class="min-w-[500px] text-sm border-collapse">
+    <div v-else class="flex-1 rb-table-scroll">
+    <table class="rb-manifest" style="min-width: 500px;">
       <thead>
-        <tr class="border-b border-gray-200 text-left text-gray-500">
-          <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('caseNumber')">Case ID {{ sortIndicator('caseNumber') }}</th>
-          <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('createdAt')">Created {{ sortIndicator('createdAt') }}</th>
-          <th class="py-3 px-6 cursor-pointer select-none whitespace-nowrap" @click="toggleSort('vehicle')">Vehicle ID {{ sortIndicator('vehicle') }}</th>
-          <th class="py-3 px-6 w-full cursor-pointer select-none whitespace-nowrap" @click="toggleSort('station')">Station {{ sortIndicator('station') }}</th>
+        <tr>
+          <th class="sortable" @click="toggleSort('caseNumber')">Case ID {{ sortIndicator('caseNumber') }}</th>
+          <th class="sortable" @click="toggleSort('createdAt')">Created {{ sortIndicator('createdAt') }}</th>
+          <th class="sortable" @click="toggleSort('vehicle')">Vehicle ID {{ sortIndicator('vehicle') }}</th>
+          <th class="sortable" @click="toggleSort('station')">Station {{ sortIndicator('station') }}</th>
         </tr>
       </thead>
       <tbody v-if="displayCases.length === 0">
         <tr>
-          <td colspan="4" class="py-10 text-center text-gray-400 text-sm">
+          <td colspan="4" class="rb-empty">
             <p>No cases found matching your filters.</p>
-            <button
-              v-if="hasActiveFilters"
-              type="button"
-              @click="resetFilters"
-              class="mt-2 text-teal-600 hover:underline cursor-pointer text-xs"
-            >Clear filters</button>
+            <button v-if="hasActiveFilters" type="button" @click="resetFilters" class="rb-reset-link mt-2">Clear filters</button>
           </td>
         </tr>
       </tbody>
@@ -113,13 +111,13 @@
         class="group"
       >
         <tr
-          class="border-t-2 border-gray-200 transition-colors"
+          class="transition-colors"
           :class="[
             c.status === 'closed' ? 'opacity-60 group-hover:bg-gray-200' : 'group-hover:bg-blue-50',
             { 'bg-yellow-100': highlightedCaseId === c.id },
           ]"
         >
-          <td class="py-3 px-6 font-medium whitespace-nowrap">
+          <td class="rb-case-id">
             <div>
               {{ c.caseNumber }}
               <span v-if="isNew(c)" class="ml-1.5 text-[10px] font-bold uppercase tracking-wide text-white bg-teal-600 px-1.5 py-0.5 rounded-full align-middle">New</span>
@@ -131,21 +129,21 @@
               class="text-teal-600 hover:underline text-xs font-normal cursor-pointer"
             >Show on map</button>
           </td>
-          <td class="py-3 px-6 text-gray-600 whitespace-nowrap">
+          <td class="rb-created-time tabular">
             <div>{{ formatCreatedAt(c.createdAt) }}</div>
             <div v-if="c.status !== 'closed'" class="text-xs text-gray-400">{{ formatDuration(c.createdAt) }}</div>
           </td>
-          <td class="py-3 px-6 text-gray-600 whitespace-nowrap">{{ assignedVehicleFor(c)?.callSign || "—" }}</td>
-          <td class="py-3 px-6 text-gray-600 whitespace-nowrap">{{ assignedVehicleFor(c)?.Station?.name || "—" }}</td>
+          <td>{{ assignedVehicleFor(c)?.callSign || "—" }}</td>
+          <td>{{ assignedVehicleFor(c)?.Station?.name || "—" }}</td>
         </tr>
         <tr
-          class="border-b-2 border-gray-200 transition-colors"
+          class="transition-colors"
           :class="[
             c.status === 'closed' ? 'opacity-60 group-hover:bg-gray-200' : 'group-hover:bg-blue-50',
             highlightedCaseId === c.id ? 'bg-yellow-100' : 'bg-gray-50',
           ]"
         >
-          <td colspan="4" class="pb-3 pt-1 px-6">
+          <td colspan="4" class="pb-3 pt-1 px-3">
             <StatusStepper :status="c.status" />
           </td>
         </tr>
@@ -153,28 +151,19 @@
     </table>
     </div>
 
-    <div v-if="!loading" class="flex items-center gap-3 mt-4 text-sm flex-wrap">
-      <span class="text-gray-500 text-xs">Showing {{ rangeStart }}–{{ rangeEnd }} of {{ displayCases.length }} cases</span>
-      <label class="flex items-center gap-1.5 text-xs text-gray-500">
-        Per page
-        <select v-model.number="pageSize" class="border rounded px-2 py-1 text-xs cursor-pointer hover:bg-gray-50 transition">
-          <option :value="10">10</option>
-          <option :value="25">25</option>
-          <option :value="50">50</option>
-        </select>
-      </label>
-      <div class="flex items-center gap-3 sm:ml-auto">
-        <button
-          :disabled="page === 1"
-          @click="page--"
-          class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
-        >Previous</button>
-        <span class="text-gray-600">Page {{ page }} of {{ totalPages }}</span>
-        <button
-          :disabled="page === totalPages"
-          @click="page++"
-          class="px-3 py-1 border rounded cursor-pointer disabled:opacity-40 disabled:cursor-default hover:bg-gray-50"
-        >Next</button>
+    <div v-if="!loading" class="rb-table-foot">
+      <span>Showing {{ rangeStart }}–{{ rangeEnd }} of {{ displayCases.length }} cases</span>
+      <div class="rb-pager">
+        <label>Per page
+          <select v-model.number="pageSize">
+            <option :value="10">10</option>
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+          </select>
+        </label>
+        <button :disabled="page === 1" @click="page--">Previous</button>
+        <span>Page {{ page }} of {{ totalPages }}</span>
+        <button :disabled="page === totalPages" @click="page++">Next</button>
       </div>
     </div>
   </div>
