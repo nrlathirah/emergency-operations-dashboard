@@ -144,8 +144,8 @@ const authStore = useAuthStore();
 const quickLoginRoles = [
   { label: "Super Admin", email: "admin@ops.gov.my", color: "#5B3E92" },
   { label: "KKM Staff", email: "ahmad.razak@kkm.gov.my", color: "#B3261E" },
-  { label: "PDRM Staff", email: "zul.hassan@pdrm.gov.my", color: "#1E3A5F" },
-  { label: "JBPM Staff", email: "faizal.anuar@jbpm.gov.my", color: "#B75A00" },
+  { label: "PDRM Staff", email: "zul.hassan@pdrm.gov.my", color: "#1F5C99" },
+  { label: "JBPM Staff", email: "faizal.anuar@jbpm.gov.my", color: "#D9720A" },
 ];
 
 const quickFill = (role) => {

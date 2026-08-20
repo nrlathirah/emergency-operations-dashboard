@@ -1,14 +1,19 @@
 <template>
   <div class="rb-heatmap">
     <div class="rb-heatmap-grid">
+      <!-- Tooltip lives on this wrapper (the actual grid item), not on the
+           colored cell inside it — a pseudo-element tooltip inherits its
+           own host's transform, so the hover-grow on .rb-heatmap-cell would
+           otherwise stretch the tooltip text too. -->
       <div
         v-for="cell in cells"
         :key="cell.hour"
-        class="rb-heatmap-cell"
-        :style="{ background: cellColor(cell.count) }"
-        :title="`${formatHour(cell.hour)}: ${cell.count} case${cell.count === 1 ? '' : 's'}`"
+        class="rb-heatmap-cell-wrap rb-tooltip-target"
+        :data-tooltip="`${formatHour(cell.hour)}: ${cell.count} case${cell.count === 1 ? '' : 's'}`"
       >
-        <span v-if="cell.hour % 6 === 0" class="rb-heatmap-hour">{{ formatHour(cell.hour) }}</span>
+        <div class="rb-heatmap-cell" :style="{ background: cellColor(cell.count) }">
+          <span v-if="cell.hour % 6 === 0" class="rb-heatmap-hour">{{ formatHour(cell.hour) }}</span>
+        </div>
       </div>
     </div>
     <div class="rb-heatmap-legend">

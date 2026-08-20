@@ -39,8 +39,15 @@ const TOP_N = 8;
 
 // Categories have no fixed semantic color (unlike status/priority/agency),
 // so each bar is assigned one from a rotating palette instead of all
-// rendering in the same default accent color.
-const PALETTE = ["#2563EB", "#B3261E", "#2F7A4F", "#B75A00", "#6B3FA0", "#0C6E72", "#B23A85", "#5C6B26"];
+// rendering in the same default accent color. Ordered light -> dark to
+// match the bars' descending-count order, so the chart reads as one
+// deliberate progression rather than light/dark colors mixed at random.
+// Kept out of near-black territory too — pushed dark enough, different
+// hues (dark green, dark maroon, dark purple) start to look the same
+// regardless of hue, so the darkest entry here still reads clearly as
+// its own color. Every value is checked (OKLab ΔE) to stay clearly
+// distinct both from the 3 reserved agency colors and from each other.
+const PALETTE = ["#F498B4", "#3EB99D", "#8286D4", "#8D7E18", "#974F81", "#007260", "#764600", "#5B3275"];
 
 const rows = ref(null);
 const caption = ref("");

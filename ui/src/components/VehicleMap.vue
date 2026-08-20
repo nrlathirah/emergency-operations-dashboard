@@ -38,11 +38,11 @@
         Ambulance
       </span>
       <span v-if="showAgency('PDRM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyVehicleTypeVisible('police_car') }">
-        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#1E3A5F">🚓</span>
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#1F5C99">🚓</span>
         Police Car
       </span>
       <span v-if="showAgency('JBPM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyVehicleTypeVisible('fire_truck') }">
-        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#B75A00">🚒</span>
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white border-2 text-xs" style="border-color:#D9720A">🚒</span>
         Fire Truck
       </span>
       <span v-if="showAgency('KKM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyIncidentAgencyVisible('KKM') }">
@@ -52,13 +52,13 @@
         KKM Incident
       </span>
       <span v-if="showAgency('PDRM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyIncidentAgencyVisible('PDRM') }">
-        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#1E3A5F">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#1F5C99">
           <span class="block w-1.5 h-1.5 rounded-full bg-white"></span>
         </span>
         PDRM Incident
       </span>
       <span v-if="showAgency('JBPM')" class="flex items-center gap-1.5 transition-opacity" :class="{ 'opacity-30': !anyIncidentAgencyVisible('JBPM') }">
-        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#B75A00">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full" style="background:#D9720A">
           <span class="block w-1.5 h-1.5 rounded-full bg-white"></span>
         </span>
         JBPM Incident
@@ -143,7 +143,7 @@ const checkViewChanged = () => {
   viewChanged.value = !isDefaultView();
 };
 
-const AGENCY_COLORS = { KKM: "#B3261E", PDRM: "#1E3A5F", JBPM: "#B75A00" };
+const AGENCY_COLORS = { KKM: "#B3261E", PDRM: "#1F5C99", JBPM: "#D9720A" };
 const VEHICLE_EMOJI = { ambulance: "🚑", police_car: "🚓", fire_truck: "🚒" };
 
 // Matches the labels used everywhere else (status filter, case table stepper)

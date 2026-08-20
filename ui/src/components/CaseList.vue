@@ -196,7 +196,7 @@ const props = defineProps({
 });
 
 // Matches the agency colors used on the map/legend elsewhere in the app.
-const AGENCY_COLORS = { KKM: "#B3261E", PDRM: "#1E3A5F", JBPM: "#B75A00" };
+const AGENCY_COLORS = { KKM: "#B3261E", PDRM: "#1F5C99", JBPM: "#D9720A" };
 
 const emit = defineEmits(["show-on-map"]);
 

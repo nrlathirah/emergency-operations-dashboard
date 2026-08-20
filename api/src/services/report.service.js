@@ -245,6 +245,18 @@ const resolveDateRangeLabel = async (agencyCode, startDate, endDate) => {
   return formatDateRangeLabel(startKey, todayKey);
 };
 
+// 1 -> "A", 26 -> "Z", 27 -> "AA" — for building an A1-style printArea
+// reference from a column count.
+const columnLetter = (n) => {
+  let s = "";
+  while (n > 0) {
+    const rem = (n - 1) % 26;
+    s = String.fromCharCode(65 + rem) + s;
+    n = Math.floor((n - 1) / 26);
+  }
+  return s;
+};
+
 // Same border/fill colors as the app's own --line/--surface-2 tokens, so the
 // sheet reads as "this app's report", not a generic spreadsheet.
 const BORDER_COLOR = "FFD8E3E0";
@@ -328,7 +340,11 @@ const addSummarySheet = (workbook, { sheetName, title, agencyCode, dateRangeLabe
   // A plain grey timestamp below the table, not bundled into the
   // Agency/Date Range scope block up top — it's metadata about the
   // export itself, not one of the filters that shaped what's in it.
+  // Excluded from the print area (below) since the page footer already
+  // shows the same "Generated:" text on the printed page — showing both
+  // would duplicate it.
   if (generatedAt) {
+    sheet.pageSetup.printArea = `A1:B${totalRow.number}`;
     sheet.addRow([]);
     const generatedRow = sheet.addRow([`Generated: ${generatedAt}`]);
     generatedRow.font = { italic: true, size: 10, color: { argb: "FF666666" } };
@@ -435,16 +451,20 @@ const buildCaseHistorySheet = (workbook, { sheetName, agencyCode, status, dateRa
   addSummaryRow("Total Records", cases.length);
   addSummaryRow("Low Priority", priorityCounts.low);
   addSummaryRow("Medium Priority", priorityCounts.medium);
-  addSummaryRow("High Priority", priorityCounts.high);
+  let lastSummaryRow = addSummaryRow("High Priority", priorityCounts.high);
   if (resolvedDurations.length > 0) {
     const avgMinutes = Math.round(resolvedDurations.reduce((sum, m) => sum + m, 0) / resolvedDurations.length);
-    addSummaryRow("Average Resolution Time", formatMinutes(avgMinutes));
+    lastSummaryRow = addSummaryRow("Average Resolution Time", formatMinutes(avgMinutes));
   }
 
   // A plain grey timestamp below everything else, not bundled into the
   // Agency/Date Range/Status scope block up top — it's metadata about the
   // export itself, not one of the filters that shaped what's in it.
+  // Excluded from the print area (below) since the page footer already
+  // shows the same "Generated:" text on the printed page — showing both
+  // would duplicate it.
   if (generatedAt) {
+    sheet.pageSetup.printArea = `A1:${columnLetter(columnCount)}${lastSummaryRow.number}`;
     sheet.addRow([]);
     const generatedRow = sheet.addRow([`Generated: ${generatedAt}`]);
     generatedRow.font = { italic: true, size: 10, color: { argb: "FF666666" } };

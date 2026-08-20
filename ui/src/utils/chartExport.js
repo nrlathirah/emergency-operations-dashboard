@@ -136,6 +136,10 @@ export const downloadRowsExcel = async (rows, fullFilename, { title, agencyLabel
     // A plain grey timestamp below the table, not bundled into the
     // Agency/Date Range scope block up top — it's metadata about the
     // export itself, not one of the filters that shaped what's in it.
+    // Excluded from the print area (below) since the page footer already
+    // shows the same "Generated:" text on the printed page — showing both
+    // would duplicate it.
+    sheet.pageSetup.printArea = `A1:B${totalRow.number}`;
     sheet.addRow([]);
     const generatedRow = sheet.addRow([`Generated: ${generatedAt}`]);
     generatedRow.font = { italic: true, size: 10, color: { argb: "FF666666" } };

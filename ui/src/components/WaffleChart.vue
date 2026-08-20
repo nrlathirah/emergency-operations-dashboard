@@ -1,7 +1,18 @@
 <template>
   <div class="rb-waffle">
     <div class="rb-waffle-grid">
-      <span v-for="(color, i) in cellColors" :key="i" class="rb-waffle-cell" :style="{ background: color }"></span>
+      <!-- Tooltip lives on this wrapper (the actual grid item), not on the
+           colored cell inside it — a pseudo-element tooltip inherits its
+           own host's transform, so the hover-grow on .rb-waffle-cell would
+           otherwise stretch the tooltip text too. -->
+      <span
+        v-for="(cell, i) in waffleCells"
+        :key="i"
+        class="rb-waffle-cell-wrap rb-tooltip-target"
+        :data-tooltip="`${cell.label}: ${cell.value}`"
+      >
+        <span class="rb-waffle-cell" :style="{ background: cell.color }"></span>
+      </span>
     </div>
     <div class="rb-waffle-legend">
       <span
@@ -27,15 +38,17 @@ defineEmits(["row-click"]);
 
 // 100 cells, each ~1% — the last segment absorbs the rounding remainder so
 // the grid always fills exactly 100 cells regardless of how the individual
-// percentages round.
-const cellColors = computed(() => {
+// percentages round. Each cell carries its segment's label/value along
+// with its color, so hovering any cell — not just the legend — shows what
+// it represents.
+const waffleCells = computed(() => {
   const total = props.segments.reduce((sum, s) => sum + s.value, 0) || 1;
   let assigned = 0;
   const cells = [];
   props.segments.forEach((seg, i) => {
     const count = i === props.segments.length - 1 ? 100 - assigned : Math.round((seg.value / total) * 100);
     assigned += count;
-    for (let j = 0; j < count; j++) cells.push(seg.color);
+    for (let j = 0; j < count; j++) cells.push({ color: seg.color, label: seg.label, value: seg.value });
   });
   return cells;
 });

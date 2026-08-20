@@ -19,27 +19,46 @@
 
   --kkm: #B3261E;
   --kkm-soft: #F6DEDC;
-  --pdrm: #1E3A5F;
-  --pdrm-soft: #DEE6EE;
-  --jbpm: #B75A00;
-  --jbpm-soft: #F6E4D0;
+  --pdrm: #1F5C99;
+  --pdrm-soft: #DCE7F3;
+  --jbpm: #D9720A;
+  --jbpm-soft: #FBE5CC;
   --super: #5B3E92;
   --super-soft: #EAE3F5;
 
+  /* Every value below is checked (OKLab ΔE, normal + simulated color-vision
+     deficiency) to stay clearly distinct from the 3 reserved agency colors
+     above — none of them may read as "close to KKM/PDRM/JBPM" at a glance,
+     since those three are reserved exclusively for agency identity.
+     --accent and --muted (brand chrome, not data) are deliberately left
+     out of this — stat-dispatched/veh-enroute and stat-closed used to
+     just reuse those two directly; they now have their own dedicated
+     values below instead, so fixing the collision here never touches the
+     app's actual brand color or its everyday neutral text color.
+
+     pri- and stat- and veh- are each a single ordered set (case priority,
+     case lifecycle stage, vehicle occupancy) shown together in one chart,
+     so within each set the values step light -> dark in a consistent hue
+     family rather than jumping between unrelated hues — mixing light and
+     dark out of sequence in the same chart reads as messy. Kept away from
+     very dark/near-black shades too — different hues pushed that dark
+     (dark green vs dark maroon vs dark navy) start to look the same
+     regardless of hue, so every value below stays in a moderate-to-vivid
+     lightness band and leans on hue, not darkness, for separation. */
   --pri-low: #2F7A4F;
-  --pri-med: #93610A;
-  --pri-high: #B23A22;
+  --pri-med: #9B6000;
+  --pri-high: #8A021C;
 
-  --stat-open: #93610A;
-  --stat-dispatched: #0C6E72;
-  --stat-enroute: #2E5C9A;
-  --stat-onscene: #6B3FA0;
-  --stat-closed: #64716F;
+  --stat-open: #5FBFAD;
+  --stat-dispatched: #43A594;
+  --stat-enroute: #248C7C;
+  --stat-onscene: #004C3F;
+  --stat-closed: #003126;
 
-  --veh-available: #2F7A4F;
-  --veh-dispatched: #93610A;
-  --veh-enroute: #0C6E72;
-  --veh-busy: #B23A22;
+  --veh-available: #4B9358;
+  --veh-dispatched: #9B6000;
+  --veh-enroute: #0089A7;
+  --veh-busy: #8A021C;
 
   --radius-lg: 10px;
   --radius-md: 7px;
@@ -239,12 +258,31 @@ select.rb-scope-select {
 .rb-chart-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; align-items: stretch; }
 .rb-chart-grid > .rb-panel.rb-span-2 { grid-column: 1 / -1; }
 
-.rb-bar-list { display: flex; flex-direction: column; gap: 10px; }
+.rb-bar-list { display: flex; flex-direction: column; gap: 10px; position: relative; }
 .rb-bar-row { display: grid; grid-template-columns: 96px 1fr 44px; align-items: center; gap: 10px; }
 .rb-bar-row-label { font-size: 0.8125rem; color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rb-bar-track { height: 18px; background: var(--surface-2); border-radius: var(--radius-sm); overflow: hidden; }
-.rb-bar-fill { display: block; height: 100%; border-radius: var(--radius-sm); background: var(--accent); }
-.rb-bar-row-value { font-family: "IBM Plex Mono", monospace; font-size: 0.8125rem; font-weight: 600; text-align: right; color: var(--ink); }
+/* No overflow:hidden here (unlike before) — it would clip both the fill's
+   own hover tooltip and its hover-grow effect below, since a pseudo-element
+   or transform escaping an element's box gets clipped by that same
+   element's overflow, not just a parent's. .rb-bar-fill already carries
+   its own matching border-radius, so the track never needed to clip it for
+   rounded corners in the first place. */
+.rb-bar-track { height: 18px; background: var(--surface-2); border-radius: var(--radius-sm); cursor: pointer; }
+.rb-bar-fill {
+  display: block; height: 100%; border-radius: var(--radius-sm); background: var(--accent);
+  transition: transform 120ms ease; transform-origin: center;
+}
+/* Triggered by hovering the (non-transformed) track, not the fill itself —
+   a pseudo-element tooltip inherits its own host's transform, so putting
+   both the tooltip and the scale on .rb-bar-fill made the tooltip text
+   stretch/grow along with the bar. Keeping the tooltip anchor on the track
+   and only the fill's OWN box scaling keeps the tooltip a stable size. */
+.rb-bar-track:hover .rb-bar-fill { transform: scaleY(1.3); }
+/* Hidden in the live view — the tooltip above shows this on hover instead
+   — but shown in the export copy just below, since a downloaded/printed
+   image has no hover and still needs the number written out. */
+.rb-bar-row-value { display: none; font-family: "IBM Plex Mono", monospace; font-size: 0.8125rem; font-weight: 600; text-align: right; color: var(--ink); }
+.rb-chart-export .rb-bar-row-value { display: block; }
 
 /* The 96px label column is sized for the narrow in-card view, where
    ellipsis-truncation is an acceptable tradeoff. The export layout has
@@ -265,6 +303,12 @@ select.rb-scope-select {
 .rb-donut-legend-row .rb-dot { display: block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .rb-donut-legend-row .rb-name { color: var(--ink-soft); flex: 1; }
 .rb-donut-legend-row .rb-val { font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--ink); }
+/* Thickening the ring (not scaling/moving it) is the donut's version of
+   "grow on hover" — a transform would shift a rotated arc segment off its
+   own circle, but a wider stroke reads the same way ("this one's bigger")
+   without any position math. */
+.rb-donut-arc { transition: stroke-width 120ms ease; cursor: pointer; }
+.rb-donut-arc:hover { stroke-width: 23px; }
 
 .rb-agency-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8125rem; color: var(--ink-soft); line-height: 1; }
 .rb-agency-tag .rb-dot { display: block; width: 8px; height: 8px; border-radius: 2px; flex: none; }
@@ -285,40 +329,106 @@ select.rb-scope-select {
 .rb-xybar-bars { position: absolute; inset: 0; display: flex; align-items: flex-end; justify-content: space-evenly; }
 .rb-xybar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; width: 64px; }
 .rb-xybar-col--clickable { cursor: pointer; }
-.rb-xybar-col--clickable:hover .rb-xybar-bar { opacity: 0.75; }
-.rb-xybar-value { font-size: 0.75rem; font-weight: 600; color: var(--ink); margin-bottom: 5px; font-family: "IBM Plex Mono", monospace; }
-.rb-xybar-bar { width: 46px; border-radius: 4px 4px 0 0; transition: opacity 120ms ease; }
-.rb-xybar-bar:hover { opacity: 0.85; }
+/* Hidden in the live view — the hover tooltip on the bar itself shows this
+   instead — but shown in the export copy, since a downloaded/printed image
+   has no hover and still needs the number written out. */
+.rb-xybar-value { display: none; font-size: 0.75rem; font-weight: 600; color: var(--ink); margin-bottom: 5px; font-family: "IBM Plex Mono", monospace; }
+.rb-chart-export .rb-xybar-value { display: block; }
+.rb-xybar-bar-wrap { width: 46px; cursor: pointer; }
+.rb-xybar-bar {
+  width: 100%; height: 100%; border-radius: 4px 4px 0 0;
+  transition: transform 120ms ease; transform-origin: center bottom;
+}
+/* Widens rather than grows taller — height encodes the value, so scaling
+   that axis would make the bar look like it changed value. Same idea as
+   the heatmap cells' hover scale: makes clear which bar a tooltip is for.
+   Triggered by hovering the wrap (which carries the tooltip), not the bar
+   itself — see the .rb-bar-track comment above for why. */
+.rb-xybar-bar-wrap:hover .rb-xybar-bar { transform: scaleX(1.15); }
 .rb-xybar-xaxis { display: flex; justify-content: space-evenly; margin-left: 34px; border-top: 1px solid var(--line-strong); padding-top: 6px; }
 .rb-xybar-xtick { font-size: 0.8125rem; color: var(--ink-soft); width: 64px; text-align: center; }
 
 /* ================= Waffle / square grid (e.g. Cases by Agency) ================= */
 .rb-waffle { display: flex; align-items: center; justify-content: center; gap: 22px; flex-wrap: wrap; }
 .rb-waffle-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; width: 150px; flex: none; }
-.rb-waffle-cell { display: block; aspect-ratio: 1; border-radius: 2px; }
+.rb-waffle-cell-wrap { display: block; aspect-ratio: 1; }
+.rb-waffle-cell { display: block; width: 100%; height: 100%; border-radius: 2px; transition: transform 120ms ease; }
+/* Triggered by hovering the wrap (which carries the tooltip), not the
+   cell itself — see the .rb-bar-track comment above for why. */
+.rb-waffle-cell-wrap:hover .rb-waffle-cell { transform: scale(1.35); }
 .rb-waffle-legend { display: flex; flex-direction: column; gap: 9px; }
 .rb-waffle-legend span { display: flex; align-items: center; gap: 7px; font-size: 0.8125rem; color: var(--ink-soft); }
 .rb-waffle-legend .rb-dot { display: block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .rb-waffle-legend b { font-family: "IBM Plex Mono", monospace; color: var(--ink); font-weight: 600; }
-.rb-waffle-legend-item--clickable { cursor: pointer; transition: opacity 120ms ease; }
-.rb-waffle-legend-item--clickable:hover { opacity: 0.7; }
+/* Color change, not a fade — a legend row is text, not a bar/shape, so
+   "grow" doesn't read the same way here; a color shift still signals
+   "clickable" without dulling toward grey. */
+.rb-waffle-legend-item--clickable { cursor: pointer; transition: color 120ms ease; }
+.rb-waffle-legend-item--clickable:hover { color: var(--accent-strong); }
+
+/* ================= Chart hover tooltip =================
+   Two variants, both rendering the same small dark pill:
+
+   1. Pure CSS, no JS state (.rb-tooltip-target) — put the class and a
+      data-tooltip="Label: value" attribute on any plain HTML element (a
+      waffle cell, bubble, heatmap cell...) and the ::after/::before pair
+      below shows the label fixed above it on hover.
+
+   2. Mouse-tracked (.rb-chart-tooltip) — for charts where the hover target
+      spans a wide/tall area (bar tracks, XY bars, stacked segments) so a
+      tooltip that follows the cursor along the element reads better than
+      one fixed at a single point, and for SVG shapes (the donut ring)
+      where ::after can't be positioned reliably at all. Component sets
+      hovered/tooltipPos state via @mouseenter/@mousemove and renders this
+      div with inline left/top.
+
+   Neither ever appears in exports: .rb-tooltip-target is driven by :hover,
+   which is never "on" during an automated html2canvas capture, and
+   .rb-chart-tooltip only renders when its component's `hovered` state is
+   set, which never happens without real mouse interaction. */
+.rb-tooltip-target { position: relative; cursor: pointer; }
+.rb-tooltip-target::after {
+  content: attr(data-tooltip);
+  position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: #fff; font-size: 0.6875rem; font-weight: 600; line-height: 1.3;
+  padding: 4px 8px; border-radius: var(--radius-sm); white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity 120ms ease; z-index: 40;
+}
+.rb-tooltip-target::before {
+  content: ""; position: absolute; bottom: calc(100% + 3px); left: 50%; transform: translateX(-50%);
+  border: 4px solid transparent; border-top-color: var(--ink); pointer-events: none;
+  opacity: 0; transition: opacity 120ms ease; z-index: 40;
+}
+.rb-tooltip-target:hover::after, .rb-tooltip-target:hover::before { opacity: 1; }
+
+.rb-chart-tooltip {
+  position: absolute; background: var(--ink); color: #fff; font-size: 0.6875rem; font-weight: 600;
+  padding: 4px 8px; border-radius: var(--radius-sm); white-space: nowrap; pointer-events: none;
+  transform: translate(-50%, -100%); margin-top: -10px; z-index: 40;
+}
 
 /* ================= Bubble chart (e.g. Cases by Category) ================= */
 .rb-bubbles { display: flex; align-items: flex-end; justify-content: space-evenly; flex-wrap: wrap; gap: 14px 8px; padding: 10px 0 4px; min-height: 100px; }
 .rb-bubble-col { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.rb-bubble-col--clickable { cursor: pointer; transition: opacity 120ms ease; }
-.rb-bubble-col--clickable:hover { opacity: 0.75; }
-.rb-bubble { display: flex; align-items: center; justify-content: center; border-radius: 50%; flex: none; }
+.rb-bubble-col--clickable { cursor: pointer; }
+.rb-bubble-wrap { display: flex; flex: none; }
+.rb-bubble { display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 100%; height: 100%; transition: transform 120ms ease; }
+/* Triggered by hovering the wrap (which carries the tooltip), not the
+   bubble itself — see the .rb-bar-track comment above for why. */
+.rb-bubble-wrap:hover .rb-bubble { transform: scale(1.12); }
 .rb-bubble-value { color: #fff; font-size: 0.75rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
 .rb-bubble-label { font-size: 0.75rem; color: var(--ink-soft); text-align: center; max-width: 76px; }
 
 /* ================= Heatmap (Cases by Hour of Day) ================= */
 .rb-heatmap-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; }
+.rb-heatmap-cell-wrap { aspect-ratio: 1; }
 .rb-heatmap-cell {
-  aspect-ratio: 1; border-radius: 4px; display: flex; align-items: flex-end; justify-content: center;
+  width: 100%; height: 100%; border-radius: 4px; display: flex; align-items: flex-end; justify-content: center;
   padding-bottom: 2px; transition: transform 100ms ease;
 }
-.rb-heatmap-cell:hover { transform: scale(1.08); }
+/* Triggered by hovering the wrap (which carries the tooltip), not the
+   cell itself — see the .rb-bar-track comment above for why. */
+.rb-heatmap-cell-wrap:hover .rb-heatmap-cell { transform: scale(1.08); }
 /* A background pill (an earlier design) guaranteed contrast against any
    cell color, but its box made even a few px of html2canvas vertical
    drift look like it was spilling into the row below. White text with a
@@ -340,11 +450,22 @@ select.rb-scope-select {
    rule intended. */
 .rb-stacked-legend > span { display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
 .rb-stacked-legend .rb-dot { display: block; width: 8px; height: 8px; border-radius: 50%; }
-.rb-stacked-rows { display: flex; flex-direction: column; gap: 12px; }
+.rb-stacked-rows { display: flex; flex-direction: column; gap: 12px; position: relative; }
 .rb-stacked-row { display: grid; grid-template-columns: 64px 1fr 44px; align-items: center; gap: 10px; }
 .rb-stacked-row-label { font-size: 0.8125rem; font-weight: 600; }
-.rb-stacked-bar { display: flex; height: 18px; border-radius: var(--radius-sm); overflow: hidden; background: var(--surface-2); }
-.rb-stacked-seg { display: block; height: 100%; }
+.rb-stacked-bar { display: flex; height: 18px; border-radius: var(--radius-sm); background: var(--surface-2); }
+.rb-stacked-seg-wrap { display: block; height: 100%; cursor: pointer; }
+.rb-stacked-seg { display: block; width: 100%; height: 100%; transition: transform 120ms ease; transform-origin: center; }
+/* Grows taller, not wider — width encodes the value here, so scaling that
+   axis would make a segment look like it changed value. Same idea as the
+   heatmap cells' hover scale: makes clear which segment a tooltip is for.
+   Triggered by hovering the wrap (which carries the tooltip), not the
+   segment itself — see the .rb-bar-track comment above for why. */
+.rb-stacked-seg-wrap:hover .rb-stacked-seg { transform: scaleY(1.3); }
+/* Rounded ends via per-segment corner radius, not overflow:hidden on the
+   bar — hidden overflow would clip each segment's hover tooltip too. */
+.rb-stacked-seg-wrap:first-child .rb-stacked-seg { border-top-left-radius: var(--radius-sm); border-bottom-left-radius: var(--radius-sm); }
+.rb-stacked-seg-wrap:last-child .rb-stacked-seg { border-top-right-radius: var(--radius-sm); border-bottom-right-radius: var(--radius-sm); }
 .rb-stacked-row-total { font-family: "IBM Plex Mono", monospace; font-size: 0.8125rem; font-weight: 600; text-align: right; color: var(--ink); }
 
 /* ================= Chart export layout (download image / print) =================

@@ -36,10 +36,10 @@ const props = defineProps({
 });
 
 const STATUS_ORDER = [
-  { key: "available", label: "Available", color: "var(--pri-low)" },
-  { key: "dispatched", label: "Dispatched", color: "var(--pri-med)" },
-  { key: "en_route", label: "En Route", color: "var(--accent)" },
-  { key: "busy", label: "Busy", color: "var(--pri-high)" },
+  { key: "available", label: "Available", color: "var(--veh-available)" },
+  { key: "dispatched", label: "Dispatched", color: "var(--veh-dispatched)" },
+  { key: "en_route", label: "En Route", color: "var(--veh-enroute)" },
+  { key: "busy", label: "Busy", color: "var(--veh-busy)" },
 ];
 
 const segments = ref(null);

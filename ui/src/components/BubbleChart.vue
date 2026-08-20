@@ -8,8 +8,18 @@
         :class="{ 'rb-bubble-col--clickable': clickable }"
         @click="clickable && $emit('row-click', row)"
       >
-        <div class="rb-bubble" :style="{ width: size(row.value) + 'px', height: size(row.value) + 'px', background: row.color }">
-          <span class="rb-bubble-value">{{ row.value }}</span>
+        <!-- Tooltip lives on this wrapper, sized to match the bubble, not
+             on the bubble itself — a pseudo-element tooltip inherits its
+             own host's transform, so the hover-grow on .rb-bubble would
+             otherwise stretch the tooltip text too. -->
+        <div
+          class="rb-bubble-wrap rb-tooltip-target"
+          :style="{ width: size(row.value) + 'px', height: size(row.value) + 'px' }"
+          :data-tooltip="`${row.label}: ${row.value}`"
+        >
+          <div class="rb-bubble" :style="{ background: row.color }">
+            <span class="rb-bubble-value">{{ row.value }}</span>
+          </div>
         </div>
         <span class="rb-bubble-label">{{ row.label }}</span>
       </div>

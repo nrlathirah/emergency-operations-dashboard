@@ -198,7 +198,7 @@ const headerSubtitle = computed(() => {
 // Matches the agency/priority color tokens defined in styles/design-system.css.
 const badgeColor = computed(() => {
   if (authStore.user?.role === "super_admin") return "#5B3E92";
-  const colors = { KKM: "#B3261E", PDRM: "#1E3A5F", JBPM: "#B75A00" };
+  const colors = { KKM: "#B3261E", PDRM: "#1F5C99", JBPM: "#D9720A" };
   return colors[authStore.user?.agency] || "#64716F";
 });
 
