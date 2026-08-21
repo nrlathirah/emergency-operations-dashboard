@@ -73,7 +73,7 @@
             <td class="capitalize">{{ c.category }}</td>
             <td><span class="rb-priority-tag" :data-priority="c.priority"><span class="rb-dot"></span>{{ capitalize(c.priority) }}</span></td>
             <td class="rb-case-loc">{{ c.location }}</td>
-            <td class="tabular">{{ formatDate(c.createdAt) }}</td>
+            <td class="tabular">{{ formatDateTime(c.createdAt) }}</td>
             <td class="rb-resolved-time tabular">{{ formatDuration(c.createdAt, c.updatedAt) }}</td>
           </tr>
         </tbody>
@@ -100,9 +100,11 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { reportService } from "../services/reportService";
 import { buildTimestampedFilename } from "../utils/chartExport";
+import { formatDateTime } from "../utils/formatDate";
+import { useClickOutside } from "../composables/useClickOutside";
 import LoadingSpinner from "./LoadingSpinner.vue";
 import ErrorBanner from "./ErrorBanner.vue";
 
@@ -138,9 +140,7 @@ const error = ref(null);
 const exporting = ref(false);
 const exportError = ref("");
 const menuOpen = ref(false);
-const handleOutsideClick = (e) => {
-  if (!e.target.closest("[data-table-menu]")) menuOpen.value = false;
-};
+useClickOutside("[data-table-menu]", () => (menuOpen.value = false));
 
 const page = ref(1);
 const pageSize = ref(10);
@@ -211,9 +211,6 @@ const sortIndicator = (field) => {
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize.value)));
 const rangeStart = computed(() => (total.value === 0 ? 0 : (page.value - 1) * pageSize.value + 1));
 const rangeEnd = computed(() => Math.min(page.value * pageSize.value, total.value));
-
-const formatDate = (dateStr) =>
-  new Date(dateStr).toLocaleString("en-MY", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 const formatDuration = (createdAt, updatedAt) => {
   const totalMinutes = Math.round((new Date(updatedAt) - new Date(createdAt)) / 60000);
@@ -286,9 +283,5 @@ watch(
 );
 watch(page, fetchPage);
 
-onMounted(() => {
-  fetchPage();
-  window.addEventListener("click", handleOutsideClick);
-});
-onUnmounted(() => window.removeEventListener("click", handleOutsideClick));
+onMounted(fetchPage);
 </script>

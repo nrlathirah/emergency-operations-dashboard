@@ -22,6 +22,7 @@
 
 <script setup>
 import { computed } from "vue";
+import { formatDate } from "../utils/formatDate";
 
 const props = defineProps({
   points: { type: Array, required: true }, // [{ date: "YYYY-MM-DD", value }]
@@ -70,10 +71,7 @@ const peak = computed(() => {
   return coords.value[peakIndex];
 });
 
-const formatAxisDate = (dateStr) => {
-  const d = new Date(`${dateStr}T00:00:00`);
-  return d.toLocaleDateString("en-MY", { day: "numeric", month: "short" });
-};
+const formatAxisDate = (dateStr) => formatDate(`${dateStr}T00:00:00`);
 
 // 5 evenly-spaced labels regardless of how many days of data there are.
 const axisLabels = computed(() => {

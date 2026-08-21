@@ -178,6 +178,7 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "./stores/auth";
 import { useThemeStore } from "./stores/theme";
 import { userService } from "./services/userService";
+import { useClickOutside } from "./composables/useClickOutside";
 import PasswordInput from "./components/PasswordInput.vue";
 import Modal from "./components/Modal.vue";
 
@@ -245,14 +246,10 @@ const toggleUserMenu = () => {
   confirmingLogout.value = false;
 };
 
-const handleOutsideUserMenuClick = (e) => {
-  if (!e.target.closest("[data-user-menu]")) {
-    showUserMenu.value = false;
-    confirmingLogout.value = false;
-  }
-};
-onMounted(() => window.addEventListener("click", handleOutsideUserMenuClick));
-onUnmounted(() => window.removeEventListener("click", handleOutsideUserMenuClick));
+useClickOutside("[data-user-menu]", () => {
+  showUserMenu.value = false;
+  confirmingLogout.value = false;
+});
 
 // A mobile browser often resumes a backgrounded tab from memory rather than
 // reloading it, so no API request fires to let the response interceptor

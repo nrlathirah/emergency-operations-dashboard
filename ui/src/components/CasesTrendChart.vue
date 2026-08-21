@@ -18,6 +18,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import { reportService } from "../services/reportService";
+import { formatDate } from "../utils/formatDate";
 import TrendLine from "./TrendLine.vue";
 import ChartFrame from "./ChartFrame.vue";
 
@@ -49,7 +50,7 @@ const loadChart = async () => {
 const peakInfo = computed(() => {
   if (!points.value || points.value.length === 0) return null;
   const peak = points.value.reduce((max, p) => (p.count > max.count ? p : max), points.value[0]);
-  const dateLabel = new Date(`${peak.date}T00:00:00`).toLocaleDateString("en-MY", { day: "numeric", month: "short" });
+  const dateLabel = formatDate(`${peak.date}T00:00:00`);
   return { count: peak.count, dateLabel };
 });
 

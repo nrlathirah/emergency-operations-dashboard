@@ -598,9 +598,11 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
+import { ref, computed, watch, onMounted, nextTick } from "vue";
 import { userService } from "../services/userService";
 import { useAuthStore } from "../stores/auth";
+import { formatDateTime } from "../utils/formatDate";
+import { useClickOutside } from "../composables/useClickOutside";
 import LoadingSpinner from "./LoadingSpinner.vue";
 import ErrorBanner from "./ErrorBanner.vue";
 import PasswordInput from "./PasswordInput.vue";
@@ -613,10 +615,7 @@ const generateTempPassword = () => `Welcome${Math.floor(1000 + Math.random() * 9
 
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
-const formatDate = (value) =>
-  value
-    ? new Date(value).toLocaleString("en-MY", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
-    : null;
+const formatDate = (value) => formatDateTime(value, { includeYear: false });
 
 const copied = ref(false);
 const copyPassword = async (value) => {
@@ -711,9 +710,7 @@ const openActivityDrawer = (user = null) => {
 };
 
 const showToolbarMenu = ref(false);
-const handleOutsideToolbarMenuClick = (e) => {
-  if (!e.target.closest("[data-toolbar-menu]")) showToolbarMenu.value = false;
-};
+useClickOutside("[data-toolbar-menu]", () => (showToolbarMenu.value = false));
 
 const showResetRequestsPopover = ref(false);
 const resetRequests = ref([]);
@@ -987,20 +984,7 @@ const confirmDeactivate = (u) => {
   closeActionMenu();
 };
 
-const handleOutsideMenuClick = (e) => {
-  if (!e.target.closest("[data-action-menu]")) closeActionMenu();
-};
-
-onMounted(() => {
-  window.addEventListener("click", handleOutsideMenuClick);
-  window.addEventListener("scroll", closeActionMenu, true);
-  window.addEventListener("click", handleOutsideToolbarMenuClick);
-});
-onUnmounted(() => {
-  window.removeEventListener("click", handleOutsideMenuClick);
-  window.removeEventListener("scroll", closeActionMenu, true);
-  window.removeEventListener("click", handleOutsideToolbarMenuClick);
-});
+useClickOutside("[data-action-menu]", closeActionMenu, { closeOnScroll: true });
 
 const showAddUser = ref(false);
 const submitting = ref(false);

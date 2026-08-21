@@ -108,9 +108,10 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick, onMounted, onUnmounted } from "vue";
-import html2canvas from "html2canvas";
+import { ref, computed, nextTick } from "vue";
 import { downloadRowsExcel, buildTimestampedFilename, splitDateRangeLabel } from "../utils/chartExport";
+import { formatDateTime } from "../utils/formatDate";
+import { useClickOutside } from "../composables/useClickOutside";
 import LoadingSpinner from "./LoadingSpinner.vue";
 import ErrorBanner from "./ErrorBanner.vue";
 
@@ -138,19 +139,20 @@ const exportRef = ref(null);
 
 const agencyLabel = computed(() => props.agencyCode || "All Agencies");
 const exportedAt = ref("");
-const formatExportedAt = () =>
-  new Date().toLocaleString("en-MY", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 // html2canvas can fire before the Google Font (IBM Plex Sans) has actually
 // finished loading, silently substituting a fallback with different letter
 // widths — waiting for document.fonts.ready avoids capturing that transient
-// state.
+// state. Also loaded on-demand here (not a static top-level import) — it's
+// a sizable library only ever needed once someone actually downloads or
+// prints a chart image, not on every page load.
 const captureExport = async () => {
   if (!exportRef.value) return null;
-  exportedAt.value = formatExportedAt();
+  exportedAt.value = formatDateTime(new Date());
   await nextTick();
   await document.fonts.ready;
   try {
+    const { default: html2canvas } = await import("html2canvas");
     return await html2canvas(exportRef.value, { backgroundColor: "#ffffff", scale: 2 });
   } catch (err) {
     // A silent failure here previously looked like nothing happened at all
@@ -177,7 +179,7 @@ const exportExcel = () => {
     agencyLabel: agencyLabel.value,
     dateRangeLabel: dateRangeLabel || "All Time",
     durationLabel,
-    generatedAt: formatExportedAt(),
+    generatedAt: formatDateTime(new Date()),
     labelHeader: props.labelHeader,
   });
 };
@@ -215,9 +217,5 @@ const printImage = async () => {
   else img.onload = triggerPrint;
 };
 
-const handleOutsideClick = (e) => {
-  if (!e.target.closest("[data-chart-menu]")) menuOpen.value = false;
-};
-onMounted(() => window.addEventListener("click", handleOutsideClick));
-onUnmounted(() => window.removeEventListener("click", handleOutsideClick));
+useClickOutside("[data-chart-menu]", () => (menuOpen.value = false));
 </script>

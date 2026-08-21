@@ -1,4 +1,8 @@
-import ExcelJS from "exceljs";
+// exceljs is a large library (spreadsheet generation) that only ever runs
+// when someone actually clicks an "Export to Excel" button — importing it
+// statically here would put its full weight in every page's initial bundle
+// for every visitor, whether they ever export anything or not. Loaded
+// on-demand instead, inside downloadRowsExcel below.
 
 // e.g. "emergency-ops-cases-by-status-2026-08-18-1432.png" — branded and
 // timestamped (not just dated) so repeated downloads on the same day get
@@ -57,6 +61,7 @@ const THIN_BORDER = {
 export const downloadRowsExcel = async (rows, fullFilename, { title, agencyLabel, dateRangeLabel, durationLabel, generatedAt, labelHeader = "Label" } = {}) => {
   if (!rows || rows.length === 0) return;
 
+  const { default: ExcelJS } = await import("exceljs");
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Data");
 

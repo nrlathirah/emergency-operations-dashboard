@@ -173,6 +173,7 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from "vue";
 import { caseService } from "../services/caseService";
 import { vehicleService } from "../services/vehicleService";
 import { useAuthStore } from "../stores/auth";
+import { formatDateTime } from "../utils/formatDate";
 import LoadingSpinner from "./LoadingSpinner.vue";
 import ErrorBanner from "./ErrorBanner.vue";
 import StatusStepper from "./StatusStepper.vue";
@@ -302,13 +303,7 @@ const pagedCases = computed(() => {
 const rangeStart = computed(() => (displayCases.value.length === 0 ? 0 : (page.value - 1) * pageSize.value + 1));
 const rangeEnd = computed(() => Math.min(page.value * pageSize.value, displayCases.value.length));
 
-const formatCreatedAt = (createdAt) =>
-  new Date(createdAt).toLocaleString("en-MY", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+const formatCreatedAt = (createdAt) => formatDateTime(createdAt, { includeYear: false });
 
 // Elapsed time since creation, for active cases — refreshes automatically on
 // every 5s poll since fetchCases() replaces the cases array each time.

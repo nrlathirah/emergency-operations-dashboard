@@ -52,7 +52,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch } from "vue";
+import { formatDate } from "../utils/formatDate";
+import { useClickOutside } from "../composables/useClickOutside";
 
 const startDate = defineModel("startDate", { type: String, default: null });
 const endDate = defineModel("endDate", { type: String, default: null });
@@ -197,18 +199,14 @@ const dayCount = computed(() => {
 
 const rangeLabel = computed(() => {
   if (!startDate.value || !endDate.value) return "All time";
-  const fmt = (s) => new Date(`${s}T00:00:00`).toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" });
+  const fmt = (s) => formatDate(`${s}T00:00:00`, { includeYear: true });
   const count = dayCount.value;
   const dayWord = count === 1 ? "day" : "days";
   if (startDate.value === endDate.value) return `${fmt(startDate.value)} (${count} ${dayWord})`;
   return `${fmt(startDate.value)} – ${fmt(endDate.value)} (${count} ${dayWord})`;
 });
 
-const handleOutsideClick = (e) => {
-  if (!e.target.closest("[data-cal-range]")) open.value = false;
-};
-onMounted(() => window.addEventListener("click", handleOutsideClick));
-onUnmounted(() => window.removeEventListener("click", handleOutsideClick));
+useClickOutside("[data-cal-range]", () => (open.value = false));
 
 // Re-anchor the visible month every time the popover opens, so it always
 // shows something relevant instead of wherever month navigation last left off.
