@@ -39,7 +39,10 @@ const props = defineProps({
 
 // One fixed color for every agency — a neutral teal, distinct from every
 // agency color (KKM red, PDRM navy, JBPM amber) and the super-admin indigo.
-const colors = { main: "#0C6E72", light: "#AED8D4" };
+// Referenced as CSS custom properties (not literal hex) so the stepper
+// follows the light/dark theme automatically, same as everything else that
+// reads these tokens.
+const colors = { main: "var(--accent)", light: "var(--accent-soft)" };
 
 const steps = [
   { key: "open", label: "Open" },
@@ -52,15 +55,15 @@ const steps = [
 const currentIndex = computed(() => steps.findIndex((s) => s.key === props.status));
 
 const dotStyle = (index) => {
-  if (index < currentIndex.value) return { backgroundColor: colors.main, color: "#fff" };
+  if (index < currentIndex.value) return { backgroundColor: colors.main, color: "var(--accent-contrast)" };
   if (index === currentIndex.value) {
-    return { backgroundColor: colors.main, color: "#fff", boxShadow: `0 0 0 4px ${colors.light}` };
+    return { backgroundColor: colors.main, color: "var(--accent-contrast)", boxShadow: `0 0 0 4px ${colors.light}` };
   }
-  return { backgroundColor: "#e5e7eb", color: "#6b7280" };
+  return { backgroundColor: "var(--surface-2)", color: "var(--muted)" };
 };
 
 const lineStyle = (index) => ({
-  backgroundColor: index < currentIndex.value ? colors.main : "#e5e7eb",
+  backgroundColor: index < currentIndex.value ? colors.main : "var(--surface-2)",
 });
 </script>
 
@@ -72,7 +75,7 @@ const lineStyle = (index) => ({
    naturally no such segment once closed. */
 .progress-line--active {
   position: relative;
-  background-color: #AED8D4;
+  background-color: var(--accent-soft);
   overflow: hidden;
 }
 
@@ -81,7 +84,7 @@ const lineStyle = (index) => ({
   position: absolute;
   inset: 0;
   width: 50%;
-  background: linear-gradient(to right, transparent, #0C6E72, transparent);
+  background: linear-gradient(to right, transparent, var(--accent), transparent);
   animation: progress-sweep 1.4s ease-in-out infinite;
 }
 

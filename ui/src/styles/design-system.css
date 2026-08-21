@@ -66,6 +66,113 @@
   --radius-pill: 999px;
   --shadow-card: 0 1px 2px rgba(16, 26, 28, 0.04), 0 1px 1px rgba(16, 26, 28, 0.03);
   --shadow-pop: 0 12px 28px rgba(16, 26, 28, 0.16), 0 2px 8px rgba(16, 26, 28, 0.08);
+
+  /* The header bar is permanent dark chrome in both themes (like most
+     dashboards' top nav) — its own tokens, deliberately NOT --ink/--surface,
+     so it never inherits the page's light/dark flip below. Same values in
+     both blocks; kept as tokens (not literals in .app-header) purely so
+     there's one definition instead of two copies to keep in sync. */
+  --header-bg: #101A1C;
+  --header-ink: #EAF3F2;
+  --header-eyebrow: #9FB6B3;
+
+  /* Hover tooltips are their own small always-dark popup in both themes
+     (same convention as the header) — they used to just reuse --ink
+     directly, which worked only by coincidence back when --ink was always
+     dark; once --ink itself flips for dark mode, background: var(--ink)
+     turns into a near-white tooltip with white text on it, invisible. */
+  --tooltip-bg: #101A1C;
+  --tooltip-ink: #FBFFFE;
+}
+
+/* Dark palette. Every categorical set (agency/priority/status/vehicle) was
+   re-picked and run through the same dataviz palette validator used for
+   the chart work earlier — the light-mode values are tuned for a white
+   surface and don't carry over; these are their own validated dark-surface
+   variants, not just the light values displayed on a dark page. Structure
+   mirrors the light block exactly (same token names) so every existing
+   `var(--x)` reference throughout this file and every component picks up
+   the swap automatically — nothing outside this block needs to change.
+   Applied two ways: the media query covers "system" mode (no explicit
+   choice saved), and the attribute selector covers an explicit dark pick
+   from the toggle — see stores/theme.js. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ink: #EAF3F2;
+    --ink-soft: #B8CBC8;
+    --muted: #7E938F;
+    --paper: #0A1416;
+    --surface: #111D1F;
+    --surface-2: #1B2B2D;
+    --line: #24373A;
+    --line-strong: #33494C;
+    --accent: #35B4AE;
+    --accent-strong: #4FC9C2;
+    --accent-soft: #163634;
+    --accent-contrast: #06181A;
+
+    --kkm: #DD4F58;
+    --kkm-soft: #3A2023;
+    --pdrm: #2B93CE;
+    --pdrm-soft: #1B2E3A;
+    --jbpm: #B98D1E;
+    --jbpm-soft: #332A16;
+    --super: #9358D6;
+    --super-soft: #2C2138;
+
+    --pri-low: #3FA06A;
+    --pri-med: #C99425;
+    --pri-high: #E0525C;
+
+    --stat-open: #6FCFC0;
+    --stat-dispatched: #4DB7A5;
+    --stat-enroute: #2FA394;
+    --stat-onscene: #1A7A68;
+    --stat-closed: #0F5C4C;
+
+    --veh-available: #5CAE68;
+    --veh-dispatched: #C99425;
+    --veh-enroute: #29A8C7;
+    --veh-busy: #E0525C;
+  }
+}
+:root[data-theme="dark"] {
+  --ink: #EAF3F2;
+  --ink-soft: #B8CBC8;
+  --muted: #7E938F;
+  --paper: #0A1416;
+  --surface: #111D1F;
+  --surface-2: #1B2B2D;
+  --line: #24373A;
+  --line-strong: #33494C;
+  --accent: #35B4AE;
+  --accent-strong: #4FC9C2;
+  --accent-soft: #163634;
+  --accent-contrast: #06181A;
+
+  --kkm: #DD4F58;
+  --kkm-soft: #3A2023;
+  --pdrm: #2B93CE;
+  --pdrm-soft: #1B2E3A;
+  --jbpm: #B98D1E;
+  --jbpm-soft: #332A16;
+  --super: #9358D6;
+  --super-soft: #2C2138;
+
+  --pri-low: #3FA06A;
+  --pri-med: #C99425;
+  --pri-high: #E0525C;
+
+  --stat-open: #6FCFC0;
+  --stat-dispatched: #4DB7A5;
+  --stat-enroute: #2FA394;
+  --stat-onscene: #1A7A68;
+  --stat-closed: #0F5C4C;
+
+  --veh-available: #5CAE68;
+  --veh-dispatched: #C99425;
+  --veh-enroute: #29A8C7;
+  --veh-busy: #E0525C;
 }
 
 .tabular { font-variant-numeric: tabular-nums; }
@@ -73,13 +180,13 @@
 
 /* ================= Shared app shell ================= */
 .app-header {
-  background: var(--ink); color: #EAF3F2;
+  background: var(--header-bg); color: var(--header-ink);
   padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
 }
 @media (min-width: 640px) { .app-header { padding: 14px 24px; } }
 .app-brand { display: flex; align-items: center; gap: 11px; }
 .app-brand-mark { width: 30px; height: 30px; border-radius: var(--radius-sm); background: var(--accent); display: grid; place-items: center; flex: none; font-size: 15px; line-height: 1; }
-.app-brand-text .eyebrow { display: block; font-size: 0.625rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #9FB6B3; line-height: 1.3; }
+.app-brand-text .eyebrow { display: block; font-size: 0.625rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--header-eyebrow); line-height: 1.3; }
 .app-brand-text h1 { margin: 1px 0 0; font-size: 0.95rem; font-weight: 600; line-height: 1.3; }
 @media (min-width: 640px) { .app-brand-text h1 { font-size: 1.05rem; } }
 /* Below 640px, .app-header's own flex-wrap was letting the avatar (on the
@@ -98,6 +205,14 @@
   .app-brand-text h1 { font-size: 0.8125rem; }
   .app-account { flex: none; }
 }
+
+.app-theme-toggle {
+  display: grid; place-items: center; width: 32px; height: 32px; flex: none;
+  border: none; border-radius: 50%; background: rgba(255,255,255,.08); color: var(--header-ink);
+  cursor: pointer; transition: background 120ms ease;
+}
+.app-theme-toggle:hover { background: rgba(255,255,255,.16); }
+.app-theme-toggle svg { width: 17px; height: 17px; }
 
 .app-account { display: flex; align-items: center; gap: 8px; }
 .app-account-info { text-align: right; line-height: 1.25; display: flex; flex-direction: column; gap: 5px; }
@@ -118,7 +233,7 @@
   width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.14); color: #fff;
   display: grid; place-items: center; font-size: 0.8rem; font-weight: 600; flex: none;
 }
-.app-chevron { color: #9FB6B3; font-size: 0.6rem; }
+.app-chevron { color: var(--header-eyebrow); font-size: 0.6rem; }
 
 .app-nav { background: #16211F; padding: 0 16px; display: flex; gap: 4px; overflow-x: auto; }
 @media (min-width: 640px) { .app-nav { padding: 0 24px; } }
@@ -151,7 +266,7 @@
 .rb-brand-mark { width: 34px; height: 34px; border-radius: var(--radius-sm); background: var(--accent); flex: none; display: grid; place-items: center; }
 .rb-brand-mark svg { width: 17px; height: 17px; }
 .rb-eyebrow { display: block; font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.11em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
-.rb-brand h1 { margin: 0; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; }
+.rb-brand h1 { margin: 0; font-size: 1.375rem; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
 .rb-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
 select.rb-scope-select {
@@ -336,7 +451,7 @@ select.rb-scope-select {
    ring to match the bar's own color. */
 .rb-bar-track:hover .rb-bar-fill {
   transform: scaleY(1.3) translateY(-2px);
-  box-shadow: 0 6px 10px -2px rgba(16, 26, 28, 0.26), 0 0 0 1px var(--glow, transparent);
+  box-shadow: 0 6px 10px -2px rgba(16, 26, 28, 0.26), 0 0 6px var(--glow, transparent);
 }
 /* Hidden in the live view — the tooltip above shows this on hover instead
    — but shown in the export copy just below, since a downloaded/printed
@@ -353,16 +468,25 @@ select.rb-scope-select {
 .rb-bar-caption { margin-top: 12px; font-size: 0.75rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 10px; }
 
 .rb-donut-wrap { display: flex; align-items: center; justify-content: center; gap: 22px; flex-wrap: wrap; }
-.rb-donut { width: 128px; height: 128px; flex: none; position: relative; }
+.rb-donut { width: 144px; height: 144px; flex: none; position: relative; }
 /* An <svg> clips anything past its own viewBox by default. The ring (r=40,
-   18px stroke) normally fits inside the 0-100 viewBox with room to spare,
-   but hovering grows the stroke to 23px (below), pushing the segment's
-   outer edge out to radius 51.5 — past the viewBox's 50-unit boundary —
-   which is exactly what was flattening/cutting off the bulge on hover.
-   overflow: visible turns that default clipping off. */
+   22px stroke, set on the <circle> elements in DonutChart.vue) already
+   pushes past the 0-100 viewBox's 50-unit boundary at rest, and hovering
+   grows the stroke to 27px (below) further still — exactly what was
+   flattening/cutting off the bulge on hover before overflow: visible
+   turned that default SVG clipping off. */
 .rb-donut svg { width: 100%; height: 100%; display: block; overflow: visible; }
-.rb-donut-center { position: absolute; inset: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.rb-donut-center strong { font-family: "IBM Plex Mono", monospace; font-size: 1.35rem; font-weight: 600; }
+/* pointer-events: none is the actual fix here, not decoration — this is a
+   SQUARE box sitting on top of a CIRCULAR ring (later sibling in the DOM,
+   so it paints above the <svg> by default), and a square inscribed this
+   close to a ring's outer edge covers most of the ring's area at diagonal
+   angles (its corners reach nearly as far out as the ring itself) even
+   though it looks like it's just sitting in the empty hole. Without this,
+   that overlap silently ate mouseenter/mouseleave on the arcs underneath
+   everywhere except right at the outer edge, which is exactly the "hover
+   only works near the border" bug this fixes. */
+.rb-donut-center { position: absolute; inset: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.rb-donut-center strong { font-family: "IBM Plex Mono", monospace; font-size: 1.35rem; font-weight: 600; color: var(--ink); }
 .rb-donut-center span { font-size: 0.625rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .rb-donut-legend { display: flex; flex-direction: column; gap: 9px; }
 .rb-donut-legend-row { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; line-height: 1; }
@@ -384,7 +508,7 @@ select.rb-scope-select {
   filter: drop-shadow(0 2px 3px rgba(16, 26, 28, 0.14));
 }
 .rb-donut-arc:hover {
-  stroke-width: 23px;
+  stroke-width: 27px;
   filter: drop-shadow(0 5px 10px rgba(16, 26, 28, 0.26)) drop-shadow(0 0 5px var(--glow, transparent));
 }
 
@@ -430,7 +554,7 @@ select.rb-scope-select {
    the bar's own color instead of a fixed one. */
 .rb-xybar-bar-wrap:hover .rb-xybar-bar {
   transform: scaleX(1.15) translateY(-3px);
-  box-shadow: 0 3px 0 var(--glow, transparent), 0 12px 18px -4px rgba(16, 26, 28, 0.28), 0 0 0 1px var(--glow, transparent);
+  box-shadow: 0 3px 0 var(--glow, transparent), 0 12px 18px -4px rgba(16, 26, 28, 0.28), 0 0 6px var(--glow, transparent);
 }
 .rb-xybar-xaxis { display: flex; justify-content: space-evenly; margin-left: 34px; border-top: 1px solid var(--line-strong); padding-top: 6px; }
 .rb-xybar-xtick { font-size: 0.8125rem; color: var(--ink-soft); width: 64px; text-align: center; }
@@ -448,7 +572,7 @@ select.rb-scope-select {
    the cell's own color. */
 .rb-waffle-cell-wrap:hover .rb-waffle-cell {
   transform: scale(1.35) translateY(-1px);
-  box-shadow: 0 3px 5px rgba(16, 26, 28, 0.24), 0 0 0 1px var(--glow, transparent);
+  box-shadow: 0 3px 5px rgba(16, 26, 28, 0.24), 0 0 4px var(--glow, transparent);
 }
 .rb-waffle-legend { display: flex; flex-direction: column; gap: 9px; }
 .rb-waffle-legend span { display: flex; align-items: center; gap: 7px; font-size: 0.8125rem; color: var(--ink-soft); }
@@ -484,7 +608,7 @@ select.rb-scope-select {
 .rb-tooltip-target::after {
   content: attr(data-tooltip);
   position: absolute; bottom: calc(100% + 7px); left: 50%; transform: translateX(-50%);
-  background: var(--ink); color: #fff; font-size: 0.6875rem; font-weight: 600; line-height: 1.35;
+  background: var(--tooltip-bg); color: var(--tooltip-ink); font-size: 0.6875rem; font-weight: 600; line-height: 1.35;
   padding: 5px 9px; border-radius: var(--radius-sm); pointer-events: none;
   /* A short label ("Open: 12") fits on one line regardless; only a longer
      tip (like the drill-down/Simulate hints) actually reaches this cap and
@@ -496,7 +620,7 @@ select.rb-scope-select {
 }
 .rb-tooltip-target::before {
   content: ""; position: absolute; bottom: calc(100% + 3px); left: 50%; transform: translateX(-50%);
-  border: 4px solid transparent; border-top-color: var(--ink); pointer-events: none;
+  border: 4px solid transparent; border-top-color: var(--tooltip-bg); pointer-events: none;
   opacity: 0; transition: opacity 120ms ease; z-index: 40;
 }
 .rb-tooltip-target:hover::after, .rb-tooltip-target:hover::before { opacity: 1; }
@@ -510,7 +634,7 @@ select.rb-scope-select {
 .rb-tooltip-target--align-right::before { left: auto; right: 14px; transform: none; }
 
 .rb-chart-tooltip {
-  position: absolute; background: var(--ink); color: #fff; font-size: 0.6875rem; font-weight: 600;
+  position: absolute; background: var(--tooltip-bg); color: var(--tooltip-ink); font-size: 0.6875rem; font-weight: 600;
   padding: 4px 8px; border-radius: var(--radius-sm); white-space: nowrap; pointer-events: none;
   transform: translate(-50%, -100%); margin-top: -10px; z-index: 40;
 }
@@ -529,7 +653,7 @@ select.rb-scope-select {
    inline per bubble) tints the hover ring to match its own color. */
 .rb-bubble-wrap:hover .rb-bubble {
   transform: scale(1.12) translateY(-2px);
-  box-shadow: 0 8px 14px -2px rgba(16, 26, 28, 0.3), 0 0 0 1px var(--glow, transparent);
+  box-shadow: 0 8px 14px -2px rgba(16, 26, 28, 0.3), 0 0 8px var(--glow, transparent);
 }
 .rb-bubble-value { color: #fff; font-size: 0.75rem; font-weight: 700; font-family: "IBM Plex Mono", monospace; }
 .rb-bubble-label { font-size: 0.75rem; color: var(--ink-soft); text-align: center; max-width: 76px; }
@@ -549,7 +673,7 @@ select.rb-scope-select {
    is actually showing. */
 .rb-heatmap-cell-wrap:hover .rb-heatmap-cell {
   transform: scale(1.08) translateY(-1px);
-  box-shadow: 0 3px 6px rgba(16, 26, 28, 0.22), 0 0 0 1px var(--glow, transparent);
+  box-shadow: 0 3px 6px rgba(16, 26, 28, 0.22), 0 0 4px var(--glow, transparent);
 }
 /* A background pill (an earlier design) guaranteed contrast against any
    cell color, but its box made even a few px of html2canvas vertical
@@ -597,7 +721,7 @@ select.rb-scope-select {
    (set inline per segment) tints the hover ring to match its own color. */
 .rb-stacked-seg-wrap:hover .rb-stacked-seg {
   transform: scaleY(1.3) translateY(-2px);
-  box-shadow: 0 6px 10px -2px rgba(16, 26, 28, 0.26), 0 0 0 1px var(--glow, transparent);
+  box-shadow: 0 6px 10px -2px rgba(16, 26, 28, 0.26), 0 0 6px var(--glow, transparent);
 }
 /* Rounded ends via per-segment corner radius, not overflow:hidden on the
    bar — hidden overflow would clip each segment's hover tooltip too. */
@@ -736,7 +860,7 @@ select.rb-scope-select {
 .rb-fullscreen-overlay { position: fixed; inset: 0; background: rgba(16, 26, 28, 0.55); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 9999; }
 .rb-fullscreen-panel { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); width: 100%; max-width: 720px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; }
 .rb-fullscreen-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line); }
-.rb-fullscreen-head h3 { margin: 0; font-size: 1rem; font-weight: 600; }
+.rb-fullscreen-head h3 { margin: 0; font-size: 1rem; font-weight: 600; color: var(--ink); }
 .rb-fullscreen-body { padding: 24px; overflow-y: auto; }
 
 /* ================= Tables (Reports manifest + reused for Live Dashboard/Users) ================= */

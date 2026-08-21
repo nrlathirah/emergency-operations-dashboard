@@ -8,7 +8,21 @@
           <h1>Emergency Operations Dashboard</h1>
         </div>
       </div>
-      <div class="relative text-sm ml-auto" data-user-menu @click.stop>
+      <button
+        type="button"
+        @click="themeStore.toggle()"
+        class="app-theme-toggle ml-auto"
+        :title="themeStore.resolved === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+        :aria-label="themeStore.resolved === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+      >
+        <svg v-if="themeStore.resolved === 'dark'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4.5" /><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" />
+        </svg>
+        <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 14.5A8.5 8.5 0 019.5 4a8.5 8.5 0 1010.5 10.5z" />
+        </svg>
+      </button>
+      <div class="relative text-sm" data-user-menu @click.stop>
         <button
           type="button"
           @click="toggleUserMenu"
@@ -29,7 +43,7 @@
 
         <div
           v-if="showUserMenu"
-          class="absolute right-0 top-full mt-2 w-48 bg-white text-gray-800 rounded-lg shadow-lg py-1 text-sm"
+          class="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-gray-100 text-gray-800 rounded-lg shadow-lg py-1 text-sm"
           style="z-index: 9999;"
         >
           <!-- Only shown on mobile, where the trigger button hides the
@@ -93,7 +107,7 @@
 
     <!-- Edit Name modal -->
     <Modal v-if="showEditName">
-      <h3 class="text-base font-semibold mb-4">Edit Name</h3>
+      <h3 class="text-base font-semibold mb-4 text-gray-900">Edit Name</h3>
       <form @submit.prevent="handleEditName" class="space-y-3">
         <div>
           <label class="block text-xs text-gray-600 mb-1">Name</label>
@@ -124,7 +138,7 @@
 
     <!-- Change Password modal -->
     <Modal v-if="showChangePassword">
-      <h3 class="text-base font-semibold mb-4">Change Password</h3>
+      <h3 class="text-base font-semibold mb-4 text-gray-900">Change Password</h3>
       <form @submit.prevent="handleChangePassword" class="space-y-3">
         <div>
           <label class="block text-xs text-gray-600 mb-1">Current Password</label>
@@ -163,12 +177,24 @@
 import { computed, ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "./stores/auth";
+import { useThemeStore } from "./stores/theme";
 import { userService } from "./services/userService";
 import PasswordInput from "./components/PasswordInput.vue";
 import Modal from "./components/Modal.vue";
 
 const authStore = useAuthStore();
+const themeStore = useThemeStore();
 const router = useRouter();
+
+// Only matters while the store is in "system" mode — an explicit light/dark
+// pick is static and needs no listener. Keeps a live OS theme change (e.g.
+// the user's OS switches to dark at sunset) reflected without a reload.
+const darkMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+const handleSystemThemeChange = () => {
+  if (themeStore.mode === "system") themeStore.apply();
+};
+onMounted(() => darkMediaQuery.addEventListener("change", handleSystemThemeChange));
+onUnmounted(() => darkMediaQuery.removeEventListener("change", handleSystemThemeChange));
 
 const AGENCY_FULL_NAMES = {
   KKM: "Kementerian Kesihatan Malaysia",

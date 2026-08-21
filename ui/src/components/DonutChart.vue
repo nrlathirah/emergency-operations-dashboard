@@ -2,7 +2,7 @@
   <div class="rb-donut-wrap">
     <div class="rb-donut" @mouseleave="hovered = null">
       <svg viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="40" fill="none" stroke="var(--surface-2)" stroke-width="18" />
+        <circle cx="50" cy="50" r="40" fill="none" stroke="var(--surface-2)" stroke-width="22" />
         <g transform="rotate(-90 50 50)">
           <circle
             v-for="arc in arcs"
@@ -14,7 +14,7 @@
             fill="none"
             :stroke="arc.color"
             :style="{ '--glow': arc.color }"
-            stroke-width="18"
+            stroke-width="22"
             :stroke-dasharray="`${arc.dash} ${CIRCUMFERENCE - arc.dash}`"
             :stroke-dashoffset="-arc.offset"
             @mouseenter="hovered = arc"

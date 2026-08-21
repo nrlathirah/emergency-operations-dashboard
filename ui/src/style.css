@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Ties Tailwind's `dark:` variant to our own manual/system theme toggle
+   (a `data-theme` attribute on <html>, set by useTheme.js) instead of the
+   default bare `prefers-color-scheme` — so `dark:` utilities agree with
+   every design-system.css token, which uses the same attribute. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* "Incident Briefing Board" design tokens, applied at the Tailwind theme
    level so every existing teal / gray utility class across the app
    (buttons, borders, focus rings, chrome) picks up the new palette and
@@ -27,6 +33,36 @@
   --color-gray-900: #101a1c;
 }
 
+/* Dark-mode retint of the exact same scale — every `text-gray-*`,
+   `bg-gray-*`, `border-gray-*` and `text-teal-*`/`bg-teal-*` utility across
+   the app is compiled to `var(--color-gray-600)` etc (verified in the built
+   CSS output), so overriding these custom properties flips every one of
+   those utility classes app-wide with no per-component edits. The scale is
+   inverted (50 <-> 900) rather than just darkened, since existing markup
+   consistently uses low numbers for light surfaces/backgrounds and high
+   numbers for dark ink/text — see design-system.css's dark token block for
+   the equivalent --paper/--surface/--ink retint this mirrors. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-teal-50: #163634; --color-teal-100: #1c423f; --color-teal-200: #2a5551;
+    --color-teal-600: #35b4ae; --color-teal-700: #4fc9c2; --color-teal-950: #eaf4f3;
+
+    --color-gray-50: #111d1f; --color-gray-100: #1b2b2d; --color-gray-200: #24373a;
+    --color-gray-300: #33494c; --color-gray-400: #56706d; --color-gray-500: #93a6a2;
+    --color-gray-600: #b8cbc8; --color-gray-700: #cfe0dd; --color-gray-800: #e3f0ee;
+    --color-gray-900: #eaf3f2;
+  }
+}
+:root[data-theme="dark"] {
+  --color-teal-50: #163634; --color-teal-100: #1c423f; --color-teal-200: #2a5551;
+  --color-teal-600: #35b4ae; --color-teal-700: #4fc9c2; --color-teal-950: #eaf4f3;
+
+  --color-gray-50: #111d1f; --color-gray-100: #1b2b2d; --color-gray-200: #24373a;
+  --color-gray-300: #33494c; --color-gray-400: #56706d; --color-gray-500: #93a6a2;
+  --color-gray-600: #b8cbc8; --color-gray-700: #cfe0dd; --color-gray-800: #e3f0ee;
+  --color-gray-900: #eaf3f2;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -42,9 +78,26 @@
   *, ::before, ::after {
     border-color: var(--color-gray-200);
   }
+
+  /* Every plain <input>/<select>/<textarea> outside the rb-* token system
+     (login form, the modals in App.vue, UserManagement's forms) otherwise
+     falls back to the browser's default white form-control background —
+     invisible in light mode, but a glaring white box on a dark surface. */
+  input, select, textarea {
+    background-color: var(--surface, #fff);
+    color: var(--ink, inherit);
+  }
 }
 
 body {
   margin: 0;
   font-family: var(--font-sans);
+  /* Without this, any element that never sets its own `color` (several did
+     — .rb-brand h1, .rb-donut-center strong, .rb-fullscreen-head h3) falls
+     back to the browser's initial black in BOTH themes. Fine by coincidence
+     in light mode (black-on-white), invisible in dark mode. This is the
+     root-cause fix; those individual rules are also given their own
+     explicit color for clarity, but this is what actually closes the gap
+     for anything else relying on the same fallback. */
+  color: var(--ink);
 }

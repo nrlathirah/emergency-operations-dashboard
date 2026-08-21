@@ -1,6 +1,6 @@
 <template>
   <div class="fixed inset-0 flex items-center justify-center bg-black/40 px-4" style="z-index: 9999;">
-    <div class="bg-white rounded-lg shadow-xl p-6 w-full" :class="width === 'md' ? 'max-w-md' : 'max-w-sm'">
+    <div class="bg-white dark:bg-gray-100 rounded-lg shadow-xl p-6 w-full" :class="width === 'md' ? 'max-w-md' : 'max-w-sm'">
       <slot />
     </div>
   </div>

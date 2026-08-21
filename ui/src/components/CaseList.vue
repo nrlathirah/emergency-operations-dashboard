@@ -58,7 +58,7 @@
          rendered behind the map when the two overlap. -->
     <div
       v-if="simulateToast"
-      class="fixed top-4 right-4 bg-white border border-gray-200 shadow-lg rounded-lg text-sm max-w-xs"
+      class="fixed top-4 right-4 bg-white dark:bg-gray-100 border border-gray-200 shadow-lg rounded-lg text-sm max-w-xs"
       style="z-index: 9999;"
     >
       <div class="px-4 py-3">
@@ -112,8 +112,8 @@
         <tr
           class="transition-colors"
           :class="[
-            c.status === 'closed' ? 'opacity-60 group-hover:bg-gray-200' : 'group-hover:bg-blue-50',
-            { 'bg-yellow-100': highlightedCaseId === c.id },
+            c.status === 'closed' ? 'opacity-60 group-hover:bg-gray-200' : 'group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30',
+            { 'bg-yellow-100 dark:bg-amber-900/40': highlightedCaseId === c.id },
           ]"
         >
           <td class="rb-case-id">
@@ -138,8 +138,8 @@
         <tr
           class="transition-colors"
           :class="[
-            c.status === 'closed' ? 'opacity-60 group-hover:bg-gray-200' : 'group-hover:bg-blue-50',
-            highlightedCaseId === c.id ? 'bg-yellow-100' : 'bg-gray-50',
+            c.status === 'closed' ? 'opacity-60 group-hover:bg-gray-200' : 'group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30',
+            highlightedCaseId === c.id ? 'bg-yellow-100 dark:bg-amber-900/40' : 'bg-gray-50',
           ]"
         >
           <td colspan="4" class="pb-3 pt-1 px-3" style="max-width: none;">

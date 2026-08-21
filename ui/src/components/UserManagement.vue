@@ -83,7 +83,7 @@
             :key="u.id"
             :ref="(el) => setRowRef(u.id, el)"
             class="transition-colors duration-700"
-            :class="highlightedUserId === u.id ? 'bg-amber-100' : ''"
+            :class="highlightedUserId === u.id ? 'bg-amber-100 dark:bg-amber-900/40' : ''"
           >
             <td class="rb-case-id">
               <div class="flex items-center gap-2">
@@ -128,7 +128,7 @@
           v-if="actionMenuUser"
           data-action-menu
           @click.stop
-          class="fixed w-44 bg-white border border-gray-200 rounded-lg shadow-lg py-1 text-sm"
+          class="fixed w-44 bg-white dark:bg-gray-100 border border-gray-200 rounded-lg shadow-lg py-1 text-sm"
           :style="{ top: actionMenuPos.top + 'px', left: actionMenuPos.left + 'px', zIndex: 9999 }"
         >
           <template v-if="!confirmingDeactivate">
@@ -213,7 +213,7 @@
     <Teleport to="body">
       <div v-if="showActivityDrawer" class="fixed inset-0" style="z-index: 9999;">
         <div class="absolute inset-0 bg-black/40" @click="showActivityDrawer = false"></div>
-        <div class="absolute right-0 top-0 h-full w-full max-w-sm bg-white shadow-xl flex flex-col">
+        <div class="absolute right-0 top-0 h-full w-full max-w-sm bg-white dark:bg-gray-100 shadow-xl flex flex-col">
           <div class="px-4 py-3 border-b border-gray-100">
             <div class="flex items-center justify-between">
               <h3 class="text-sm font-semibold text-gray-800">
@@ -274,10 +274,10 @@
         v-if="showResetRequestsPopover"
         data-reset-requests-menu
         @click.stop
-        class="fixed w-80 bg-white border border-gray-200 rounded-xl shadow-xl text-sm overflow-hidden"
+        class="fixed w-80 bg-white dark:bg-gray-100 border border-gray-200 rounded-xl shadow-xl text-sm overflow-hidden"
         :style="{ top: resetRequestsPopoverPos.top + 'px', left: resetRequestsPopoverPos.left + 'px', zIndex: 9999 }"
       >
-        <div class="flex items-center justify-between px-4 py-3 bg-amber-50 border-b border-amber-100">
+        <div class="flex items-center justify-between px-4 py-3 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-100 dark:border-amber-800">
           <div class="flex items-center gap-2">
             <span class="text-base">🔔</span>
             <h4 class="text-sm font-semibold text-gray-800">Password Reset Requests</h4>
@@ -338,8 +338,8 @@
                 </div>
               </template>
               <template v-else>
-                <div class="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-                  <p class="text-amber-700 text-[11px] mb-2">Remove without resetting? They won't be notified — they'll have to try again or contact you directly.</p>
+                <div class="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2.5">
+                  <p class="text-amber-700 dark:text-amber-300 text-[11px] mb-2">Remove without resetting? They won't be notified — they'll have to try again or contact you directly.</p>
                   <div class="flex gap-2">
                     <button
                       type="button"
@@ -413,7 +413,7 @@
 
     <!-- Edit Name modal -->
     <Modal v-if="editNameTarget">
-      <h3 class="text-base font-semibold mb-4">Edit Name</h3>
+      <h3 class="text-base font-semibold mb-4 text-gray-900">Edit Name</h3>
       <form @submit.prevent="handleEditName" class="space-y-3">
         <div>
           <label class="block text-xs text-gray-600 mb-1">Name</label>
@@ -446,7 +446,7 @@
     <!-- Add User modal -->
     <Modal v-if="showAddUser">
       <template v-if="!createdCredentials">
-        <h3 class="text-base font-semibold mb-4">Add User</h3>
+        <h3 class="text-base font-semibold mb-4 text-gray-900">Add User</h3>
         <form @submit.prevent="handleAddUser" class="space-y-3">
           <div>
             <label class="block text-xs text-gray-600 mb-1">Name</label>
@@ -523,7 +523,7 @@
       <!-- Shown once, right after creation — this password is never
            retrievable again since it's only ever stored as a hash. -->
       <template v-else>
-        <h3 class="text-base font-semibold mb-1">✅ User Created</h3>
+        <h3 class="text-base font-semibold mb-1 text-gray-900">✅ User Created</h3>
         <p class="text-xs text-gray-500 mb-3">Share this temporary password with {{ createdCredentials.name }} now — it won't be shown again.</p>
         <div class="flex items-center gap-2 bg-gray-50 border rounded px-3 py-2 mb-2">
           <code class="flex-1 text-sm font-mono">{{ createdCredentials.password }}</code>
@@ -546,7 +546,7 @@
     <!-- Reset Password modal -->
     <Modal v-if="resetTarget">
       <template v-if="!resetCredentials">
-        <h3 class="text-base font-semibold mb-1">Reset Password</h3>
+        <h3 class="text-base font-semibold mb-1 text-gray-900">Reset Password</h3>
         <p class="text-xs text-gray-500 mb-4">Set a new temporary password for {{ resetTarget.name }}. They'll be required to set their own on next login.</p>
         <form @submit.prevent="handleResetPassword" class="space-y-3">
           <div>
@@ -580,7 +580,7 @@
       </template>
 
       <template v-else>
-        <h3 class="text-base font-semibold mb-1">✅ Password Reset</h3>
+        <h3 class="text-base font-semibold mb-1 text-gray-900">✅ Password Reset</h3>
         <p class="text-xs text-gray-500 mb-3">Share this temporary password with {{ resetTarget.name }} now — it won't be shown again.</p>
         <div class="flex items-center gap-2 bg-gray-50 border rounded px-3 py-2 mb-2">
           <code class="flex-1 text-sm font-mono">{{ resetCredentials }}</code>

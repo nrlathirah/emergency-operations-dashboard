@@ -1,6 +1,6 @@
 <template>
   <div class="flex items-center justify-center py-10 px-4">
-    <form @submit.prevent="handleSubmit" class="bg-white rounded-xl shadow-lg p-8 w-full max-w-sm space-y-5">
+    <form @submit.prevent="handleSubmit" class="bg-white dark:bg-gray-100 rounded-xl shadow-lg p-8 w-full max-w-sm space-y-5">
       <div class="text-center">
         <div class="text-4xl mb-2">🔒</div>
         <h1 class="text-lg font-semibold text-gray-900">Set a New Password</h1>
