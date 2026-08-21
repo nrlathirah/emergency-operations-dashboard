@@ -464,7 +464,7 @@
           <div>
             <label class="block text-xs text-gray-600 mb-1">Temporary Password</label>
             <div class="flex gap-2">
-              <PasswordInput v-model="form.password" required minlength="6" class="flex-1" />
+              <PasswordInput v-model="form.password" required minlength="8" class="flex-1" />
               <button
                 type="button"
                 @click="form.password = generateTempPassword()"
@@ -547,7 +547,7 @@
           <div>
             <label class="block text-xs text-gray-600 mb-1">New Temporary Password</label>
             <div class="flex gap-2">
-              <PasswordInput v-model="resetPasswordValue" required minlength="6" class="flex-1" />
+              <PasswordInput v-model="resetPasswordValue" required minlength="8" class="flex-1" />
               <button
                 type="button"
                 @click="resetPasswordValue = generateTempPassword()"

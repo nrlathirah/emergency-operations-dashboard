@@ -145,11 +145,11 @@
         </div>
         <div>
           <label class="block text-xs text-gray-600 mb-1">New Password</label>
-          <PasswordInput v-model="passwordForm.new" required minlength="6" />
+          <PasswordInput v-model="passwordForm.new" required minlength="8" />
         </div>
         <div>
           <label class="block text-xs text-gray-600 mb-1">Confirm New Password</label>
-          <PasswordInput v-model="passwordForm.confirm" required minlength="6" />
+          <PasswordInput v-model="passwordForm.confirm" required minlength="8" />
         </div>
 
         <p v-if="passwordError" class="text-red-600 text-xs">{{ passwordError }}</p>

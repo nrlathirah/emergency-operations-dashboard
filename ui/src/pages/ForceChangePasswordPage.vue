@@ -14,12 +14,12 @@
 
       <div>
         <label class="block text-sm text-gray-600 mb-1">New Password</label>
-        <PasswordInput v-model="newPassword" size="lg" required minlength="6" />
+        <PasswordInput v-model="newPassword" size="lg" required minlength="8" />
       </div>
 
       <div>
         <label class="block text-sm text-gray-600 mb-1">Confirm New Password</label>
-        <PasswordInput v-model="confirmPassword" size="lg" required minlength="6" />
+        <PasswordInput v-model="confirmPassword" size="lg" required minlength="8" />
       </div>
 
       <p v-if="error" class="text-red-600 text-sm text-center">{{ error }}</p>
