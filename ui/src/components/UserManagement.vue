@@ -5,35 +5,38 @@
         <h2>All Users</h2>
       </div>
       <div class="flex items-center gap-2 flex-wrap">
-        <button
-          type="button"
-          data-reset-requests-menu
-          @click="toggleResetRequestsPopover($event)"
-          class="relative rb-icon-btn"
-          style="width: auto; padding: 0 12px; gap: 6px; font-size: 0.8125rem; font-weight: 600;"
-          title="Reset Requests"
-        >
-          🔔 Reset Requests
-          <span
-            v-if="resetRequests.length"
-            class="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[10px] leading-none rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center"
-          >{{ resetRequests.length }}</span>
-        </button>
-        <button
-          type="button"
-          @click="openActivityDrawer()"
-          class="rb-icon-btn"
-          style="width: auto; padding: 0 12px; gap: 6px; font-size: 0.8125rem; font-weight: 600;"
-        >🕒 Activity</button>
-        <button
-          type="button"
-          :disabled="exporting || total === 0"
-          :title="total === 0 ? 'No users to export' : ''"
-          @click="handleExport"
-          class="rb-icon-btn"
-          style="width: auto; padding: 0 12px; gap: 6px; font-size: 0.8125rem; font-weight: 600;"
-        >{{ exporting ? "Generating…" : "Export to Excel" }}</button>
         <button type="button" @click="openAddUser" class="rb-btn-export">+ Add User</button>
+        <div class="relative" data-toolbar-menu>
+          <button
+            type="button"
+            @click="showToolbarMenu = !showToolbarMenu"
+            class="relative rb-icon-btn"
+            title="More options"
+            aria-label="More options"
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
+            <span
+              v-if="resetRequests.length"
+              class="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] leading-none rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center"
+            >{{ resetRequests.length }}</span>
+          </button>
+          <div v-if="showToolbarMenu" class="rb-chart-menu" style="min-width: 190px;">
+            <button type="button" @click="openResetRequestsFromMenu()" class="flex items-center justify-between w-full">
+              <span>🔔 Reset Requests</span>
+              <span
+                v-if="resetRequests.length"
+                class="bg-red-600 text-white text-[10px] leading-none rounded-full min-w-[16px] h-4 px-1 flex items-center justify-center"
+              >{{ resetRequests.length }}</span>
+            </button>
+            <button type="button" @click="showToolbarMenu = false; openActivityDrawer()">🕒 Activity</button>
+            <button
+              type="button"
+              :disabled="exporting || total === 0"
+              :title="total === 0 ? 'No users to export' : ''"
+              @click="showToolbarMenu = false; handleExport()"
+            >📊 {{ exporting ? "Generating…" : "Export to Excel" }}</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -264,150 +267,142 @@
       </div>
     </Teleport>
 
-    <!-- Password Reset Requests popover — a lightweight notice, not an
-         action drawer. Clicking a name scrolls to and highlights that row
-         in the table; the actual reset happens through the same "⋮" →
-         Reset Password flow used everywhere else, so there's one reset
-         path instead of two. -->
+    <!-- Password Reset Requests slide-over drawer — same shell as the
+         Activity drawer above, just with two tabs instead of one list.
+         Clicking a name scrolls to and highlights that row in the table;
+         the actual reset happens through the same "⋮" → Reset Password
+         flow used everywhere else, so there's one reset path instead of
+         two. -->
     <Teleport to="body">
-      <div
-        v-if="showResetRequestsPopover"
-        data-reset-requests-menu
-        @click.stop
-        class="fixed w-80 bg-white dark:bg-gray-100 border border-gray-200 rounded-xl shadow-xl text-sm overflow-hidden"
-        :style="{ top: resetRequestsPopoverPos.top + 'px', left: resetRequestsPopoverPos.left + 'px', zIndex: 9999 }"
-      >
-        <div class="flex items-center justify-between px-4 py-3 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-100 dark:border-amber-800">
-          <div class="flex items-center gap-2">
-            <span class="text-base">🔔</span>
-            <h4 class="text-sm font-semibold text-gray-800">Password Reset Requests</h4>
+      <div v-if="showResetRequestsPopover" class="fixed inset-0" style="z-index: 9999;">
+        <div class="absolute inset-0 bg-black/40" @click="closeResetRequestsPopover"></div>
+        <div class="absolute right-0 top-0 h-full w-full max-w-sm bg-white dark:bg-gray-100 shadow-xl flex flex-col">
+          <div class="px-4 py-3 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-semibold text-gray-800">🔔 Password Reset Requests</h3>
+              <button
+                type="button"
+                @click="closeResetRequestsPopover"
+                class="text-gray-400 hover:text-gray-600 cursor-pointer text-lg leading-none"
+                aria-label="Close"
+              >✕</button>
+            </div>
+            <div class="flex gap-4 mt-2 text-xs">
+              <button
+                type="button"
+                @click="resetRequestsTab = 'pending'"
+                class="font-medium cursor-pointer transition pb-1"
+                :class="resetRequestsTab === 'pending' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700'"
+              >Pending{{ resetRequests.length ? ` (${resetRequests.length})` : "" }}</button>
+              <button
+                type="button"
+                @click="openHistoryTab"
+                class="font-medium cursor-pointer transition pb-1"
+                :class="resetRequestsTab === 'history' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700'"
+              >History</button>
+            </div>
           </div>
-          <button
-            type="button"
-            @click="closeResetRequestsPopover"
-            class="text-gray-400 hover:text-gray-600 cursor-pointer text-base leading-none"
-            aria-label="Close"
-          >✕</button>
-        </div>
 
-        <div class="flex border-b border-gray-100 text-xs">
-          <button
-            type="button"
-            @click="resetRequestsTab = 'pending'"
-            class="flex-1 px-3 py-2 font-medium cursor-pointer transition"
-            :class="resetRequestsTab === 'pending' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700'"
-          >Pending{{ resetRequests.length ? ` (${resetRequests.length})` : "" }}</button>
-          <button
-            type="button"
-            @click="openHistoryTab"
-            class="flex-1 px-3 py-2 font-medium cursor-pointer transition"
-            :class="resetRequestsTab === 'history' ? 'text-teal-600 border-b-2 border-teal-600' : 'text-gray-500 hover:text-gray-700'"
-          >History</button>
-        </div>
+          <div class="flex-1 overflow-y-auto px-4 py-3">
+            <template v-if="resetRequestsTab === 'pending'">
+              <p v-if="resetRequestsError" class="text-xs text-red-500 mb-3">
+                ⚠️ {{ resetRequestsError }}
+                <button type="button" @click="fetchResetRequests" class="underline cursor-pointer">Retry</button>
+              </p>
 
-        <template v-if="resetRequestsTab === 'pending'">
-          <p v-if="resetRequestsError" class="text-xs text-red-500 px-4 py-3">
-            ⚠️ {{ resetRequestsError }}
-            <button type="button" @click="fetchResetRequests" class="underline cursor-pointer">Retry</button>
-          </p>
+              <ul v-if="resetRequests.length" class="space-y-3 text-xs">
+                <li v-for="req in resetRequests" :key="req.id" class="pb-3 border-b border-gray-50 last:border-0">
+                  <template v-if="confirmingDismissId !== req.id">
+                    <div class="flex items-start gap-3">
+                      <button
+                        type="button"
+                        @click="scrollToUser(req)"
+                        class="flex items-start gap-3 flex-1 min-w-0 text-left cursor-pointer group"
+                      >
+                        <span class="flex-shrink-0 w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-semibold">
+                          {{ (req.User?.name || req.email).charAt(0).toUpperCase() }}
+                        </span>
+                        <span class="min-w-0">
+                          <span class="block font-medium text-gray-800 truncate group-hover:text-teal-600 transition">{{ req.User?.name || req.email }}</span>
+                          <span class="block text-gray-400 mt-0.5">Requested {{ formatDate(req.createdAt) }}</span>
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        @click="confirmingDismissId = req.id"
+                        title="Remove request"
+                        aria-label="Remove request"
+                        class="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-gray-300 hover:text-red-600 hover:bg-red-50 cursor-pointer transition"
+                      >✕</button>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2.5">
+                      <p class="text-amber-700 dark:text-amber-300 mb-2">Remove without resetting? They won't be notified — they'll have to try again or contact you directly.</p>
+                      <div class="flex gap-2">
+                        <button
+                          type="button"
+                          :disabled="processingRequestId === req.id"
+                          @click="handleDismissRequest(req)"
+                          class="px-2.5 py-1 bg-red-600 text-white rounded font-medium hover:bg-red-700 cursor-pointer disabled:opacity-60 disabled:cursor-default transition"
+                        >{{ processingRequestId === req.id ? "…" : "Yes, Remove" }}</button>
+                        <button
+                          type="button"
+                          @click="confirmingDismissId = null"
+                          class="px-2.5 py-1 border border-gray-300 text-gray-500 rounded hover:bg-gray-50 cursor-pointer transition"
+                        >Cancel</button>
+                      </div>
+                    </div>
+                  </template>
+                </li>
+              </ul>
+              <p v-else-if="!resetRequestsError" class="text-xs text-gray-400">All caught up — no pending requests.</p>
+              <p v-if="resetRequests.length" class="text-[11px] text-gray-400 mt-3">Click a name to locate them in the table below.</p>
+            </template>
 
-          <ul v-if="resetRequests.length" class="max-h-80 overflow-y-auto divide-y divide-gray-50">
-            <li v-for="req in resetRequests" :key="req.id" class="px-4 py-3">
-              <template v-if="confirmingDismissId !== req.id">
-                <div class="flex items-start gap-3">
-                  <button
-                    type="button"
-                    @click="scrollToUser(req)"
-                    class="flex items-start gap-3 flex-1 min-w-0 text-left cursor-pointer group"
-                  >
-                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-semibold">
+            <template v-else>
+              <p v-if="resetHistoryError" class="text-xs text-red-500 mb-3">
+                ⚠️ {{ resetHistoryError }}
+                <button type="button" @click="fetchResetRequestHistory()" class="underline cursor-pointer">Retry</button>
+              </p>
+
+              <ul v-if="resetHistory.length" class="space-y-3 text-xs">
+                <li v-for="req in resetHistory" :key="req.id" class="pb-3 border-b border-gray-50 last:border-0">
+                  <div class="flex items-start gap-3">
+                    <span class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-semibold">
                       {{ (req.User?.name || req.email).charAt(0).toUpperCase() }}
                     </span>
-                    <span class="min-w-0">
-                      <span class="block font-medium text-gray-800 truncate group-hover:text-teal-600 transition">{{ req.User?.name || req.email }}</span>
-                      <span class="block text-[11px] text-gray-400">Requested {{ formatDate(req.createdAt) }}</span>
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    @click="confirmingDismissId = req.id"
-                    title="Remove request"
-                    aria-label="Remove request"
-                    class="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full text-gray-300 hover:text-red-600 hover:bg-red-50 cursor-pointer transition"
-                  >✕</button>
-                </div>
-              </template>
-              <template v-else>
-                <div class="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2.5">
-                  <p class="text-amber-700 dark:text-amber-300 text-[11px] mb-2">Remove without resetting? They won't be notified — they'll have to try again or contact you directly.</p>
-                  <div class="flex gap-2">
-                    <button
-                      type="button"
-                      :disabled="processingRequestId === req.id"
-                      @click="handleDismissRequest(req)"
-                      class="px-2.5 py-1 bg-red-600 text-white rounded text-[11px] font-medium hover:bg-red-700 cursor-pointer disabled:opacity-60 disabled:cursor-default transition"
-                    >{{ processingRequestId === req.id ? "…" : "Yes, Remove" }}</button>
-                    <button
-                      type="button"
-                      @click="confirmingDismissId = null"
-                      class="px-2.5 py-1 border border-gray-300 text-gray-500 rounded text-[11px] hover:bg-gray-50 cursor-pointer transition"
-                    >Cancel</button>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-2">
+                        <span class="font-medium text-gray-800 truncate">{{ req.User?.name || req.email }}</span>
+                        <span
+                          class="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
+                          :class="req.status === 'resolved' ? 'bg-teal-100 text-teal-700' : 'bg-gray-100 text-gray-500'"
+                        >{{ req.status === "resolved" ? "Reset" : "Removed" }}</span>
+                      </div>
+                      <div class="text-gray-400 mt-0.5">Requested {{ formatDate(req.createdAt) }}</div>
+                      <div class="text-gray-400">By {{ req.ResolvedByUser?.name || "Unknown" }} · {{ formatDate(req.resolvedAt) }}</div>
+                    </div>
                   </div>
-                </div>
-              </template>
-            </li>
-          </ul>
-          <div v-else-if="!resetRequestsError" class="text-center px-4 py-8">
-            <div class="text-2xl mb-1">✅</div>
-            <p class="text-xs text-gray-400">All caught up — no pending requests.</p>
+                </li>
+              </ul>
+              <p v-else-if="!resetHistoryError" class="text-xs text-gray-400">No history yet.</p>
+            </template>
           </div>
 
-          <div v-if="resetRequests.length" class="px-4 py-2 bg-gray-50 border-t border-gray-100">
-            <p class="text-[10px] text-gray-400">Click a name to locate them in the table below.</p>
+          <div v-if="(resetRequestsTab === 'pending' && resetRequests.length) || (resetRequestsTab === 'history' && resetHistory.length)" class="px-4 py-3 border-t border-gray-100 text-center">
+            <template v-if="resetRequestsTab === 'history'">
+              <p class="text-[11px] text-gray-400 mb-2">Showing {{ resetHistory.length }} of {{ resetHistoryTotal }}</p>
+              <button
+                v-if="resetHistory.length < resetHistoryTotal"
+                type="button"
+                :disabled="resetHistoryLoadingMore"
+                @click="loadMoreResetHistory"
+                class="px-3 py-1.5 border rounded text-xs hover:bg-gray-50 cursor-pointer disabled:opacity-60 disabled:cursor-default"
+              >{{ resetHistoryLoadingMore ? "Loading…" : "Load More" }}</button>
+            </template>
           </div>
-        </template>
-
-        <template v-else>
-          <p v-if="resetHistoryError" class="text-xs text-red-500 px-4 py-3">
-            ⚠️ {{ resetHistoryError }}
-            <button type="button" @click="fetchResetRequestHistory()" class="underline cursor-pointer">Retry</button>
-          </p>
-
-          <ul v-if="resetHistory.length" class="max-h-80 overflow-y-auto divide-y divide-gray-50">
-            <li v-for="req in resetHistory" :key="req.id" class="px-4 py-3 text-xs">
-              <div class="flex items-start gap-3">
-                <span class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-semibold">
-                  {{ (req.User?.name || req.email).charAt(0).toUpperCase() }}
-                </span>
-                <div class="min-w-0 flex-1">
-                  <div class="flex items-center gap-2">
-                    <span class="font-medium text-gray-800 truncate">{{ req.User?.name || req.email }}</span>
-                    <span
-                      class="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
-                      :class="req.status === 'resolved' ? 'bg-teal-100 text-teal-700' : 'bg-gray-100 text-gray-500'"
-                    >{{ req.status === "resolved" ? "Reset" : "Removed" }}</span>
-                  </div>
-                  <div class="text-gray-400 mt-0.5">Requested {{ formatDate(req.createdAt) }}</div>
-                  <div class="text-gray-400">By {{ req.ResolvedByUser?.name || "Unknown" }} · {{ formatDate(req.resolvedAt) }}</div>
-                </div>
-              </div>
-            </li>
-          </ul>
-          <div v-else-if="!resetHistoryError" class="text-center px-4 py-8">
-            <p class="text-xs text-gray-400">No history yet.</p>
-          </div>
-
-          <div v-if="resetHistory.length" class="px-4 py-2 bg-gray-50 border-t border-gray-100 text-center">
-            <p class="text-[11px] text-gray-400 mb-2">Showing {{ resetHistory.length }} of {{ resetHistoryTotal }}</p>
-            <button
-              v-if="resetHistory.length < resetHistoryTotal"
-              type="button"
-              :disabled="resetHistoryLoadingMore"
-              @click="loadMoreResetHistory"
-              class="px-3 py-1.5 border rounded text-xs hover:bg-gray-50 cursor-pointer disabled:opacity-60 disabled:cursor-default"
-            >{{ resetHistoryLoadingMore ? "Loading…" : "Load More" }}</button>
-          </div>
-        </template>
+        </div>
       </div>
     </Teleport>
 
@@ -715,8 +710,12 @@ const openActivityDrawer = (user = null) => {
   fetchAuditLog();
 };
 
+const showToolbarMenu = ref(false);
+const handleOutsideToolbarMenuClick = (e) => {
+  if (!e.target.closest("[data-toolbar-menu]")) showToolbarMenu.value = false;
+};
+
 const showResetRequestsPopover = ref(false);
-const resetRequestsPopoverPos = ref({ top: 0, left: 0 });
 const resetRequests = ref([]);
 const resetRequestsError = ref("");
 const processingRequestId = ref(null);
@@ -731,17 +730,22 @@ const fetchResetRequests = async () => {
   }
 };
 
-const toggleResetRequestsPopover = (event) => {
+const toggleResetRequestsPopover = () => {
   if (showResetRequestsPopover.value) {
     showResetRequestsPopover.value = false;
     return;
   }
   confirmingDismissId.value = null;
   resetRequestsTab.value = "pending";
-  const rect = event.currentTarget.getBoundingClientRect();
-  resetRequestsPopoverPos.value = { top: rect.bottom + 4, left: rect.left };
   showResetRequestsPopover.value = true;
   fetchResetRequests();
+};
+
+// The "Reset Requests" menu item lives inside the toolbar's "⋮" dropdown —
+// close that first, then open the drawer.
+const openResetRequestsFromMenu = () => {
+  showToolbarMenu.value = false;
+  toggleResetRequestsPopover();
 };
 
 const resetRequestsTab = ref("pending");
@@ -778,10 +782,6 @@ const openHistoryTab = () => {
 
 const closeResetRequestsPopover = () => {
   showResetRequestsPopover.value = false;
-};
-
-const handleOutsideResetRequestsClick = (e) => {
-  if (!e.target.closest("[data-reset-requests-menu]")) closeResetRequestsPopover();
 };
 
 const handleDismissRequest = async (req) => {
@@ -994,14 +994,12 @@ const handleOutsideMenuClick = (e) => {
 onMounted(() => {
   window.addEventListener("click", handleOutsideMenuClick);
   window.addEventListener("scroll", closeActionMenu, true);
-  window.addEventListener("click", handleOutsideResetRequestsClick);
-  window.addEventListener("scroll", closeResetRequestsPopover, true);
+  window.addEventListener("click", handleOutsideToolbarMenuClick);
 });
 onUnmounted(() => {
   window.removeEventListener("click", handleOutsideMenuClick);
   window.removeEventListener("scroll", closeActionMenu, true);
-  window.removeEventListener("click", handleOutsideResetRequestsClick);
-  window.removeEventListener("scroll", closeResetRequestsPopover, true);
+  window.removeEventListener("click", handleOutsideToolbarMenuClick);
 });
 
 const showAddUser = ref(false);

@@ -206,14 +206,6 @@
   .app-account { flex: none; }
 }
 
-.app-theme-toggle {
-  display: grid; place-items: center; width: 32px; height: 32px; flex: none;
-  border: none; border-radius: 50%; background: rgba(255,255,255,.08); color: var(--header-ink);
-  cursor: pointer; transition: background 120ms ease;
-}
-.app-theme-toggle:hover { background: rgba(255,255,255,.16); }
-.app-theme-toggle svg { width: 17px; height: 17px; }
-
 .app-account { display: flex; align-items: center; gap: 8px; }
 .app-account-info { text-align: right; line-height: 1.25; display: flex; flex-direction: column; gap: 5px; }
 /* Hidden below 640px so the header keeps just the avatar on a phone width —
@@ -426,6 +418,16 @@ select.rb-scope-select {
 
 .rb-chart-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; align-items: stretch; }
 .rb-chart-grid > .rb-panel.rb-span-2 { grid-column: 1 / -1; }
+/* A grid item's default automatic minimum width is its content's min-content
+   size, not 0 — so on mobile, where every panel collapses into ONE shared
+   column (below), a single wide-content panel (e.g. the donut's legend
+   text) forces that whole column, and therefore every OTHER panel sharing
+   it, to stretch to match — even ones with nothing wide in them. That's
+   what was pushing the whole page into horizontal overflow starting at
+   whichever panel happened to need the most room. min-width: 0 lets each
+   panel shrink to the track's actual size instead; anything inside that
+   still doesn't fit (e.g. a legend row) wraps or ellipsizes on its own. */
+.rb-chart-grid > .rb-panel { min-width: 0; }
 
 .rb-bar-list { display: flex; flex-direction: column; gap: 10px; position: relative; }
 .rb-bar-row { display: grid; grid-template-columns: 96px 1fr 44px; align-items: center; gap: 10px; }
@@ -660,7 +662,14 @@ select.rb-scope-select {
 
 /* ================= Heatmap (Cases by Hour of Day) ================= */
 .rb-heatmap-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 4px; }
-.rb-heatmap-cell-wrap { aspect-ratio: 1; }
+/* min-width: 0 for the same reason as .rb-chart-grid > .rb-panel above —
+   the labeled cells (12am/6am/12pm/6pm) contain unbreakable text wider
+   than a 1fr column on a narrow phone, which otherwise forces that column
+   (and everything sharing the grid) wider than the container, pushing the
+   whole chart into horizontal overflow. The label just clips/overlaps
+   slightly on the very narrowest screens instead — every cell is still
+   fully hoverable and correctly colored either way. */
+.rb-heatmap-cell-wrap { aspect-ratio: 1; min-width: 0; }
 .rb-heatmap-cell {
   width: 100%; height: 100%; border-radius: 4px; display: flex; align-items: flex-end; justify-content: center;
   padding-bottom: 2px; transition: transform 100ms ease, box-shadow 160ms ease;

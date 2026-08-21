@@ -5,13 +5,14 @@
         <h2>Case History</h2>
         <p class="rb-panel-meta">Closed cases only — see the Live Dashboard for cases still in progress.</p>
       </div>
-      <button
-        type="button"
-        :disabled="exporting"
-        @click="handleExport"
-        class="rb-icon-btn"
-        style="width: auto; padding: 0 12px; gap: 6px; font-size: 0.8125rem; font-weight: 600;"
-      >{{ exporting ? "Generating…" : "Export to Excel" }}</button>
+      <div class="relative" data-table-menu>
+        <button type="button" @click="menuOpen = !menuOpen" class="rb-icon-btn" title="More options" aria-label="More options">
+          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
+        </button>
+        <div v-if="menuOpen" class="rb-chart-menu">
+          <button type="button" :disabled="exporting" @click="menuOpen = false; handleExport()">{{ exporting ? "Generating…" : "Export to Excel" }}</button>
+        </div>
+      </div>
     </div>
     <p v-if="exportError" class="text-red-600 text-xs mb-3">{{ exportError }}</p>
 
@@ -99,7 +100,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { reportService } from "../services/reportService";
 import { buildTimestampedFilename } from "../utils/chartExport";
 import LoadingSpinner from "./LoadingSpinner.vue";
@@ -136,6 +137,10 @@ const loading = ref(true);
 const error = ref(null);
 const exporting = ref(false);
 const exportError = ref("");
+const menuOpen = ref(false);
+const handleOutsideClick = (e) => {
+  if (!e.target.closest("[data-table-menu]")) menuOpen.value = false;
+};
 
 const page = ref(1);
 const pageSize = ref(10);
@@ -281,5 +286,9 @@ watch(
 );
 watch(page, fetchPage);
 
-onMounted(fetchPage);
+onMounted(() => {
+  fetchPage();
+  window.addEventListener("click", handleOutsideClick);
+});
+onUnmounted(() => window.removeEventListener("click", handleOutsideClick));
 </script>
