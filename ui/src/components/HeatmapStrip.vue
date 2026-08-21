@@ -11,7 +11,7 @@
         class="rb-heatmap-cell-wrap rb-tooltip-target"
         :data-tooltip="`${formatHour(cell.hour)}: ${cell.count} case${cell.count === 1 ? '' : 's'}`"
       >
-        <div class="rb-heatmap-cell" :style="{ background: cellColor(cell.count) }">
+        <div class="rb-heatmap-cell" :style="{ background: cellColor(cell.count), '--glow': cellColor(cell.count) }">
           <span v-if="cell.hour % 6 === 0" class="rb-heatmap-hour">{{ formatHour(cell.hour) }}</span>
         </div>
       </div>

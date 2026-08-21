@@ -19,7 +19,7 @@
             @mousemove="trackMouse"
             @mouseleave="hovered = null"
           >
-            <span class="rb-stacked-seg" :style="{ background: seg.color }"></span>
+            <span class="rb-stacked-seg" :style="{ background: seg.color, '--glow': seg.color }"></span>
           </span>
         </div>
         <span class="rb-stacked-row-total tabular">{{ row.total }}</span>

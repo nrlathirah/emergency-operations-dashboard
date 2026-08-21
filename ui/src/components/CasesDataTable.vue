@@ -2,31 +2,33 @@
   <div class="rb-panel">
     <div class="rb-panel-head">
       <div>
-        <span class="rb-panel-tag">Manifest</span>
-        <h2>
-          Case History
-          <span
-            class="rb-tooltip-target"
-            style="display: inline-flex; color: var(--muted); font-size: 0.75rem; vertical-align: 2px;"
-            data-tooltip="Tip: click a bar or segment on the Priority, Category, or Agency charts above to filter this table"
-          >ⓘ</span>
-        </h2>
+        <h2>Case History</h2>
         <p class="rb-panel-meta">Closed cases only — see the Live Dashboard for cases still in progress.</p>
       </div>
-      <div class="relative" data-table-menu>
-        <button type="button" @click="menuOpen = !menuOpen" class="rb-icon-btn" title="More options" aria-label="More options">
-          <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6" /><circle cx="12" cy="12" r="1.6" /><circle cx="19" cy="12" r="1.6" /></svg>
-        </button>
-        <div v-if="menuOpen" class="rb-chart-menu">
-          <button type="button" :disabled="exporting" @click="handleExport">{{ exporting ? "Generating…" : "Export to Excel" }}</button>
-          <button type="button" @click="handlePrint">Print</button>
-        </div>
-      </div>
+      <button
+        type="button"
+        :disabled="exporting"
+        @click="handleExport"
+        class="rb-icon-btn"
+        style="width: auto; padding: 0 12px; gap: 6px; font-size: 0.8125rem; font-weight: 600;"
+      >{{ exporting ? "Generating…" : "Export to Excel" }}</button>
     </div>
     <p v-if="exportError" class="text-red-600 text-xs mb-3">{{ exportError }}</p>
 
     <div class="rb-filter-row">
-      <input class="rb-search-input" type="search" placeholder="Search case ID or location…" @input="onSearchInput" />
+      <input v-model="searchInput" class="rb-search-input" type="search" placeholder="Search case ID or location…" />
+      <!-- Only for super_admin, and only while the page-level Agency select
+           above the charts is itself on "All Agencies" — the whole point of
+           this one is narrowing the table without losing the all-agency
+           view everywhere else; once the page is already scoped to a single
+           agency there's only one real choice left here, so it'd just be a
+           redundant control taking up space. -->
+      <select v-if="isSuperAdmin && !props.agencyCode" v-model="agencyFilter" class="rb-scope-select">
+        <option value="">All Agencies</option>
+        <option value="KKM">KKM</option>
+        <option value="PDRM">PDRM</option>
+        <option value="JBPM">JBPM</option>
+      </select>
       <select v-model="categoryFilter" class="rb-scope-select">
         <option value="">All Categories</option>
         <option v-for="c in CATEGORY_OPTIONS" :key="c" :value="c">{{ capitalize(c) }}</option>
@@ -37,10 +39,7 @@
         <option value="medium">Medium</option>
         <option value="high">High</option>
       </select>
-      <span v-if="drillFilter" class="rb-filter-chip">
-        Filtered by: {{ drillFilterLabel }}
-        <button type="button" @click="clearDrill" aria-label="Clear filter">×</button>
-      </span>
+      <button v-if="hasActiveFilters" type="button" @click="clearFilters" class="rb-reset-link">✕ Reset Filters</button>
     </div>
 
     <ErrorBanner v-if="error" :message="error" @retry="fetchPage" />
@@ -60,7 +59,10 @@
         </thead>
         <tbody v-if="cases.length === 0">
           <tr>
-            <td :colspan="isSuperAdmin ? 7 : 6" class="rb-empty">No closed cases found.</td>
+            <td :colspan="isSuperAdmin ? 7 : 6" class="rb-empty">
+              <p>No closed cases found{{ hasActiveFilters ? " matching your filters" : "" }}.</p>
+              <button v-if="hasActiveFilters" type="button" @click="clearFilters" class="rb-reset-link mt-2">Clear filters</button>
+            </td>
           </tr>
         </tbody>
         <tbody v-else>
@@ -97,7 +99,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { reportService } from "../services/reportService";
 import { buildTimestampedFilename } from "../utils/chartExport";
 import LoadingSpinner from "./LoadingSpinner.vue";
@@ -112,13 +114,7 @@ const props = defineProps({
   // which fetches the earliest case on record so this never has to fall
   // back to a vague "All Time" placeholder.
   dateRangeLabel: { type: String, default: null },
-  // Set by ReportsPage when a priority/category chart segment is clicked —
-  // { type: 'priority'|'category', value }. Pre-fills the matching select
-  // below and shows a dismissible chip; clearing it emits back up so the
-  // parent can reset its own drill state too.
-  drillFilter: { type: Object, default: null },
 });
-const emit = defineEmits(["clear-drill-filter"]);
 
 // "Case History" — closed/resolved cases only. Cases still in progress
 // belong on the Live Dashboard, not here, so there's no status filter to
@@ -140,15 +136,39 @@ const loading = ref(true);
 const error = ref(null);
 const exporting = ref(false);
 const exportError = ref("");
-const menuOpen = ref(false);
 
 const page = ref(1);
 const pageSize = ref(10);
 const sortField = ref(null);
 const sortOrder = ref("ASC");
 const search = ref("");
+const searchInput = ref("");
 const categoryFilter = ref("");
 const priorityFilter = ref("");
+const agencyFilter = ref("");
+
+const hasActiveFilters = computed(
+  () => !!(searchInput.value || categoryFilter.value || priorityFilter.value || agencyFilter.value)
+);
+const clearFilters = () => {
+  searchInput.value = "";
+  categoryFilter.value = "";
+  priorityFilter.value = "";
+  agencyFilter.value = "";
+};
+
+// A local pick here overrides the page-level scope just for this table
+// (see the template comment on the select) — falling back to whatever the
+// page passed down when the table's own dropdown is left on "All Agencies".
+const effectiveAgencyCode = computed(() => agencyFilter.value || props.agencyCode);
+
+// If the page-level scope itself changes (the Agency select above the
+// charts), a leftover local override here would silently keep showing a
+// now-unrelated agency's cases instead of following the page like every
+// other chart does — resetting keeps this table in sync by default, same
+// as before this dropdown existed, with any override being a fresh choice
+// made against wherever the page currently is.
+watch(() => props.agencyCode, () => (agencyFilter.value = ""));
 
 const DEFAULT_SORT_FIELD = "createdAt";
 const DEFAULT_SORT_ORDER = "DESC";
@@ -156,37 +176,12 @@ const DEFAULT_SORT_ORDER = "DESC";
 const capitalize = (s) => s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ");
 
 let searchDebounceTimer = null;
-const onSearchInput = (e) => {
+watch(searchInput, (value) => {
   clearTimeout(searchDebounceTimer);
-  const value = e.target.value;
   searchDebounceTimer = setTimeout(() => {
     search.value = value;
   }, 300);
-};
-
-const drillFilterLabel = computed(() => {
-  if (!props.drillFilter) return "";
-  const dimLabel = props.drillFilter.type === "priority" ? "Priority" : "Category";
-  return `${dimLabel}: ${capitalize(props.drillFilter.value)}`;
 });
-
-const clearDrill = () => {
-  categoryFilter.value = "";
-  priorityFilter.value = "";
-  emit("clear-drill-filter");
-};
-
-// A drill-down click from a chart pre-fills the matching select — it's a
-// starting point the user can still adjust or clear, not a locked filter.
-watch(
-  () => props.drillFilter,
-  (filter) => {
-    if (!filter) return;
-    if (filter.type === "priority") priorityFilter.value = filter.value;
-    if (filter.type === "category") categoryFilter.value = filter.value;
-  },
-  { immediate: true }
-);
 
 const toggleSort = (field) => {
   if (sortField.value !== field) {
@@ -228,7 +223,7 @@ const fetchPage = async () => {
   try {
     error.value = null;
     const result = await reportService.getCasesTable({
-      agencyCode: props.agencyCode || undefined,
+      agencyCode: effectiveAgencyCode.value || undefined,
       status: STATUS,
       sort: sortField.value || undefined,
       order: sortField.value ? sortOrder.value : undefined,
@@ -254,11 +249,10 @@ const fetchPage = async () => {
 // table is showing you", not a separate, unexplained bulk-export action.
 const handleExport = async () => {
   if (exporting.value) return;
-  menuOpen.value = false;
   exporting.value = true;
   exportError.value = "";
   try {
-    const blob = await reportService.downloadCasesExcel(props.agencyCode, STATUS, {
+    const blob = await reportService.downloadCasesExcel(effectiveAgencyCode.value, STATUS, {
       startDate: props.startDate,
       endDate: props.endDate,
       search: search.value,
@@ -278,71 +272,8 @@ const handleExport = async () => {
   }
 };
 
-// Prints whatever page of the table is currently loaded, not the full
-// filtered set — a quick printout of what's on screen, distinct from the
-// full bulk Excel export above.
-const handlePrint = () => {
-  menuOpen.value = false;
-  const rowsHtml = cases.value
-    .map(
-      (c) => `<tr>
-        <td>${c.caseNumber}</td>
-        ${props.isSuperAdmin ? `<td>${c.Agency?.code || "—"}</td>` : ""}
-        <td>${capitalize(c.category)}</td>
-        <td>${capitalize(c.priority)}</td>
-        <td>${c.location}</td>
-        <td>${formatDate(c.createdAt)}</td>
-        <td>${formatDuration(c.createdAt, c.updatedAt)}</td>
-      </tr>`
-    )
-    .join("");
-  const agencyHeader = props.isSuperAdmin ? "<th>Agency</th>" : "";
-  // Every active filter shows here too — a printout with no context about
-  // what's been narrowed down is easy to misread as "all cases."
-  const scopeParts = [
-    `Agency: ${props.agencyCode || "All Agencies"}`,
-    `Date Range: ${props.dateRangeLabel || "All Time"}`,
-  ];
-  if (search.value) scopeParts.push(`Search: "${search.value}"`);
-  if (categoryFilter.value) scopeParts.push(`Category: ${capitalize(categoryFilter.value)}`);
-  if (priorityFilter.value) scopeParts.push(`Priority: ${capitalize(priorityFilter.value)}`);
-  scopeParts.push(
-    `Generated: ${new Date().toLocaleString("en-MY", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}`
-  );
-
-  const win = window.open("", "_blank", "width=800,height=700");
-  if (!win) return;
-  win.document.write(`<!doctype html><html><head><title>Case History</title>
-    <style>
-      body { font-family: system-ui, sans-serif; padding: 28px; color: #101A1C; }
-      h1 { font-size: 17px; margin: 0 0 6px; }
-      p.scope { font-size: 11px; color: #64716F; margin: 0 0 16px; }
-      table { width: 100%; border-collapse: collapse; }
-      th, td { border: 1px solid #D8E3E0; padding: 7px 12px; text-align: left; font-size: 12px; }
-      th { background: #E7EFED; }
-    </style>
-  </head><body>
-    <h1>Case History — Closed Cases</h1>
-    <p class="scope">${scopeParts.join(" · ")}</p>
-    <table><thead><tr><th>Case ID</th>${agencyHeader}<th>Category</th><th>Priority</th><th>Location</th><th>Created</th><th>Resolved In</th></tr></thead>
-    <tbody>${rowsHtml}</tbody></table>
-  </body></html>`);
-  win.document.close();
-  win.focus();
-  setTimeout(() => {
-    win.print();
-    win.close();
-  }, 250);
-};
-
-const handleOutsideClick = (e) => {
-  if (!e.target.closest("[data-table-menu]")) menuOpen.value = false;
-};
-onMounted(() => window.addEventListener("click", handleOutsideClick));
-onUnmounted(() => window.removeEventListener("click", handleOutsideClick));
-
 watch(
-  [() => props.agencyCode, () => props.startDate, () => props.endDate, sortField, sortOrder, pageSize, search, categoryFilter, priorityFilter],
+  [effectiveAgencyCode, () => props.startDate, () => props.endDate, sortField, sortOrder, pageSize, search, categoryFilter, priorityFilter],
   () => {
     page.value = 1;
     fetchPage();

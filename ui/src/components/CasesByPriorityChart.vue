@@ -1,6 +1,5 @@
 <template>
   <ChartFrame
-    tag="Distribution"
     title="Cases by Priority"
     :rows="rows"
     :loading="!rows && !error"
@@ -11,7 +10,7 @@
     label-header="Priority"
     @retry="loadChart"
   >
-    <BarChartXY :rows="rows" clickable @row-click="(row) => $emit('segment-click', { type: 'priority', value: row.label.toLowerCase() })" />
+    <BarChartXY :rows="rows" />
   </ChartFrame>
 </template>
 
@@ -27,7 +26,6 @@ const props = defineProps({
   endDate: { type: String, default: null },
   dateRangeLabel: { type: String, default: null },
 });
-defineEmits(["segment-click"]);
 
 const PRIORITY_ORDER = [
   { key: "low", label: "Low", color: "var(--pri-low)" },

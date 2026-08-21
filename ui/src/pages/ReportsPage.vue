@@ -41,9 +41,16 @@
              a KKM staff account's own reports even though none of that
              data is actually present anywhere on the page. -->
         <template v-if="isSuperAdmin">
-          <span><span class="rb-legend-dot" style="background: var(--kkm)"></span>KKM</span>
-          <span><span class="rb-legend-dot" style="background: var(--pdrm)"></span>PDRM</span>
-          <span><span class="rb-legend-dot" style="background: var(--jbpm)"></span>JBPM</span>
+          <!-- Dimming whichever agencies the top filter has excluded (only
+               once one's actually picked — plain "All Agencies" leaves
+               every dot at full opacity, same as before this existed) is
+               just a visible echo of what the filter above already did, so
+               it's obvious at a glance which agency the whole page — every
+               KPI and chart below, not just this legend — is currently
+               scoped to. -->
+          <span :class="{ 'rb-legend-dim': agencyFilter && agencyFilter !== 'KKM' }"><span class="rb-legend-dot" style="background: var(--kkm)"></span>KKM</span>
+          <span :class="{ 'rb-legend-dim': agencyFilter && agencyFilter !== 'PDRM' }"><span class="rb-legend-dot" style="background: var(--pdrm)"></span>PDRM</span>
+          <span :class="{ 'rb-legend-dim': agencyFilter && agencyFilter !== 'JBPM' }"><span class="rb-legend-dot" style="background: var(--jbpm)"></span>JBPM</span>
         </template>
         <span v-else><span class="rb-legend-dot" :style="{ background: `var(--${authStore.user?.agency?.toLowerCase()})` }"></span>{{ authStore.user?.agency }}</span>
       </span>
@@ -82,7 +89,6 @@
         :end-date="endDate"
         :date-range-label="resolvedDateRangeLabel"
         :class="{ 'rb-span-2': index === chartSections.length - 1 && chartSections.length % 2 !== 0 }"
-        @segment-click="onSegmentClick"
       />
     </div>
 
@@ -94,8 +100,6 @@
         :start-date="startDate"
         :end-date="endDate"
         :date-range-label="resolvedDateRangeLabel"
-        :drill-filter="drillFilter"
-        @clear-drill-filter="drillFilter = null"
       />
     </div>
   </div>
@@ -184,19 +188,6 @@ const resolvedDateRangeLabel = computed(() => {
 // re-run every component's own onMounted fetch, without adding a separate
 // manual refetch trigger to each one individually.
 const refreshKey = ref(0);
-
-// Agency drill-down reuses the page's own agency selector (clicking "PDRM"
-// on a chart is just another way of setting the same scope the dropdown
-// already controls) — only priority/category route to the table's filter
-// chip below, since those don't have an equivalent page-level control.
-const drillFilter = ref(null);
-const onSegmentClick = ({ type, value }) => {
-  if (type === "agency") {
-    agencyFilter.value = value;
-    return;
-  }
-  drillFilter.value = { type, value };
-};
 
 const exportingFullReport = ref(false);
 const downloadFullReport = async () => {

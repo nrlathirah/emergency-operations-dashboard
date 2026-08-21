@@ -1,6 +1,5 @@
 <template>
   <ChartFrame
-    tag="Distribution"
     title="Cases by Status"
     :rows="rows"
     :loading="!rows && !error"

@@ -2,7 +2,6 @@
   <div class="rb-panel rb-cases-panel flex flex-col" :style="props.matchHeight ? { '--match-height': `${props.matchHeight}px` } : {}">
     <div class="rb-panel-head">
       <div>
-        <span class="rb-panel-tag">Distribution</span>
         <h2>
           Cases
           <span class="rb-live-dot" style="margin-left: 8px; margin-right: 5px;"></span>

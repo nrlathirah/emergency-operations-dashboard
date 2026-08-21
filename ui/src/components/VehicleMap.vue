@@ -2,7 +2,6 @@
   <div ref="mapCardRef" class="rb-panel">
     <div class="rb-panel-head">
       <div>
-        <span class="rb-panel-tag">Fleet</span>
         <h2>Live Operations Map</h2>
       </div>
       <button v-if="viewChanged" type="button" @click="clearFocus" class="rb-reset-link">✕ Reset View</button>

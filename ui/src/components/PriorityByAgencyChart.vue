@@ -1,6 +1,5 @@
 <template>
   <ChartFrame
-    tag="Cross-tab"
     title="Priority Mix by Agency"
     :rows="exportRows"
     :loading="!rows && !error"

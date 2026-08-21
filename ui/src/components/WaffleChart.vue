@@ -11,7 +11,7 @@
         class="rb-waffle-cell-wrap rb-tooltip-target"
         :data-tooltip="`${cell.label}: ${cell.value}`"
       >
-        <span class="rb-waffle-cell" :style="{ background: cell.color }"></span>
+        <span class="rb-waffle-cell" :style="{ background: cell.color, '--glow': cell.color }"></span>
       </span>
     </div>
     <div class="rb-waffle-legend">

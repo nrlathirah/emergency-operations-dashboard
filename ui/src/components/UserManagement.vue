@@ -2,7 +2,6 @@
   <div class="rb-panel">
     <div class="rb-panel-head">
       <div>
-        <span class="rb-panel-tag">Directory</span>
         <h2>All Users</h2>
       </div>
       <div class="flex items-center gap-2 flex-wrap">

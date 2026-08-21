@@ -1,6 +1,5 @@
 <template>
   <ChartFrame
-    tag="Trend"
     title="Average Response Time"
     :rows="rows"
     :loading="!points && !error"

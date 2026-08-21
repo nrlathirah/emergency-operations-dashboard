@@ -1,6 +1,5 @@
 <template>
   <ChartFrame
-    tag="Distribution"
     title="Cases by Agency"
     :rows="rows"
     :loading="!rows && !error"
@@ -11,7 +10,7 @@
     label-header="Agency"
     @retry="loadChart"
   >
-    <WaffleChart :segments="rows" clickable @row-click="(row) => $emit('segment-click', { type: 'agency', value: row.label })" />
+    <WaffleChart :segments="rows" />
   </ChartFrame>
 </template>
 
@@ -27,7 +26,6 @@ const props = defineProps({
   endDate: { type: String, default: null },
   dateRangeLabel: { type: String, default: null },
 });
-defineEmits(["segment-click"]);
 
 const AGENCY_COLORS = { KKM: "var(--kkm)", PDRM: "var(--pdrm)", JBPM: "var(--jbpm)" };
 

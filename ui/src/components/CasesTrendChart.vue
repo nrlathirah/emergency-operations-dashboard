@@ -1,6 +1,5 @@
 <template>
   <ChartFrame
-    tag="Trend"
     title="Cases Reported"
     :rows="rows"
     :loading="!points && !error"

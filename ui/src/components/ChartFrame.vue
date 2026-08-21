@@ -2,7 +2,6 @@
   <div class="rb-panel">
     <div class="rb-panel-head">
       <div>
-        <span v-if="tag" class="rb-panel-tag">{{ tag }}</span>
         <h2>{{ title }}</h2>
       </div>
       <div v-if="!loading && !error" class="rb-chart-toolbar">
@@ -116,7 +115,6 @@ import LoadingSpinner from "./LoadingSpinner.vue";
 import ErrorBanner from "./ErrorBanner.vue";
 
 const props = defineProps({
-  tag: { type: String, default: "" },
   title: { type: String, required: true },
   rows: { type: Array, default: null }, // [{ label, value, color? }]
   filename: { type: String, required: true },

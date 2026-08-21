@@ -17,7 +17,7 @@
           :style="{ width: size(row.value) + 'px', height: size(row.value) + 'px' }"
           :data-tooltip="`${row.label}: ${row.value}`"
         >
-          <div class="rb-bubble" :style="{ background: row.color }">
+          <div class="rb-bubble" :style="{ background: row.color, '--glow': row.color }">
             <span class="rb-bubble-value">{{ row.value }}</span>
           </div>
         </div>

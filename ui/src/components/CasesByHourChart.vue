@@ -1,6 +1,5 @@
 <template>
   <ChartFrame
-    tag="Timing"
     title="Cases by Hour of Day"
     :rows="rows"
     :loading="!cells && !error"

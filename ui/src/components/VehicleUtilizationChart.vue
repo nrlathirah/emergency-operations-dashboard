@@ -1,6 +1,5 @@
 <template>
   <ChartFrame
-    tag="Fleet"
     title="Vehicle Utilization"
     :rows="segments"
     :loading="!segments && !error"

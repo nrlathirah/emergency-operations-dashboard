@@ -1,6 +1,5 @@
 <template>
   <ChartFrame
-    tag="Distribution"
     title="Cases by Category"
     :rows="allRows"
     :loading="!rows && !error"
@@ -11,7 +10,7 @@
     label-header="Category"
     @retry="loadChart"
   >
-    <BubbleChart :rows="rows" :caption="caption" clickable @row-click="(row) => $emit('segment-click', { type: 'category', value: row.key })" />
+    <BubbleChart :rows="rows" :caption="caption" />
   </ChartFrame>
 </template>
 
@@ -27,7 +26,6 @@ const props = defineProps({
   endDate: { type: String, default: null },
   dateRangeLabel: { type: String, default: null },
 });
-defineEmits(["segment-click"]);
 
 // With "All Agencies" selected, categories combine across all 3 agencies —
 // too many bars to stay readable, and lumping the remainder into a single
@@ -62,14 +60,12 @@ const loadChart = async () => {
       endDate: props.endDate,
     });
     const sorted = Object.entries(summary).sort((a, b) => b[1] - a[1]);
-    // `key` carries the raw DB value (e.g. "en_route") for drill-down
-    // filtering; `label` is only ever the capitalized display text.
-    const top = sorted.slice(0, TOP_N).map(([key, value], i) => ({ key, label: capitalize(key), value, color: PALETTE[i % PALETTE.length] }));
+    const top = sorted.slice(0, TOP_N).map(([key, value], i) => ({ label: capitalize(key), value, color: PALETTE[i % PALETTE.length] }));
     const rest = sorted.slice(TOP_N);
     const restTotal = rest.reduce((sum, [, count]) => sum + count, 0);
 
     rows.value = top;
-    allRows.value = sorted.map(([key, value], i) => ({ key, label: capitalize(key), value, color: PALETTE[i % PALETTE.length] }));
+    allRows.value = sorted.map(([key, value], i) => ({ label: capitalize(key), value, color: PALETTE[i % PALETTE.length] }));
     caption.value = rest.length > 0 ? `+ ${rest.length} more categor${rest.length === 1 ? "y" : "ies"} · ${restTotal} case${restTotal === 1 ? "" : "s"} not shown` : "";
   } catch (err) {
     error.value = "Failed to load chart data.";

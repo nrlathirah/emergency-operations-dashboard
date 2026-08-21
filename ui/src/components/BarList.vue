@@ -5,7 +5,7 @@
         <slot name="label" :row="row">{{ row.label }}</slot>
       </span>
       <span class="rb-bar-track" @mouseenter="hovered = row" @mousemove="trackMouse" @mouseleave="hovered = null">
-        <span class="rb-bar-fill" :style="{ width: widthFor(row.value) + '%', background: row.color || 'var(--accent)' }"></span>
+        <span class="rb-bar-fill" :style="{ width: widthFor(row.value) + '%', background: row.color || 'var(--accent)', '--glow': row.color || 'var(--accent)' }"></span>
       </span>
       <!-- Hidden in the live view (the tooltip below shows this on hover
            now) but kept in the markup and shown only in the export copy —

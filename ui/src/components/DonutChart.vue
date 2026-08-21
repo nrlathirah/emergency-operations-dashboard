@@ -13,6 +13,7 @@
             r="40"
             fill="none"
             :stroke="arc.color"
+            :style="{ '--glow': arc.color }"
             stroke-width="18"
             :stroke-dasharray="`${arc.dash} ${CIRCUMFERENCE - arc.dash}`"
             :stroke-dashoffset="-arc.offset"

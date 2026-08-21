@@ -27,7 +27,7 @@
             @mousemove="trackMouse"
             @mouseleave="hovered = null"
           >
-            <div class="rb-xybar-bar" :style="{ background: row.color || 'var(--accent)' }"></div>
+            <div class="rb-xybar-bar" :style="{ background: row.color || 'var(--accent)', '--glow': row.color || 'var(--accent)' }"></div>
           </div>
         </div>
       </div>
