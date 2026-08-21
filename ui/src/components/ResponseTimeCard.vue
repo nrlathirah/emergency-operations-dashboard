@@ -6,7 +6,7 @@
       <span class="rb-kpi-led"></span>
       <span class="rb-kpi-label">Overall Avg. Response</span>
       <div class="rb-kpi-delta-row">
-        <span class="rb-kpi-value tabular">{{ formatDuration(data.overallMinutes) }}</span>
+        <span class="rb-kpi-value tabular">{{ formatDuration(displayed.overall) }}</span>
         <span v-if="responseDelta !== null" class="rb-delta-badge" :class="deltaClass(responseDelta, true)">{{ formatDelta(responseDelta) }}</span>
       </div>
       <span class="rb-kpi-sub tabular">{{ data.sampleSize }} closed case{{ data.sampleSize === 1 ? "" : "s" }}</span>
@@ -14,14 +14,14 @@
     <div v-for="priority in ['high', 'medium', 'low']" :key="priority" class="rb-kpi-tile" :data-priority="priority">
       <span class="rb-kpi-led"></span>
       <span class="rb-kpi-label capitalize">{{ priority }} Priority</span>
-      <span class="rb-kpi-value tabular">{{ formatDuration(data.byPriorityMinutes[priority]) }}</span>
+      <span class="rb-kpi-value tabular">{{ formatDuration(displayed[priority]) }}</span>
       <span class="rb-kpi-sub tabular">{{ countFor(priority) }} case{{ countFor(priority) === 1 ? "" : "s" }}</span>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from "vue";
+import { ref, reactive, watch, onMounted, onUnmounted } from "vue";
 import { reportService } from "../services/reportService";
 import LoadingSpinner from "./LoadingSpinner.vue";
 import ErrorBanner from "./ErrorBanner.vue";
@@ -52,6 +52,34 @@ const priorityCounts = ref({});
 // against (deltaPct comes back null from the backend in that case too).
 const responseDelta = ref(null);
 
+// Animated minutes shown in each tile — counts up from whatever was showing
+// before (0 on first load) to the freshly fetched value, rather than the
+// number just snapping to its new figure on every filter/date-range change.
+const displayed = reactive({ overall: 0, high: 0, medium: 0, low: 0 });
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const easeOutQuad = (t) => t * (2 - t);
+let rafId = null;
+
+const animateDisplayed = (targets) => {
+  if (reduceMotion) {
+    Object.assign(displayed, targets);
+    return;
+  }
+  cancelAnimationFrame(rafId);
+  const from = { ...displayed };
+  const startTime = performance.now();
+  const DURATION = 600;
+  const step = (now) => {
+    const t = Math.min(1, (now - startTime) / DURATION);
+    const eased = easeOutQuad(t);
+    for (const key in targets) {
+      displayed[key] = Math.round(from[key] + (targets[key] - from[key]) * eased);
+    }
+    if (t < 1) rafId = requestAnimationFrame(step);
+  };
+  rafId = requestAnimationFrame(step);
+};
+
 const loadData = async () => {
   try {
     error.value = null;
@@ -64,6 +92,12 @@ const loadData = async () => {
     data.value = responseTime;
     priorityCounts.value = priorityBreakdown;
     responseDelta.value = comparison.deltaPct.avgResponseMinutes;
+    animateDisplayed({
+      overall: responseTime.overallMinutes || 0,
+      high: responseTime.byPriorityMinutes.high || 0,
+      medium: responseTime.byPriorityMinutes.medium || 0,
+      low: responseTime.byPriorityMinutes.low || 0,
+    });
   } catch (err) {
     error.value = "Failed to load response time data.";
   }
@@ -83,4 +117,5 @@ const deltaClass = (pct, lowerIsBetter) => {
 
 watch([() => props.agencyCode, () => props.startDate, () => props.endDate], loadData);
 onMounted(loadData);
+onUnmounted(() => cancelAnimationFrame(rafId));
 </script>

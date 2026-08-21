@@ -285,19 +285,40 @@ const anyIncidentAgencyVisible = (agencyCode) => {
   return matching.some((c) => keys.has(`incident:${c.id}`));
 };
 
-const applyOpacity = () => {
+// Shared by applyOpacity (to decide what to dim) and every marker's click
+// handler (to decide whether a click should do anything at all) — a single
+// source of truth so a pin can never end up dimmed but still clickable.
+const isRelevant = (type, id) => {
   const keys = relevantKeys.value;
-  const isRelevant = (type, id) => keys === null || keys.has(`${type}:${id}`);
+  return keys === null || keys.has(`${type}:${id}`);
+};
 
-  Object.entries(stationMarkers).forEach(([id, marker]) =>
-    marker.setOpacity(isRelevant("station", id) ? 1 : DIM_OPACITY)
-  );
-  Object.entries(incidentMarkers).forEach(([id, marker]) =>
-    marker.setOpacity(isRelevant("incident", id) ? 1 : DIM_OPACITY)
-  );
-  Object.entries(vehicleMarkers).forEach(([id, marker]) =>
-    marker.setOpacity(isRelevant("vehicle", id) ? 1 : DIM_OPACITY)
-  );
+// A dimmed pin is a real target on a touch screen — low opacity alone
+// doesn't stop a tap from landing on it. pointer-events: none removes it
+// from hit-testing entirely (click, tap, hover/tooltip, the works), so a
+// stray touch on a dimmed pin does nothing instead of silently switching
+// focus to an unrelated marker.
+const setMarkerInteractive = (marker, interactive) => {
+  const el = marker.getElement?.();
+  if (el) el.style.pointerEvents = interactive ? "" : "none";
+};
+
+const applyOpacity = () => {
+  Object.entries(stationMarkers).forEach(([id, marker]) => {
+    const relevant = isRelevant("station", id);
+    marker.setOpacity(relevant ? 1 : DIM_OPACITY);
+    setMarkerInteractive(marker, relevant);
+  });
+  Object.entries(incidentMarkers).forEach(([id, marker]) => {
+    const relevant = isRelevant("incident", id);
+    marker.setOpacity(relevant ? 1 : DIM_OPACITY);
+    setMarkerInteractive(marker, relevant);
+  });
+  Object.entries(vehicleMarkers).forEach(([id, marker]) => {
+    const relevant = isRelevant("vehicle", id);
+    marker.setOpacity(relevant ? 1 : DIM_OPACITY);
+    setMarkerInteractive(marker, relevant);
+  });
   Object.entries(routeLines).forEach(([id, { casing, line }]) => {
     const relevant = isRelevant("vehicle", id);
     casing.setStyle({ opacity: relevant ? 0.9 : DIM_OPACITY * 0.6 });
@@ -374,6 +395,7 @@ const renderStations = async () => {
 
     marker.on("click", (e) => {
       L.DomEvent.stopPropagation(e);
+      if (!isRelevant("station", station.id)) return;
       focusOnStation(station);
     });
 
@@ -415,16 +437,19 @@ const renderIncidents = async () => {
           offset: [0, -4],
         });
 
-      // Give brand-new markers the correct opacity immediately, instead of
-      // waiting for the next applyOpacity() call further down the pipeline.
-      const keys = relevantKeys.value;
-      marker.setOpacity(keys === null || keys.has(`incident:${c.id}`) ? 1 : DIM_OPACITY);
+      // Give brand-new markers the correct opacity/interactivity immediately,
+      // instead of waiting for the next applyOpacity() call further down the
+      // pipeline.
+      const newIncidentRelevant = isRelevant("incident", c.id);
+      marker.setOpacity(newIncidentRelevant ? 1 : DIM_OPACITY);
+      setMarkerInteractive(marker, newIncidentRelevant);
 
       // Clicking the pin only focuses the map (zoom + reveal vehicle) and
       // opens a popup with a "Show on table" button — it no longer jumps
       // the table on its own, that's now an explicit user action.
       marker.on("click", (e) => {
         L.DomEvent.stopPropagation(e);
+        if (!isRelevant("incident", c.id)) return;
         const current = activeCasesData.value.find((cs) => cs.id === c.id);
         if (current) focusOnIncident(current);
       });

@@ -259,6 +259,14 @@ select.rb-scope-select {
 .rb-delta-badge--neutral { background: var(--surface-2); color: var(--muted); }
 
 .rb-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); padding: 18px 20px 20px; height: 100%; }
+/* A one-shot entrance on mount, not a hover/interaction effect — pure
+   opacity+transform keeps it GPU-composited (no layout/paint cost), and it
+   only ever plays once per panel per mount so it can't accumulate lag on
+   re-renders. Skipped entirely for reduced-motion so it costs nothing there. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes rb-panel-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .rb-panel { animation: rb-panel-enter 380ms ease-out both; }
+}
 /* CaseList's panel wants to match the map beside it exactly, with its own
    internal scroll for the row list instead of growing to fit every case.
    The grid itself stays items-start (DashboardPage) — neither panel
