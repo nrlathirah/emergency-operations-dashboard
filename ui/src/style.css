@@ -89,6 +89,33 @@
   }
 }
 
+/* Scrollbars otherwise stay the browser's stock light-gray bar regardless
+   of theme — a glaring white strip on a dark surface. Hooked into the same
+   --color-gray-* tokens as everything else (see the dark-mode retint
+   above), so this flips automatically with the rest of the page instead of
+   needing its own dark-mode block. scrollbar-color/-width cover Firefox;
+   the ::-webkit-scrollbar rules cover Chrome/Edge/Safari. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-400) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--color-gray-400);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-gray-500);
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
