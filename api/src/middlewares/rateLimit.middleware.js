@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 // Applied to every /api request as a floor against generic scraping/abuse —
 // loose enough that no normal usage of this dashboard (polling, page loads,
@@ -20,7 +20,7 @@ export const loginLimiter = rateLimit({
   limit: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => `${req.ip}:${(req.body?.email || "").toLowerCase()}`,
+  keyGenerator: (req) => `${ipKeyGenerator(req.ip)}:${(req.body?.email || "").toLowerCase()}`,
   message: { message: "Too many login attempts. Please wait a few minutes and try again." },
 });
 
@@ -44,6 +44,6 @@ export const simulateCaseLimiter = rateLimit({
   limit: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => `${req.ip}:${req.user?.id ?? "anon"}`,
+  keyGenerator: (req) => `${ipKeyGenerator(req.ip)}:${req.user?.id ?? "anon"}`,
   message: { message: "Simulated cases are rate-limited — please slow down." },
 });
