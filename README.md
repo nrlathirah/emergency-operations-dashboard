@@ -139,7 +139,7 @@ npm run dev              # http://localhost:5173
 
 ## Testing
 
-The API has an automated test suite (Vitest + Supertest, 43 tests) covering authentication and session revocation, agency-scoped access control, super-admin-only endpoints, dispatch authorization, demo-account protection and self-repair, input validation, report date-range and pagination limits, and idle detection. Each test file runs against its own throwaway in-memory SQLite database. It never touches `data/dev.sqlite` or any real database.
+The API has an automated test suite (Vitest + Supertest, 44 tests) covering authentication and session revocation, agency-scoped access control, super-admin-only endpoints, dispatch authorization, demo-account protection and self-repair, input validation, report date-range and pagination limits, and idle detection. Each test file runs against its own throwaway in-memory SQLite database. It never touches `data/dev.sqlite` or any real database.
 
 ```sh
 cd api

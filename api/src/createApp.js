@@ -53,6 +53,19 @@ export const createApp = () => {
     next();
   });
 
+  // The README links straight to /api — give anyone who clicks it a useful
+  // landing response instead of a bare 404. Everything listed below needs a
+  // Bearer token (from POST /api/auth/login) except login itself.
+  app.get("/api", (req, res) => {
+    res.json({
+      name: "Emergency Operations Dashboard API",
+      status: "ok",
+      dashboard: "https://emergency-operations-dashboard.vercel.app",
+      auth: "POST /api/auth/login with { email, password } — then send 'Authorization: Bearer <token>'",
+      endpoints: ["/api/auth", "/api/cases", "/api/vehicles", "/api/stations", "/api/reports", "/api/users"],
+    });
+  });
+
   mountRoutes(app);
   app.use(notFound);
   app.use(errorHandler);
