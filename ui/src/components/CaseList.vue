@@ -9,7 +9,7 @@
         </h2>
         <p class="rb-panel-meta">Showing active cases and cases closed in the last 24h — see Reports for full history.</p>
       </div>
-      <span class="rb-panel-meta">{{ activeCount }} Active · {{ closedCount }} Closed</span>
+      <span class="rb-panel-meta">{{ activeCount }} Active · {{ closedCount }} Closed<template v-if="awaitingCount"> · <span class="text-amber-600 dark:text-amber-400">{{ awaitingCount }} awaiting unit</span></template></span>
     </div>
 
     <div class="rb-filter-row">
@@ -132,7 +132,14 @@
             <div>{{ formatCreatedAt(c.createdAt) }}</div>
             <div v-if="c.status !== 'closed'" class="text-xs text-gray-400">{{ formatDuration(c.createdAt) }}</div>
           </td>
-          <td>{{ assignedVehicleFor(c)?.callSign || "—" }}</td>
+          <td>
+            <span
+              v-if="isAwaitingUnit(c)"
+              class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 whitespace-nowrap"
+              title="Every unit of this agency is busy — the nearest one will be sent automatically as soon as it's free."
+            >Awaiting unit</span>
+            <template v-else>{{ assignedVehicleFor(c)?.callSign || "—" }}</template>
+          </td>
           <td>{{ assignedVehicleFor(c)?.Station?.name || "—" }}</td>
         </tr>
         <tr
@@ -260,6 +267,12 @@ const assignedVehicleFor = (c) => vehicles.value.find((v) => v.id === c.vehicleI
 // them as "Active" rather than some separately-fetched global count.
 const activeCount = computed(() => cases.value.filter((c) => c.status !== "closed").length);
 const closedCount = computed(() => cases.value.filter((c) => c.status === "closed").length);
+
+// A case that arrived while every unit of its agency was busy: logged and
+// queued (open, no vehicle yet) — the API sends the nearest unit to the
+// longest-waiting case as soon as one frees up.
+const isAwaitingUnit = (c) => c.status === "open" && !c.vehicleId;
+const awaitingCount = computed(() => cases.value.filter(isAwaitingUnit).length);
 
 const toggleActiveOnly = () => {
   activeOnly.value = !activeOnly.value;
@@ -392,11 +405,19 @@ const handleSimulate = async () => {
   simulating.value = true;
   try {
     const result = await caseService.simulate();
-    showSimulateToast({
-      title: `New case reported: ${result.caseNumber}`,
-      detail: "Will progress through its stages automatically over the next minute.",
-      agencyCode: result.agencyCode,
-    });
+    showSimulateToast(
+      result.queued
+        ? {
+            title: `New case queued: ${result.caseNumber}`,
+            detail: `All ${result.agencyCode} units are busy — it's #${result.queuePosition} in line and the nearest unit will be sent as soon as one is free.`,
+            agencyCode: result.agencyCode,
+          }
+        : {
+            title: `New case reported: ${result.caseNumber}`,
+            detail: "Will progress through its stages automatically over the next minute.",
+            agencyCode: result.agencyCode,
+          }
+    );
     await fetchCases();
   } catch (err) {
     showSimulateToast({

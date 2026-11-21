@@ -187,31 +187,59 @@ const nextCaseNumber = async (agencyCode) => {
   return `${prefix}${String(nextSeq).padStart(5, "0")}`;
 };
 
-// Per-case one-shot timers that walk a simulated case through its lifecycle
-// (open -> dispatched -> en_route -> on_scene -> closed) and free its
-// vehicle again at the end. Deliberately NOT a persistent global loop like
-// the old design — each chain is scheduled once, only as a direct result of
-// a user clicking "Simulate New Case," and naturally ends after ~60s. If the
-// server restarts mid-chain the remaining timers are simply lost and the
-// case freezes at its last status — an acceptable tradeoff for a demo
-// feature, not worth the complexity of making it resumable.
-const scheduleLifecycle = (caseId, vehicleId) => {
-  const advance = async (fromStatus, toStatus, vehicleStatus) => {
-    const caseRecord = await Case.findByPk(caseId);
-    if (!caseRecord || caseRecord.status !== fromStatus) return; // state moved on/gone — don't clobber
-    await caseRecord.update({ status: toStatus });
-    if (vehicleStatus) {
-      const vehicle = await Vehicle.findByPk(vehicleId);
-      if (vehicle) await vehicle.update({ status: vehicleStatus });
-    }
-  };
+// Vehicles of an agency that are free to take a new case: "available", and
+// not referenced by any unfinished case — so a vehicle is never claimed by
+// two active cases at once.
+export const findFreeVehicles = async (agencyId) => {
+  const busyVehicleIds = (
+    await Case.findAll({
+      where: { status: { [Op.ne]: "closed" }, vehicleId: { [Op.ne]: null } },
+      attributes: ["vehicleId"],
+    })
+  ).map((c) => c.vehicleId);
 
-  setTimeout(() => advance("open", "dispatched", null), 8000); // vehicle already claimed at creation
-  setTimeout(() => advance("dispatched", "en_route", "en_route"), 23000);
-  setTimeout(() => advance("en_route", "on_scene", "busy"), 43000);
-  setTimeout(() => advance("on_scene", "closed", "available"), 63000);
+  return Vehicle.findAll({
+    where: {
+      agencyId,
+      status: "available",
+      id: { [Op.notIn]: busyVehicleIds.length ? busyVehicleIds : [0] },
+    },
+    include: [Station],
+  });
 };
 
+// Rough planar distance — plenty to rank vehicles within one city.
+const distanceSq = (a, b) => {
+  const dLat = a.latitude - b.latitude;
+  const dLng = (a.longitude - b.longitude) * Math.cos((a.latitude * Math.PI) / 180);
+  return dLat * dLat + dLng * dLng;
+};
+
+export const nearestVehicle = (vehicles, point) =>
+  vehicles.reduce((best, v) => (!best || distanceSq(v, point) < distanceSq(best, point) ? v : best), null);
+
+// Claiming a vehicle (status "dispatched") is what marks a case as
+// self-running: lifecycle.service.js then walks it open -> dispatched ->
+// en_route -> on_scene -> closed on every simulator tick, from the database,
+// so it survives restarts. A case that's still waiting in the queue
+// (open, no vehicle) is assigned a unit there too, as soon as one frees up.
+export const claimVehicleForCase = async (caseRecord, vehicle) => {
+  const [claimed] = await Case.update(
+    { vehicleId: vehicle.id },
+    { where: { id: caseRecord.id, status: "open", vehicleId: null } }
+  );
+  if (claimed) await vehicle.update({ status: "dispatched" });
+  return claimed > 0;
+};
+
+// How many cases an agency may have waiting for a unit at once. The queue
+// drains at several cases a minute, so this is only ever reached by
+// scripted spamming — it just stops the queue growing without bound.
+const MAX_QUEUED_PER_AGENCY = 10;
+
+// Never fails just because every unit is out — like a real dispatch centre,
+// the incident is still logged and joins a queue ("Awaiting unit"); the
+// nearest unit to free up is sent automatically.
 export const simulateNewCase = async ({ requesterRole, requesterAgencyCode }) => {
   const agencyCode = requesterRole === "super_admin" ? pick(AGENCY_CODES) : requesterAgencyCode;
 
@@ -220,54 +248,44 @@ export const simulateNewCase = async ({ requesterRole, requesterAgencyCode }) =>
     throw new Error("Agency not found");
   }
 
-  // A vehicle marked "available" can still be referenced by an existing
-  // "open" case (that case just hasn't been dispatched yet — see seed.js).
-  // Exclude those too, so a vehicle is never claimed by two active cases
-  // at once.
-  const busyVehicleIds = (
-    await Case.findAll({
-      where: { status: { [Op.ne]: "closed" }, vehicleId: { [Op.ne]: null } },
-      attributes: ["vehicleId"],
-    })
-  ).map((c) => c.vehicleId);
+  const queuedCount = await Case.count({ where: { agencyId: agency.id, status: "open", vehicleId: null } });
 
-  const vehicle = await Vehicle.findOne({
-    where: {
-      agencyId: agency.id,
-      status: "available",
-      id: { [Op.notIn]: busyVehicleIds.length ? busyVehicleIds : [0] },
-    },
-    include: [Station],
-  });
-  if (!vehicle || !vehicle.Station) {
-    throw new Error(`All ${agencyCode} units are currently busy — try again shortly`);
+  const freeVehicles = (await findFreeVehicles(agency.id)).filter((v) => v.Station);
+  const vehicle = queuedCount === 0 ? pick(freeVehicles.length ? freeVehicles : [null]) : null; // never jump the queue
+
+  if (!vehicle && queuedCount >= MAX_QUEUED_PER_AGENCY) {
+    throw new Error(`${agencyCode} already has ${queuedCount} cases waiting for a unit — give it a minute to catch up`);
   }
 
-  const station = vehicle.Station;
-  const { latitude, longitude } = jitterFromStation(station);
-  const category = pick(CATEGORY_POOL[agencyCode]);
-  const priority = pick(PRIORITY_POOL);
-  const district = STATION_DISTRICTS[station.code] || "Kuala Lumpur";
-  const location = `Jalan ${pick(STREET_NAMES)}, ${district}`;
-  const caseNumber = await nextCaseNumber(agencyCode);
+  // Place the incident near the responding vehicle's station, or — when it
+  // has to queue — near any of the agency's stations.
+  const station = vehicle?.Station || pick(await Station.findAll({ where: { agencyId: agency.id } }));
+  if (!station) {
+    throw new Error(`No ${agencyCode} stations found`);
+  }
 
+  const { latitude, longitude } = jitterFromStation(station);
   const caseRecord = await Case.create({
     agencyId: agency.id,
-    caseNumber,
-    category,
-    priority,
-    location,
+    caseNumber: await nextCaseNumber(agencyCode),
+    category: pick(CATEGORY_POOL[agencyCode]),
+    priority: pick(PRIORITY_POOL),
+    location: `Jalan ${pick(STREET_NAMES)}, ${STATION_DISTRICTS[station.code] || "Kuala Lumpur"}`,
     latitude,
     longitude,
-    vehicleId: vehicle.id,
+    // Assigned in the same insert, so the queue-assignment tick can never
+    // see this case as "waiting" and hand it a second vehicle.
+    vehicleId: vehicle?.id ?? null,
   });
 
-  // Claim the vehicle immediately (not at the +8s "dispatched" step) so a
-  // second simulate click can't pick the same vehicle before this case's
-  // lifecycle has actually started.
-  await vehicle.update({ status: "dispatched" });
+  // Claimed immediately (not at the +8s "dispatched" step) so a second
+  // simulate click can't pick the same vehicle in the meantime.
+  if (vehicle) await vehicle.update({ status: "dispatched" });
 
-  scheduleLifecycle(caseRecord.id, vehicle.id);
-
-  return { caseNumber, agencyCode };
+  return {
+    caseNumber: caseRecord.caseNumber,
+    agencyCode,
+    queued: !vehicle,
+    queuePosition: vehicle ? null : queuedCount + 1,
+  };
 };
