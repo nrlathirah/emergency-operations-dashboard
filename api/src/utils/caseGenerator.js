@@ -66,8 +66,11 @@ export const generateHistoricalCases = ({ agency, stations, vehicles, count, day
 // offset from "now") — used by the auto-backfill job to top up individual
 // days that have fallen short of their target density, instead of only ever
 // re-seeding one fixed window relative to whenever it happens to run.
-export const generateCaseForDay = ({ agency, stations, vehicles, dateKey, seq, year = new Date().getFullYear() }) => {
+// `latestMs` (used for today) keeps createdAt no later than that moment, so
+// a case is never "reported" in the future.
+export const generateCaseForDay = ({ agency, stations, vehicles, dateKey, seq, year = new Date().getFullYear(), latestMs }) => {
   const dayStartMs = new Date(`${dateKey}T00:00:00.000Z`).getTime();
-  const createdAt = new Date(dayStartMs + randomInt(0, 23 * 60 + 59) * 60000);
+  const maxMinute = latestMs ? Math.max(0, Math.floor((latestMs - dayStartMs) / 60000)) : 23 * 60 + 59;
+  const createdAt = new Date(dayStartMs + randomInt(0, Math.min(maxMinute, 23 * 60 + 59)) * 60000);
   return buildClosedCase({ agency, stations, vehicles, caseNumber: formatCaseNumber(agency.code, year, seq), createdAt });
 };

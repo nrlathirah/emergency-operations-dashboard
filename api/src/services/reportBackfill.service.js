@@ -9,7 +9,10 @@ const toDateKey = (date) => new Date(date).toISOString().slice(0, 10);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const DAYS_BACK = 90; // matches the longest fixed preset on the Reports date-range picker (see DateRangePicker.vue)
-const TARGET_PER_AGENCY_PER_DAY = 1; // roughly the density enrichReportData.mjs originally seeded (80 cases / 90 days)
+// Typical daily volume per agency — the actual per-day target varies around
+// this (see dailyTarget below) so the trend charts look like real traffic
+// instead of a flat line.
+const BASE_PER_DAY = { KKM: 4, PDRM: 3, JBPM: 2 };
 // Kept well beyond DAYS_BACK so pruning never touches a day any chart preset
 // can actually select (the longest is 90d) — this is purely about not
 // letting the table grow forever, not about how far back charts can look.
@@ -29,14 +32,44 @@ const nextSeqForAgency = async (agency, year) => {
   return latest ? parseInt(latest.caseNumber.slice(prefix.length), 10) + 1 : 1;
 };
 
+// Deterministic pseudo-random number in [0, 1) for a given string — the same
+// day+agency always gets the same target, so re-running the backfill (every
+// hour, on every restart) never keeps piling more cases onto a day that was
+// already filled. Math.random() here would make each run pick a new, likely
+// higher, target for days already topped up.
+const hashUnit = (str) => {
+  let h = 2166136261; // FNV-1a
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0) / 4294967296;
+};
+
+// How many closed cases a given agency "should" have on a given day: a base
+// rate, a weekday rhythm (busier Fri/Sat, quieter Sun/Mon), day-to-day noise,
+// and an occasional incident spike — so the chart has believable ups, downs
+// and peaks. Never below 1, so no day ever reads as an outage.
+const dailyTarget = (agencyCode, dateKey) => {
+  const base = BASE_PER_DAY[agencyCode] ?? 2;
+  const weekday = new Date(`${dateKey}T00:00:00Z`).getUTCDay(); // 0 = Sun
+  const weekdayFactor = [0.8, 0.85, 1, 1, 1.1, 1.3, 1.25][weekday];
+  const noise = 0.6 + hashUnit(`${dateKey}:${agencyCode}:noise`) * 0.8; // 0.6–1.4
+  const spike = hashUnit(`${dateKey}:${agencyCode}:spike`) < 0.06 ? 2.5 : 1; // ~2 spike days a month
+  return Math.max(1, Math.round(base * weekdayFactor * noise * spike));
+};
+
 // The Reports trend charts (getCasesTrend / getResponseTimeTrend) bucket
 // cases by calendar day across a window ending "now" — a window that keeps
 // sliding forward every day. The original historical dataset was a one-off
 // script run once, so without this, every day after that run permanently
 // reads as zero and the charts flatten out more and more over time.
 //
-// This tops up any day in the last DAYS_BACK that has fewer than
-// TARGET_PER_AGENCY_PER_DAY closed cases for a given agency. It's cheap to
+// This tops up any day in the last DAYS_BACK (today included) that has
+// fewer closed cases than its dailyTarget for a given agency. Today only
+// gets the share of its target for the hours already elapsed, with times
+// no later than now, so it grows through the day instead of reading as
+// zero until tomorrow. It's cheap to
 // call repeatedly: a day that already meets the target is left untouched,
 // so after the first run this only ever has to fill in the handful of days
 // since it last ran.
@@ -67,11 +100,20 @@ export const ensureHistoricalCoverage = async () => {
     });
 
     let seq = seqStart;
-    for (let i = 0; i < DAYS_BACK; i++) {
+    const now = Date.now();
+    const todayKey = toDateKey(now);
+    for (let i = 0; i <= DAYS_BACK; i++) {
       const dateKey = toDateKey(new Date(windowStart.getTime() + i * DAY_MS));
+      if (dateKey > todayKey) break;
+      const isToday = dateKey === todayKey;
+      const fullTarget = dailyTarget(agency.code, dateKey);
+      const elapsedFraction = isToday ? (now - new Date(`${dateKey}T00:00:00Z`).getTime()) / DAY_MS : 1;
+      const target = Math.floor(fullTarget * elapsedFraction);
       const have = countByDay[dateKey] || 0;
-      for (let j = have; j < TARGET_PER_AGENCY_PER_DAY; j++) {
-        newCases.push(generateCaseForDay({ agency, stations, vehicles, dateKey, seq: seq++, year }));
+      for (let j = have; j < target; j++) {
+        newCases.push(
+          generateCaseForDay({ agency, stations, vehicles, dateKey, seq: seq++, year, latestMs: isToday ? now : undefined })
+        );
       }
     }
   }
@@ -102,7 +144,9 @@ const runBackfillCycle = async () => {
 // both deployment shapes this app runs under: a free-tier host that sleeps
 // and restarts often (each restart alone would keep things fresh) and a
 // long-lived process that never restarts (which needs the interval instead).
-export const startReportBackfillJob = (intervalMs = 12 * 60 * 60 * 1000) => {
+// Hourly so today's count keeps climbing through the day — each run is a
+// handful of cheap queries and usually inserts 0–3 rows.
+export const startReportBackfillJob = (intervalMs = 60 * 60 * 1000) => {
   runBackfillCycle().catch((err) => console.error("Report backfill failed:", err));
   setInterval(() => {
     runBackfillCycle().catch((err) => console.error("Report backfill failed:", err));
