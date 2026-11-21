@@ -5,6 +5,15 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Emergency Operations Dashboard</title>
+    <!-- Vercel Web Analytics: anonymous visitor/page-view counts (country,
+         device, browser; no cookies). Served same-origin by Vercel once Web
+         Analytics is enabled for the project; locally the script 404s
+         harmlessly. Loaded via tag rather than the @vercel/analytics npm
+         package, whose peer range doesn't accept vue-router 5 yet. -->
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />

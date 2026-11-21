@@ -71,6 +71,16 @@ export const userService = {
     return response.data; // { data, total, page, limit }
   },
 
+  // Every login attempt (success or failure) with IP + browser, plus the
+  // caller's own IP so the drawer can mark which ones came from this network.
+  async getLoginActivity({ page, limit } = {}) {
+    const params = {};
+    if (page) params.page = page;
+    if (limit) params.limit = limit;
+    const response = await api.get("/users/login-activity", { params });
+    return response.data; // { data, total, page, limit, yourIp }
+  },
+
   async getResetRequests() {
     const response = await api.get("/users/reset-requests");
     return response.data.data;

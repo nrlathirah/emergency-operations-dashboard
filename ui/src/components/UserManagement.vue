@@ -29,6 +29,7 @@
               >{{ resetRequests.length }}</span>
             </button>
             <button type="button" @click="showToolbarMenu = false; openActivityDrawer()">🕒 Activity</button>
+            <button type="button" @click="showToolbarMenu = false; openLoginActivityDrawer()">🔐 Login Activity</button>
             <button
               type="button"
               :disabled="exporting || total === 0"
@@ -262,6 +263,69 @@
               @click="loadMoreAuditLog"
               class="px-3 py-1.5 border rounded text-xs hover:bg-gray-50 cursor-pointer disabled:opacity-60 disabled:cursor-default"
             >{{ auditLoadingMore ? "Loading…" : "Load More" }}</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Login Activity slide-over drawer — every login attempt with its IP
+         and browser. The demo accounts are shared publicly, so this (not the
+         Last Login column) is what tells the admin's own sessions apart from
+         other visitors': rows from the admin's current IP get a "You" tag. -->
+    <Teleport to="body">
+      <div v-if="showLoginActivityDrawer" class="fixed inset-0" style="z-index: 9999;">
+        <div class="absolute inset-0 bg-black/40" @click="showLoginActivityDrawer = false"></div>
+        <div class="absolute right-0 top-0 h-full w-full max-w-sm bg-white dark:bg-gray-100 shadow-xl flex flex-col">
+          <div class="px-4 py-3 border-b border-gray-100">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-semibold text-gray-800">🔐 Login Activity</h3>
+              <button
+                type="button"
+                @click="showLoginActivityDrawer = false"
+                class="text-gray-400 hover:text-gray-600 cursor-pointer text-lg leading-none"
+                aria-label="Close"
+              >✕</button>
+            </div>
+            <p class="text-[11px] text-gray-400 mt-1">
+              Last 30 days. Your current IP: <span class="tabular text-gray-600">{{ loginYourIp || "—" }}</span>
+            </p>
+          </div>
+          <div class="flex-1 overflow-y-auto px-4 py-3">
+            <p v-if="loginError" class="text-xs text-red-500 mb-3">
+              ⚠️ {{ loginError }}
+              <button type="button" @click="fetchLoginActivity()" class="underline cursor-pointer">Retry</button>
+            </p>
+            <ul v-if="loginEvents.length" class="space-y-3 text-xs text-gray-600">
+              <li v-for="ev in loginEvents" :key="ev.id" class="pb-3 border-b border-gray-50 last:border-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="font-medium text-gray-800 break-all">{{ ev.User?.name || ev.email }}</span>
+                  <span
+                    :class="ev.success ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                    class="text-[10px] px-1.5 py-0.5 rounded"
+                  >{{ ev.success ? "Success" : "Failed" }}</span>
+                  <span
+                    v-if="ev.ip && ev.ip === loginYourIp"
+                    class="text-[10px] px-1.5 py-0.5 rounded bg-teal-100 text-teal-700"
+                  >You</span>
+                </div>
+                <div v-if="ev.User" class="text-gray-400 break-all">{{ ev.email }}</div>
+                <div class="mt-0.5">
+                  <span class="tabular">{{ ev.ip || "Unknown IP" }}</span> · {{ summarizeUserAgent(ev.userAgent) }}
+                </div>
+                <div class="text-gray-400 mt-0.5">{{ formatDate(ev.createdAt) }}</div>
+              </li>
+            </ul>
+            <p v-else-if="!loginError" class="text-xs text-gray-400">No login attempts recorded yet.</p>
+          </div>
+          <div v-if="loginEvents.length" class="px-4 py-3 border-t border-gray-100 text-center">
+            <p class="text-[11px] text-gray-400 mb-2">Showing {{ loginEvents.length }} of {{ loginTotal }}</p>
+            <button
+              v-if="loginEvents.length < loginTotal"
+              type="button"
+              :disabled="loginLoadingMore"
+              @click="loadMoreLoginActivity"
+              class="px-3 py-1.5 border rounded text-xs hover:bg-gray-50 cursor-pointer disabled:opacity-60 disabled:cursor-default"
+            >{{ loginLoadingMore ? "Loading…" : "Load More" }}</button>
           </div>
         </div>
       </div>
@@ -707,6 +771,61 @@ const openActivityDrawer = (user = null) => {
   auditFilterUser.value = user;
   showActivityDrawer.value = true;
   fetchAuditLog();
+};
+
+const showLoginActivityDrawer = ref(false);
+const loginEvents = ref([]);
+const loginTotal = ref(0);
+const loginPage = ref(1);
+const loginLoadingMore = ref(false);
+const loginError = ref("");
+const loginYourIp = ref("");
+const LOGIN_PAGE_SIZE = 20;
+
+const fetchLoginActivity = async (reset = true) => {
+  if (reset) loginPage.value = 1;
+  try {
+    const result = await userService.getLoginActivity({ page: loginPage.value, limit: LOGIN_PAGE_SIZE });
+    loginEvents.value = reset ? result.data : [...loginEvents.value, ...result.data];
+    loginTotal.value = result.total;
+    loginYourIp.value = result.yourIp || "";
+    loginError.value = "";
+  } catch (err) {
+    loginError.value = "Couldn't load login activity.";
+  }
+};
+
+const loadMoreLoginActivity = async () => {
+  loginLoadingMore.value = true;
+  loginPage.value += 1;
+  await fetchLoginActivity(false);
+  loginLoadingMore.value = false;
+};
+
+const openLoginActivityDrawer = () => {
+  showLoginActivityDrawer.value = true;
+  fetchLoginActivity();
+};
+
+// Just enough of the raw user-agent string to tell devices apart at a
+// glance ("Chrome on Windows") — order matters, since Edge/Opera UAs also
+// contain "Chrome" and every Chromium/iOS UA also contains "Safari".
+const summarizeUserAgent = (ua) => {
+  if (!ua) return "Unknown browser";
+  const browser =
+    /Edg\//.test(ua) ? "Edge" :
+    /OPR\//.test(ua) ? "Opera" :
+    /Firefox\//.test(ua) ? "Firefox" :
+    /Chrome\//.test(ua) ? "Chrome" :
+    /Safari\//.test(ua) ? "Safari" :
+    /PostmanRuntime|curl|axios|node/i.test(ua) ? "API client" : "Other";
+  const os =
+    /Android/.test(ua) ? "Android" :
+    /iPhone|iPad/.test(ua) ? "iOS" :
+    /Windows/.test(ua) ? "Windows" :
+    /Mac OS X/.test(ua) ? "macOS" :
+    /Linux/.test(ua) ? "Linux" : "";
+  return os ? `${browser} on ${os}` : browser;
 };
 
 const showToolbarMenu = ref(false);

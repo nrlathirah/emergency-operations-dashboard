@@ -3,7 +3,12 @@ import { createPasswordResetRequest } from "#services/passwordResetRequest.servi
 
 export const login = async (req, res, next) => {
   try {
-    const result = await loginService({ email: req.body.email, password: req.body.password });
+    const result = await loginService({
+      email: req.body.email,
+      password: req.body.password,
+      ip: req.ip,
+      userAgent: req.get("user-agent"),
+    });
     res.status(200).json(result);
   } catch (error) {
     res.status(401).json({ message: error.message });

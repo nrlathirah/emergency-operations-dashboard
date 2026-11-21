@@ -6,6 +6,7 @@ import { User } from "#models/user.model.js";
 import { Station } from "#models/station.model.js";
 import { AuditLog } from "#models/auditLog.model.js";
 import { PasswordResetRequest } from "#models/passwordResetRequest.model.js";
+import { LoginEvent } from "#models/loginEvent.model.js";
 
 Agency.hasMany(Vehicle, { foreignKey: "agencyId" });
 Vehicle.belongsTo(Agency, { foreignKey: "agencyId" });
@@ -32,6 +33,10 @@ AuditLog.belongsTo(User, { foreignKey: "targetUserId", as: "Target" });
 User.hasMany(PasswordResetRequest, { foreignKey: "userId" });
 PasswordResetRequest.belongsTo(User, { foreignKey: "userId", as: "User" });
 PasswordResetRequest.belongsTo(User, { foreignKey: "resolvedBy", as: "ResolvedByUser" });
+
+// constraints: false — failed attempts store no userId, and a login record
+// shouldn't block (or be cascade-deleted by) anything done to the user row.
+LoginEvent.belongsTo(User, { foreignKey: "userId", as: "User", constraints: false });
 
 // Targeted, idempotent column additions for the existing production Users
 // table. plain sync() below only creates tables that don't exist yet — it
@@ -121,4 +126,4 @@ export const syncDatabase = async () => {
   console.log("Database synced");
 };
 
-export { sequelize, Agency, Vehicle, Case, User, Station, AuditLog, PasswordResetRequest };
+export { sequelize, Agency, Vehicle, Case, User, Station, AuditLog, PasswordResetRequest, LoginEvent };

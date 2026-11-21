@@ -1,18 +1,16 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { User, Agency } from "#models/index.js";
+import { recordLoginEvent } from "#services/loginEvent.service.js";
 
-export const login = async ({ email, password }) => {
+export const login = async ({ email, password, ip, userAgent }) => {
   const user = await User.scope("withPassword").findOne({
     where: { email },
     include: [{ model: Agency, attributes: ["code", "name"] }],
   });
 
-  if (!user || user.status !== "active") {
-    throw new Error("Invalid email or password");
-  }
-
-  const isValid = await bcrypt.compare(password, user.password);
+  const isValid = !!user && user.status === "active" && (await bcrypt.compare(password, user.password));
+  await recordLoginEvent({ email, userId: user?.id, success: isValid, ip, userAgent });
   if (!isValid) {
     throw new Error("Invalid email or password");
   }

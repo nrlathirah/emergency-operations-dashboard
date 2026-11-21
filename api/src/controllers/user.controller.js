@@ -1,5 +1,6 @@
 import { getAllUsers, generateUsersExcel, createUser, updateUserName, updateUserStatus, changeOwnPassword, changeOwnName, resetUserPassword } from "#services/user.service.js";
 import { getAuditLogs } from "#services/audit.service.js";
+import { getLoginEvents, normalizeIp } from "#services/loginEvent.service.js";
 import { getPendingResetRequests, dismissPasswordResetRequest, getResetRequestHistory } from "#services/passwordResetRequest.service.js";
 import { getScopedAgency } from "#utils/scope.util.js";
 
@@ -158,6 +159,25 @@ export const listResetRequestHistoryController = async (req, res, next) => {
       total: result.total,
       page: result.page,
       limit: result.limit,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Also returns the requester's own IP, so the UI can flag which logins came
+// from the admin's current network vs. someone else's.
+export const listLoginActivityController = async (req, res, next) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const result = await getLoginEvents({ page, limit });
+    res.status(200).json({
+      data: result.events,
+      total: result.total,
+      page: result.page,
+      limit: result.limit,
+      yourIp: normalizeIp(req.ip),
     });
   } catch (error) {
     next(error);

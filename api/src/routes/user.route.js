@@ -9,6 +9,7 @@ import {
   changeNameController,
   resetPasswordController,
   listAuditLogController,
+  listLoginActivityController,
   listResetRequestsController,
   dismissResetRequestController,
   listResetRequestHistoryController,
@@ -27,6 +28,7 @@ const router = Router();
 router.get("/", authenticate, requireSuperAdmin, listUsers);
 router.get("/export", authenticate, requireSuperAdmin, exportUsersExcel);
 router.get("/audit-log", authenticate, requireSuperAdmin, listAuditLogController);
+router.get("/login-activity", authenticate, requireSuperAdmin, listLoginActivityController);
 router.get("/reset-requests", authenticate, requireSuperAdmin, listResetRequestsController);
 router.get("/reset-requests/history", authenticate, requireSuperAdmin, listResetRequestHistoryController);
 router.post("/reset-requests/:id/dismiss", authenticate, requireSuperAdmin, dismissResetRequestController);
