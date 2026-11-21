@@ -1,4 +1,5 @@
 import { Vehicle, Case, Station } from "#models/index.js";
+import { isActive } from "#utils/activity.util.js";
 
 // How far along the station->incident line the vehicle sits at each stage
 // (0 = exactly at the station, 1 = exactly at the incident). Each is a fixed
@@ -86,8 +87,18 @@ const positionVehicles = async () => {
   }
 };
 
+// Skips ticks while nobody is using the site (see activity.util.js) — no
+// one is watching the map then, and querying every 3s would otherwise keep
+// the database awake around the clock. The first tick after a visitor
+// arrives snaps every vehicle to its correct position, since positions are
+// derived purely from case status rather than accumulated over time.
 export const startVehicleSimulator = (intervalMs = 3000) => {
   setInterval(async () => {
-    await positionVehicles();
+    if (!isActive()) return;
+    try {
+      await positionVehicles();
+    } catch (err) {
+      console.error("Simulator tick failed:", err.message);
+    }
   }, intervalMs);
 };

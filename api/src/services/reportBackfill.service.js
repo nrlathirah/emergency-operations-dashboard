@@ -1,6 +1,7 @@
 import { Op } from "sequelize";
 import { Agency, Vehicle, Station, Case } from "#models/index.js";
 import { generateCaseForDay } from "#utils/caseGenerator.js";
+import { isActive, onWake } from "#utils/activity.util.js";
 
 // Must match the report trend charts' own bucketing (see toDateKey in
 // report.service.js) so "day N has enough data" here means the same thing
@@ -145,10 +146,31 @@ const runBackfillCycle = async () => {
 // and restarts often (each restart alone would keep things fresh) and a
 // long-lived process that never restarts (which needs the interval instead).
 // Hourly so today's count keeps climbing through the day — each run is a
-// handful of cheap queries and usually inserts 0–3 rows.
-export const startReportBackfillJob = (intervalMs = 60 * 60 * 1000) => {
-  runBackfillCycle().catch((err) => console.error("Report backfill failed:", err));
+// handful of cheap queries and usually inserts 0–3 rows. Skipped while the
+// site is idle (so the database can sleep); the first visitor after an idle
+// spell triggers an immediate catch-up run instead, so reports are already
+// current by the time their page loads. A run never overlaps another.
+const RUN_EVERY_MS = 60 * 60 * 1000;
+let lastRunAt = 0;
+let running = false;
+
+const runIfDue = async ({ force = false } = {}) => {
+  if (running || (!force && Date.now() - lastRunAt < RUN_EVERY_MS)) return;
+  running = true;
+  try {
+    await runBackfillCycle();
+    lastRunAt = Date.now();
+  } catch (err) {
+    console.error("Report backfill failed:", err);
+  } finally {
+    running = false;
+  }
+};
+
+export const startReportBackfillJob = () => {
+  runIfDue({ force: true });
+  onWake(() => runIfDue());
   setInterval(() => {
-    runBackfillCycle().catch((err) => console.error("Report backfill failed:", err));
-  }, intervalMs);
+    if (isActive()) runIfDue();
+  }, 5 * 60 * 1000);
 };

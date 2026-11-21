@@ -11,6 +11,7 @@ export const sequelize = process.env.DATABASE_URL
     })
   : new Sequelize({
       dialect: "sqlite",
-      storage: "./data/dev.sqlite",
+      // Overridable so the test suite can use a throwaway in-memory DB.
+      storage: process.env.SQLITE_STORAGE || "./data/dev.sqlite",
       logging: false,
     });

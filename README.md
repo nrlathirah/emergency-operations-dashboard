@@ -1,5 +1,7 @@
 # Emergency Operations Dashboard
 
+[![CI](https://github.com/nrlathirah/emergency-operations-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/nrlathirah/emergency-operations-dashboard/actions/workflows/ci.yml)
+
 A real-time, multi-agency emergency operations dashboard — live vehicle tracking on a map, case dispatch, user administration, and reporting, built with Vue.js and Node.js/Express.
 
 **This is an independent personal project inspired by my work experience building a real-time emergency operations platform professionally. All code, data, and design here are original and built from scratch — no proprietary code, real agency data, or confidential information is used.**
@@ -50,6 +52,18 @@ To keep the dataset focused, this demo covers the **Klang Valley (Kuala Lumpur &
 - **Hardened against abuse** — rate limiting on login, password-reset requests, admin user changes, and case simulation; caps on page sizes, report date ranges, total users, and stored login records so no single request or script can exhaust the free-tier server or database; the shared demo accounts can't be renamed, deactivated, or have their passwords changed, and are self-repaired on every server start; user names reject HTML markup; the frontend sends anti-clickjacking and other security headers; every write endpoint validates its input (schema-checked, not just "is it present"); a centralized error handler that never leaks internal error detail to the client; standard security headers and a restricted CORS origin
 - **Responsive design** — usable across desktop and mobile breakpoints, deliberately keeping every data table's full column set on mobile (horizontal scroll, not hidden columns) rather than trading away information for width; loading states on async actions (login, export) for clear feedback
 - **Documented API** — full Postman collection included (`api/postman/`)
+
+## Security & Design Decisions
+
+The live demo publishes a **super-admin login** on its front page, so every admin capability is effectively public. A few decisions keep it safe and working for every visitor:
+
+- **Shared accounts that can't be broken** — the four demo accounts can't be renamed, deactivated, or have their passwords changed or reset, by anyone. On every server start, a self-repair step also restores their names and neutralises any user name containing markup, so the demo always comes back clean.
+- **Abuse limits sized for people, not scripts** — rate limits on login, password-reset requests, admin changes and case simulation; caps on page size (100), report date range (10 years), total users (300) and stored login records (5,000). None of them is reachable through normal use of the UI, but each one closes off a way for a single script to exhaust the free-tier server or database.
+- **Defence in depth against XSS** — Vue escapes all rendered data, and names with `<`, `>` or control characters are rejected at the API anyway. (Someone did try `<svg onload=alert(document.domain)>` on the live demo — it rendered as plain text.)
+- **Real session revocation** — JWTs carry a per-user version number checked on every request, so a deactivation or password reset cuts off existing sessions immediately rather than when the token expires.
+- **Login monitoring** — every login attempt is recorded with IP and browser, visible only to the super admin, with the admin's own IP tagged so other visitors' activity stands out. Kept for 30 days.
+- **Free-tier friendly** — background jobs (vehicle simulator, report backfill) pause after 10 minutes without visitors, so the serverless database can sleep. An uptime ping to `/` keeps the API awake without counting as activity, and the first real visitor wakes everything instantly.
+- **Self-sustaining demo data** — an hourly job keeps the last 90 days of report data populated with realistic, varying daily volumes (weekday rhythm, occasional spikes), and prunes anything older than 120 days so storage stays flat.
 
 ## Tech Stack
 
@@ -122,6 +136,17 @@ npm install
 cp .env.example .env   # defaults to http://localhost:4000/api, which matches the backend above
 npm run dev              # http://localhost:5173
 ```
+
+## Testing
+
+The API has an automated test suite (Vitest + Supertest, 43 tests) covering authentication and session revocation, agency-scoped access control, super-admin-only endpoints, dispatch authorization, demo-account protection and self-repair, input validation, report date-range and pagination limits, and idle detection. Each test file runs against its own throwaway in-memory SQLite database. It never touches `data/dev.sqlite` or any real database.
+
+```sh
+cd api
+npm test
+```
+
+GitHub Actions runs the test suite and a production build of the UI on every push to `main` and on every pull request.
 
 ## API Testing
 
