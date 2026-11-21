@@ -6,6 +6,19 @@ A real-time, multi-agency emergency operations dashboard — live vehicle tracki
 
 **This is an independent personal project inspired by my work experience building a real-time emergency operations platform professionally. All code, data, and design here are original and built from scratch — no proprietary code, real agency data, or confidential information is used.**
 
+![Live Dashboard: multi-agency map with stations, vehicles and incidents alongside the live case table](docs/screenshots/dashboard.png)
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/reports.png" alt="Incident Reports: response-time KPIs and daily case trend charts" /></td>
+    <td width="50%"><img src="docs/screenshots/dark-mode.png" alt="Live Dashboard in dark mode" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Reports: KPIs and hand-built SVG trend charts</sub></td>
+    <td align="center"><sub>Dark mode</sub></td>
+  </tr>
+</table>
+
 ## 🔗 Live Demo
 
 - **Dashboard**: https://emergency-operations-dashboard.vercel.app
