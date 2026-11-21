@@ -17,8 +17,10 @@ import {
   exportFullReportExcel,
 } from "#controllers/report.controller.js";
 import { authenticate } from "#middlewares/auth.middleware.js";
+import { validateDateRangeQuery } from "#middlewares/dateRange.middleware.js";
 
 const router = Router();
+router.use(validateDateRangeQuery);
 router.get("/date-bounds", authenticate, getDateBoundsReport);
 router.get("/cases-summary", authenticate, getCasesSummary);
 router.get("/cases-by-agency", authenticate, getCasesByAgency);

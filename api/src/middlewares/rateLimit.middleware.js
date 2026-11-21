@@ -36,6 +36,19 @@ export const passwordResetLimiter = rateLimit({
   message: { message: "Too many requests. Please try again in an hour." },
 });
 
+// Every admin write (create user, rename, activate/deactivate, reset
+// password, dismiss a request). The super-admin login is public, so this is
+// what stops a script from mass-creating or mass-editing users — generous
+// enough that a person clicking through the Users page never hits it.
+export const adminWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `${ipKeyGenerator(req.ip)}:${req.user?.id ?? "anon"}`,
+  message: { message: "Too many changes in a short time — please wait a few minutes and try again." },
+});
+
 // "Simulate New Case" is a demo convenience, not a real intake path — worth
 // capping so it can't be used to flood the Cases table (and, downstream,
 // every chart/export that aggregates it) via a scripted loop.

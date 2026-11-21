@@ -11,6 +11,7 @@ import { syncDatabase, Agency } from "#models/index.js";
 import { seedDatabase } from "./src/seed.js";
 import { startVehicleSimulator } from "#services/simulator.service.js";
 import { startReportBackfillJob } from "#services/reportBackfill.service.js";
+import { repairDemoData } from "#services/demoIntegrity.service.js";
 import { mountRoutes } from "./src/routes/index.js";
 import { generalLimiter } from "#middlewares/rateLimit.middleware.js";
 import { notFound, errorHandler } from "#middlewares/errorHandler.middleware.js";
@@ -61,6 +62,8 @@ if (agencyCount === 0) {
   console.log("No data found — running initial seed...");
   await seedDatabase();
 }
+
+await repairDemoData();
 
 startVehicleSimulator();
 startReportBackfillJob();

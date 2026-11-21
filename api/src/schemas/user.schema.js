@@ -12,7 +12,16 @@ const AGENCY_CODES = ["KKM", "PDRM", "JBPM"];
 // since it's checking a password against whatever policy was live when it
 // was created, not creating a new one.
 const passwordField = z.string().min(8, "Password must be at least 8 characters.").max(200);
-const nameField = z.string().trim().min(1, "Name is required.").max(100);
+// Names are shown all over the UI (user table, activity feed, Excel export).
+// Vue already renders them as plain text, so markup can't execute — but
+// there's no legitimate reason for a person's name to contain < > or
+// control characters, so they're rejected outright rather than stored.
+const nameField = z
+  .string()
+  .trim()
+  .min(1, "Name is required.")
+  .max(100)
+  .refine((v) => !/[<>\u0000-\u001F\u007F]/.test(v), "Name can't contain < or > or control characters.");
 
 export const createUserSchema = z.object({
   name: nameField,

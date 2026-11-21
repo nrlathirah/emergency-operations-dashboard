@@ -15,6 +15,7 @@ import {
 } from "#services/report.service.js";
 import { getCasesPage, getEarliestCaseDate } from "#services/case.service.js";
 import { getScopedAgency } from "#utils/scope.util.js";
+import { parsePagination } from "#utils/pagination.util.js";
 
 // Pulled out once — every date-filterable report handler reads the same
 // two optional query params the same way.
@@ -134,8 +135,7 @@ export const getPriorityByAgencyReport = async (req, res, next) => {
 
 export const getCasesTable = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const { page, limit } = parsePagination(req.query, 10);
     const result = await getCasesPage({
       agencyCode: getScopedAgency(req),
       status: req.query.status,

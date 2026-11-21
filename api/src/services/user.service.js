@@ -7,6 +7,11 @@ import { resolveAnyPendingRequestForUser } from "./passwordResetRequest.service.
 
 const ALLOWED_SORT_FIELDS = ["name", "email", "role", "status", "createdAt", "lastLoginAt"];
 
+// The super-admin login is public, so without a ceiling a script could
+// create users until the free-tier database fills up. Far above anything a
+// visitor testing the Add User flow would ever reach.
+const MAX_USERS = 300;
+
 export const getAllUsers = async ({ search, agencyCode, status, role, sort, order, page = 1, limit = 5 } = {}) => {
   const where = {};
   if (search) {
@@ -136,6 +141,10 @@ export const generateUsersExcel = async ({ search, agencyCode, status, role } = 
 };
 
 export const createUser = async ({ name, email, password, role, agencyCode, actorId }) => {
+  if ((await User.count()) >= MAX_USERS) {
+    throw new Error("This demo has reached its user limit — try editing an existing user instead.");
+  }
+
   let agencyId = null;
   if (role !== "super_admin") {
     const agency = await Agency.findOne({ where: { code: agencyCode } });
@@ -176,8 +185,12 @@ export const updateUserName = async ({ userId, name, actorId }) => {
   if (!user) {
     throw new Error("User not found.");
   }
-  // Unlike password/status changes, renaming doesn't affect login access —
-  // no reason to block it for the shared demo accounts.
+  // The shared demo accounts are what every visitor sees and logs in as —
+  // a rename by one visitor would show up for all of them, so they're
+  // locked here the same way changeOwnName already locks them.
+  if (user.isDemoAccount) {
+    throw new Error("This is a shared demo account and its name can't be changed.");
+  }
 
   const oldName = user.name;
   const newName = name.trim();

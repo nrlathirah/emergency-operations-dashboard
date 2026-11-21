@@ -3,11 +3,11 @@ import { getAuditLogs } from "#services/audit.service.js";
 import { getLoginEvents, normalizeIp } from "#services/loginEvent.service.js";
 import { getPendingResetRequests, dismissPasswordResetRequest, getResetRequestHistory } from "#services/passwordResetRequest.service.js";
 import { getScopedAgency } from "#utils/scope.util.js";
+import { parsePagination } from "#utils/pagination.util.js";
 
 export const listUsers = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 5;
+    const { page, limit } = parsePagination(req.query, 5);
 
     const result = await getAllUsers({
       search: req.query.search,
@@ -85,8 +85,7 @@ export const updateUserStatusController = async (req, res, next) => {
 
 export const listAuditLogController = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 15;
+    const { page, limit } = parsePagination(req.query, 15);
     const result = await getAuditLogs({ page, limit, targetUserId: req.query.targetUserId });
     res.status(200).json({
       data: result.logs,
@@ -151,8 +150,7 @@ export const dismissResetRequestController = async (req, res, next) => {
 
 export const listResetRequestHistoryController = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const { page, limit } = parsePagination(req.query, 10);
     const result = await getResetRequestHistory({ page, limit });
     res.status(200).json({
       data: result.requests,
@@ -169,8 +167,7 @@ export const listResetRequestHistoryController = async (req, res, next) => {
 // from the admin's current network vs. someone else's.
 export const listLoginActivityController = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+    const { page, limit } = parsePagination(req.query, 20);
     const result = await getLoginEvents({ page, limit });
     res.status(200).json({
       data: result.events,
