@@ -87,7 +87,9 @@ export const ensureHistoricalCoverage = async () => {
       Station.findAll({ where: { agencyId: agency.id } }),
       Vehicle.findAll({ where: { agencyId: agency.id } }),
       Case.findAll({
-        where: { agencyId: agency.id, status: "closed", createdAt: { [Op.gte]: windowStart } },
+        // Simulated cases don't count — Reports exclude them, so they can't
+        // stand in for a day's historical volume.
+        where: { agencyId: agency.id, status: "closed", isSimulated: false, createdAt: { [Op.gte]: windowStart } },
         attributes: ["createdAt"],
       }),
       nextSeqForAgency(agency, year),
@@ -136,9 +138,19 @@ export const pruneOldClosedCases = async () => {
   if (deleted > 0) console.log(`Report backfill: pruned ${deleted} closed case(s) older than ${RETENTION_DAYS} days.`);
 };
 
+// Simulated cases are only there to make the Live Dashboard move; once one
+// has dropped off the dashboard's 24h "recently closed" window it serves no
+// purpose, so it's deleted rather than kept for 120 days.
+export const pruneClosedSimulatedCases = async () => {
+  const cutoff = new Date(Date.now() - DAY_MS);
+  const deleted = await Case.destroy({ where: { isSimulated: true, status: "closed", updatedAt: { [Op.lt]: cutoff } } });
+  if (deleted > 0) console.log(`Pruned ${deleted} simulated case(s) closed more than 24h ago.`);
+};
+
 const runBackfillCycle = async () => {
   await ensureHistoricalCoverage();
   await pruneOldClosedCases();
+  await pruneClosedSimulatedCases();
 };
 
 // Runs the check once immediately, then on a recurring interval — covers

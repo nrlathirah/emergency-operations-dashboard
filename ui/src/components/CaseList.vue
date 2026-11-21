@@ -7,7 +7,7 @@
           <span class="rb-live-dot" style="margin-left: 8px; margin-right: 5px;"></span>
           <span style="font-size: 0.6875rem; font-weight: 700; color: var(--pri-low); text-transform: uppercase; letter-spacing: 0.04em; vertical-align: 2px;">Live</span>
         </h2>
-        <p class="rb-panel-meta">Showing active cases and cases closed in the last 24h — see Reports for full history.</p>
+        <p class="rb-panel-meta">Showing active cases and cases closed in the last 24h — see Reports for full history. New incidents are simulated automatically while you're here.</p>
       </div>
       <span class="rb-panel-meta">{{ activeCount }} Active · {{ closedCount }} Closed<template v-if="awaitingCount"> · <span class="text-amber-600 dark:text-amber-400">{{ awaitingCount }} awaiting unit</span></template></span>
     </div>

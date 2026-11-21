@@ -9,4 +9,9 @@ export const Case = sequelize.define("Case", {
   location: { type: DataTypes.STRING, allowNull: false },
   latitude: { type: DataTypes.FLOAT, allowNull: false },
   longitude: { type: DataTypes.FLOAT, allowNull: false },
+  // Created by "Simulate New Case" or the background traffic generator
+  // (ambient.service.js). These close in about a minute, so they're kept
+  // out of Reports (they'd distort response-time KPIs) and deleted 24h
+  // after closing; the Live Dashboard shows them like any other case.
+  isSimulated: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
 });

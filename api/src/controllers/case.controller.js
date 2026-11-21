@@ -4,6 +4,7 @@ import { getScopedAgency } from "#utils/scope.util.js";
 export const listCases = async (req, res, next) => {
   try {
     const cases = await getAllCases({
+      includeSimulated: true, // the Live Dashboard shows simulated traffic; Reports don't
       agencyCode: getScopedAgency(req),
       status: req.query.status,
       sort: req.query.sort,

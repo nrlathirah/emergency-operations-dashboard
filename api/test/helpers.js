@@ -33,3 +33,12 @@ export const findUserId = async (app, adminToken, email) => {
   const res = await request(app).get("/api/users").query({ search: email }).set(auth(adminToken));
   return res.body.data.find((u) => u.email === email)?.id;
 };
+
+// Sets updatedAt directly in SQL. Sequelize ignores a silent update whose
+// only field is updatedAt (it becomes a no-op), so tests that need to make a
+// row look old use this instead.
+export const backdateUpdatedAt = async (sequelize, ids, date) => {
+  await sequelize.query(`UPDATE "Cases" SET "updatedAt" = :date WHERE id IN (:ids)`, {
+    replacements: { date, ids },
+  });
+};

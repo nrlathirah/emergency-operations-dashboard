@@ -4,7 +4,6 @@ import helmet from "helmet";
 import { mountRoutes } from "./routes/index.js";
 import { generalLimiter } from "#middlewares/rateLimit.middleware.js";
 import { notFound, errorHandler } from "#middlewares/errorHandler.middleware.js";
-import { markActivity } from "#utils/activity.util.js";
 
 // Builds the Express app (middleware + routes) without connecting to the
 // database, starting background jobs, or listening on a port — app.js does
@@ -40,17 +39,11 @@ export const createApp = () => {
   app.use(express.json({ limit: "100kb" }));
   app.use(generalLimiter);
 
-  // Health check / keep-alive target for an uptime monitor. Deliberately
-  // outside /api so pinging it does NOT count as real activity below — the
-  // server stays awake, but the database is left alone to sleep.
+  // Health check / keep-alive target for an uptime monitor. It never counts
+  // as activity (only authenticated requests do — see auth.middleware.js),
+  // so the server stays awake while the database is left alone to sleep.
   app.get("/", (req, res) => {
     res.send("Emergency Operations Dashboard API is running");
-  });
-
-  // Any real API request = someone is using the site right now.
-  app.use("/api", (req, res, next) => {
-    markActivity();
-    next();
   });
 
   // The README links straight to /api — give anyone who clicks it a useful

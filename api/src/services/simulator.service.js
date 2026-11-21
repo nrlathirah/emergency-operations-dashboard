@@ -1,6 +1,7 @@
 import { Vehicle, Case, Station } from "#models/index.js";
 import { isActive } from "#utils/activity.util.js";
 import { advanceCaseLifecycles } from "#services/lifecycle.service.js";
+import { maybeSpawnAmbientCase } from "#services/ambient.service.js";
 
 // How far along the station->incident line the vehicle sits at each stage
 // (0 = exactly at the station, 1 = exactly at the incident). Each is a fixed
@@ -98,6 +99,7 @@ export const startVehicleSimulator = (intervalMs = 3000) => {
     if (!isActive()) return;
     try {
       await advanceCaseLifecycles();
+      await maybeSpawnAmbientCase();
       await positionVehicles();
     } catch (err) {
       console.error("Simulator tick failed:", err.message);

@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
 import { Op } from "sequelize";
-import { setupApp, login, auth, ADMIN, KKM_STAFF, PDRM_STAFF } from "./helpers.js";
-import { Case, Vehicle } from "#models/index.js";
+import { setupApp, login, auth, backdateUpdatedAt, ADMIN, KKM_STAFF, PDRM_STAFF } from "./helpers.js";
+import { sequelize, Case, Vehicle } from "#models/index.js";
 import { advanceCaseLifecycles } from "#services/lifecycle.service.js";
 
 let app;
@@ -75,11 +75,10 @@ describe("recovery after a restart or long outage", () => {
 
   it("lets every agency simulate again once stuck cases are recovered", async () => {
     // Freeze every remaining self-running case far in the past, then recover.
-    await Case.update(
-      { updatedAt: new Date(Date.now() - 100 * 24 * HOUR) },
-      { where: { status: ["dispatched", "en_route", "on_scene"] }, silent: true }
-    );
+    const inFlight = await Case.findAll({ where: { status: ["dispatched", "en_route", "on_scene"] }, attributes: ["id"] });
+    if (inFlight.length) await backdateUpdatedAt(sequelize, inFlight.map((c) => c.id), new Date(Date.now() - 100 * 24 * HOUR));
     await advanceCaseLifecycles();
+    expect(await Case.count({ where: { status: ["dispatched", "en_route", "on_scene"] } })).toBe(0);
 
     // Two back-to-back simulations per agency, without waiting for either to
     // finish — each needs its own free unit.

@@ -32,20 +32,25 @@ describe("idle detection", () => {
     expect(woke).toHaveBeenCalledTimes(1);
   });
 
-  it("does not count an uptime ping to / as activity, but does count /api requests", async () => {
+  it("only counts logged-in requests as activity — not uptime pings, bots or failed logins", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     const { isActive } = await loadActivity();
-    const { createApp } = await import("../src/createApp.js");
-    const app = createApp();
+    // Imported after the module reset so the app shares this activity state.
+    const { setupApp, login, auth } = await import("./helpers.js");
+    const app = await setupApp();
+    const token = await login(app, "admin@ops.gov.my");
 
     vi.setSystemTime(Date.now() + 11 * 60 * 1000);
     expect(isActive()).toBe(false);
 
-    const ping = await request(app).get("/");
-    expect(ping.status).toBe(200);
+    expect((await request(app).get("/")).status).toBe(200); // uptime monitor
+    await request(app).get("/api"); // landing page
+    await request(app).get("/api/cases"); // no token — 401
+    await request(app).get("/api/wp-admin/setup.php"); // typical scanner probe — 404
+    await request(app).post("/api/auth/login").send({ email: "bot@example.com", password: "guess" }); // 401
     expect(isActive()).toBe(false);
 
-    await request(app).get("/api/cases"); // 401 without a token, but still a real visitor
+    expect((await request(app).get("/api/cases").set(auth(token))).status).toBe(200);
     expect(isActive()).toBe(true);
   });
 });

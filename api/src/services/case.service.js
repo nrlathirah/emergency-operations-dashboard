@@ -14,8 +14,12 @@ const dateRangeWhere = (startDate, endDate) => {
   return { [Op.between]: [new Date(startDate), end] };
 };
 
-export const getAllCases = async ({ agencyCode, status, sort, order, includeAll, startDate, endDate, search, category, priority } = {}) => {
+// Simulated cases are left out unless asked for — every caller except the
+// Live Dashboard is a report, and simulated cases (which close in about a
+// minute) would distort its response-time figures.
+export const getAllCases = async ({ agencyCode, status, sort, order, includeAll, includeSimulated = false, startDate, endDate, search, category, priority } = {}) => {
   const where = {};
+  if (!includeSimulated) where.isSimulated = false;
   if (status) {
     // An explicit status filter (e.g. picked from the dropdown) is a
     // deliberate drill-down — show every matching case, regardless of age.
@@ -67,7 +71,7 @@ export const getCasesPage = async ({
   category,
   priority,
 } = {}) => {
-  const where = {};
+  const where = { isSimulated: false }; // Reports only — see getAllCases
   if (status) where.status = status;
   if (category) where.category = category;
   if (priority) where.priority = priority;
@@ -103,7 +107,7 @@ export const getCasesPage = async ({
 export const getEarliestCaseDate = async ({ agencyCode } = {}) => {
   const include = [{ model: Agency, attributes: [] }];
   if (agencyCode) include[0].where = { code: agencyCode };
-  const earliest = await Case.findOne({ include, order: [["createdAt", "ASC"]], attributes: ["createdAt"] });
+  const earliest = await Case.findOne({ where: { isSimulated: false }, include, order: [["createdAt", "ASC"]], attributes: ["createdAt"] });
   return earliest ? earliest.createdAt : null;
 };
 
@@ -240,7 +244,9 @@ const MAX_QUEUED_PER_AGENCY = 10;
 // Never fails just because every unit is out — like a real dispatch centre,
 // the incident is still logged and joins a queue ("Awaiting unit"); the
 // nearest unit to free up is sent automatically.
-export const simulateNewCase = async ({ requesterRole, requesterAgencyCode }) => {
+// allowQueue: false (used by the background traffic generator) returns null
+// instead of queueing when no unit is free.
+export const simulateNewCase = async ({ requesterRole, requesterAgencyCode, allowQueue = true }) => {
   const agencyCode = requesterRole === "super_admin" ? pick(AGENCY_CODES) : requesterAgencyCode;
 
   const agency = await Agency.findOne({ where: { code: agencyCode } });
@@ -252,6 +258,8 @@ export const simulateNewCase = async ({ requesterRole, requesterAgencyCode }) =>
 
   const freeVehicles = (await findFreeVehicles(agency.id)).filter((v) => v.Station);
   const vehicle = queuedCount === 0 ? pick(freeVehicles.length ? freeVehicles : [null]) : null; // never jump the queue
+
+  if (!vehicle && !allowQueue) return null;
 
   if (!vehicle && queuedCount >= MAX_QUEUED_PER_AGENCY) {
     throw new Error(`${agencyCode} already has ${queuedCount} cases waiting for a unit — give it a minute to catch up`);
@@ -276,6 +284,7 @@ export const simulateNewCase = async ({ requesterRole, requesterAgencyCode }) =>
     // Assigned in the same insert, so the queue-assignment tick can never
     // see this case as "waiting" and hand it a second vehicle.
     vehicleId: vehicle?.id ?? null,
+    isSimulated: true,
   });
 
   // Claimed immediately (not at the +8s "dispatched" step) so a second

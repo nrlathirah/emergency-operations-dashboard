@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { User } from "#models/index.js";
+import { markActivity } from "#utils/activity.util.js";
 
 export const authenticate = async (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -23,6 +24,10 @@ export const authenticate = async (req, res, next) => {
     }
 
     req.user = decoded;
+    // Only a genuinely logged-in user counts as "someone is using the site"
+    // (see activity.util.js) — anonymous traffic like bots and scanners
+    // probing /api never wakes the background jobs or the database.
+    markActivity();
     next();
   } catch (error) {
     return res.status(401).json({ message: "Invalid or expired token" });

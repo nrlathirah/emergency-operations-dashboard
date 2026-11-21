@@ -1,3 +1,4 @@
+import { DataTypes } from "sequelize";
 import { sequelize } from "#config/database.js";
 import { Agency } from "#models/agency.model.js";
 import { Vehicle } from "#models/vehicle.model.js";
@@ -120,8 +121,28 @@ const migrateUserColumns = async () => {
   }
 };
 
+// Dialect-agnostic (SQLite and Postgres) "add this column if it's missing"
+// for tables that already exist — sync() below only creates missing tables,
+// it never alters existing ones. On a fresh database the table doesn't exist
+// yet, so this does nothing and sync() creates it with the column included.
+const addColumnIfMissing = async (table, column, definition) => {
+  const queryInterface = sequelize.getQueryInterface();
+  let description;
+  try {
+    description = await queryInterface.describeTable(table);
+  } catch {
+    return; // Postgres: table doesn't exist yet
+  }
+  if (!description || Object.keys(description).length === 0) return; // SQLite: table doesn't exist yet
+  if (!description[column]) {
+    await queryInterface.addColumn(table, column, definition);
+    console.log(`Migration: added ${table}.${column}`);
+  }
+};
+
 export const syncDatabase = async () => {
   await migrateUserColumns();
+  await addColumnIfMissing("Cases", "isSimulated", { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false });
   await sequelize.sync();
   console.log("Database synced");
 };
